@@ -48,7 +48,7 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 1. Bump `version` in `package.json` and add a section to `CHANGELOG.md`.
 2. Push to `main`. CI builds the APK and publishes Release `vX.Y.Z`; installed apps offer the update.
 
-Release signing uses four repository secrets: `PES_KEYSTORE_BASE64`, `PES_KEYSTORE_PASSWORD`, `PES_KEY_ALIAS`, `PES_KEY_PASSWORD`. Without them CI signs with a throwaway debug key (fine for testing, but such builds can't update each other).
+Release signing uses four repository secrets: `PES_KEYSTORE_BASE64`, `PES_KEYSTORE_PASSWORD`, `PES_KEY_ALIAS`, `PES_KEY_PASSWORD`. Without them CI still builds a test APK (signed with a throwaway debug key, downloadable from the run's artifacts) but publishes no release.
 
 ## License
 

@@ -83,8 +83,13 @@ jobs:
           path: PES-*.apk
           retention-days: 14
 
+      - name: Release skipped
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.PES_KEYSTORE_PATH == ''
+        run: echo "::warning::No release published — add the four PES_* signing secrets, then run this workflow again (Actions → Android → Run workflow)."
+
+      # Only release-key builds are published, so installed apps can always update.
       - name: Publish release (new versions only)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.PES_KEYSTORE_PATH != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
