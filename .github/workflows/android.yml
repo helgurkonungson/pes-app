@@ -1,0 +1,97 @@
+# Builds the Android APK on every push. When package.json has a new version,
+# publishes a GitHub Release "vX.Y.Z" with the APK — the app's updater picks it up.
+name: Android
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+
+      - name: Version
+        id: v
+        run: |
+          echo "name=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+          echo "code=$((100 + GITHUB_RUN_NUMBER))" >> "$GITHUB_OUTPUT"
+
+      - name: Signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.PES_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/pes-release.jks"
+            echo "PES_KEYSTORE_PATH=$RUNNER_TEMP/pes-release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::No signing secrets set — APK is signed with a throwaway debug key and cannot update an installed release build."
+          fi
+
+      - name: Build APK
+        working-directory: android
+        env:
+          PES_VERSION_NAME: ${{ steps.v.outputs.name }}
+          PES_VERSION_CODE: ${{ steps.v.outputs.code }}
+          PES_KEYSTORE_PASSWORD: ${{ secrets.PES_KEYSTORE_PASSWORD }}
+          PES_KEY_ALIAS: ${{ secrets.PES_KEY_ALIAS }}
+          PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Collect APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk "PES-${{ steps.v.outputs.name }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PES-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}
+          path: PES-*.apk
+          retention-days: 14
+
+      - name: Publish release (new versions only)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="v${{ steps.v.outputs.name }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — only the build artifact was updated."
+          else
+            node tools/release-notes.mjs "${{ steps.v.outputs.name }}" > notes.md
+            gh release create "$TAG" "PES-${{ steps.v.outputs.name }}.apk" --title "PES $TAG" --notes-file notes.md
+          fi

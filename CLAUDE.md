@@ -1,0 +1,14 @@
+# Working rules for Claude in this repo
+
+This is PES, Oleg's mobile learning app. The full process (phases, communication, Definition of Done) lives in the **PES project on claude.ai**: `app/PLAYBOOK.md` and the running state in `app/STATE.md`. Read both at the start of a session.
+
+## Essentials
+- Stack: React 19 + TypeScript + Vite, Capacitor 8 (Android now, iOS later), Dexie (IndexedDB), Claude API with the user's own key. Decisions: `docs/ARCHITECTURE.md` (ADRs).
+- Pure logic goes in `src/core/` and gets unit tests (`npm test`). UI never computes XP, streaks, plans or scores itself.
+- Data schema changes: add a new `this.version(n)` in `src/data/db.ts` with an upgrade; never edit an existing version. Never lose the user's history.
+- AI output is untrusted: always pass it through `src/core/normalize.ts`.
+- No developer secrets in the repo or app. The user's key lives only in secure storage.
+- Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark theme, Tiffany accent `#81d8d0`; 360 px min width; safe-area variables.
+- Before a release: `npm run build && npm test`, run the Playwright walk-through if UI changed, bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK.
+- My workspace can't reach Google's Android build servers: APKs come from GitHub Actions.
+- Commit messages end with the attribution lines the session asks for.
