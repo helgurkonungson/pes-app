@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
-import { confirmDialog, MenuRow, MinutesPicker, Sheet, toast, TopBar } from "../components/ui";
+import { confirmDialog, ExtLink, MenuRow, MinutesPicker, openExternal, Sheet, toast, TopBar } from "../components/ui";
 import { localDay } from "../core/dates";
 import { updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
@@ -131,7 +131,7 @@ export function Settings() {
         <div className="card" style={{ paddingTop: 6, paddingBottom: 6 }}>
           <MenuRow icon={<RefreshCw size={20} className="accent" />} label="Check for updates" value={`v${APP_VERSION}`} onClick={busy ? undefined : doCheck} />
           {update.info && <MenuRow icon={<Download size={20} className="accent" />} label={`Install ${update.info.version}`} onClick={() => installUpdate(update.info!)} />}
-          <MenuRow icon={<Code size={20} className="accent" />} label="Source code" value={APP_REPO.split("/")[1]} onClick={() => window.open(`https://github.com/${APP_REPO}`, "_blank")} />
+          <MenuRow icon={<Code size={20} className="accent" />} label="Source code" value={APP_REPO.split("/")[1]} onClick={() => openExternal(`https://github.com/${APP_REPO}`)} />
         </div>
 
         <div className="card" style={{ paddingTop: 6, paddingBottom: 6 }}>
@@ -179,9 +179,7 @@ export function Settings() {
           <div className="stack-lg">
             <p className="muted small">
               Stored in your phone's secure storage and sent only to Anthropic. Create or manage keys at{" "}
-              <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">
-                console.anthropic.com
-              </a>
+              <ExtLink href="https://console.anthropic.com/settings/keys">console.anthropic.com</ExtLink>
               .
             </p>
             <input className="input selectable" placeholder="sk-ant-…" value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />

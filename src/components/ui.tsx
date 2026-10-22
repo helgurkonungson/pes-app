@@ -1,9 +1,33 @@
 /** Small design-system components. */
+import { Browser } from "@capacitor/browser";
+import { Capacitor } from "@capacitor/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { create } from "zustand";
 import { PORTIONS, clampMinutes } from "../core/planner";
 import { useNav } from "../nav/store";
+
+/** Opens a web page in the system browser (in-app links would replace the app's WebView). */
+export function openExternal(url: string): void {
+  if (Capacitor.isNativePlatform()) Browser.open({ url }).catch(() => undefined);
+  else window.open(url, "_blank", "noopener");
+}
+
+export function ExtLink({ href, children, className, style }: { href: string; children: ReactNode; className?: string; style?: CSSProperties }) {
+  return (
+    <a
+      href={href}
+      className={className}
+      style={style}
+      onClick={(e) => {
+        e.preventDefault();
+        openExternal(href);
+      }}
+    >
+      {children}
+    </a>
+  );
+}
 
 export function TopBar({ title, onBack, right }: { title?: string; onBack?: () => void; right?: ReactNode }) {
   const pop = useNav((s) => s.pop);

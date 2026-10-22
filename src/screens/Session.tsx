@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronLeft, ExternalLink, Flame, Lightbu
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
 import { gradeAnswer } from "../ai/tutor";
-import { confirmDialog } from "../components/ui";
+import { confirmDialog, ExtLink } from "../components/ui";
 import { BadgeIcon, Markdown, Rings, ScoreRing } from "../components/visuals";
 import { badgeById } from "../core/badges";
 import { canAdvance, lessonPages, type Page, placementPages, STEP_LABEL, stepsOf } from "../core/flow";
@@ -337,9 +337,9 @@ function PageView({ page, session, progress, update }: { page: Page; session: Se
                 From the web
               </p>
               {links.map((l) => (
-                <a key={l.url} href={l.url} target="_blank" rel="noreferrer" className="row small" style={{ padding: "6px 0", textDecoration: "none" }}>
+                <ExtLink key={l.url} href={l.url} className="row small" style={{ padding: "6px 0", textDecoration: "none" }}>
                   <ExternalLink size={14} /> <span className="ellipsis">{l.title}</span>
-                </a>
+                </ExtLink>
               ))}
             </div>
           )}

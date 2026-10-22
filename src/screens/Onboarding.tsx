@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AiError, testKey } from "../ai/client";
 import { setApiKey } from "../ai/key";
 import { HeroBg, Rings } from "../components/visuals";
-import { MinutesPicker, toast } from "../components/ui";
+import { ExtLink, MinutesPicker, toast } from "../components/ui";
 import { updateProfile } from "../data/db";
 
 export function Onboarding() {
@@ -95,7 +95,7 @@ export function Onboarding() {
               <label htmlFor="key">Claude API key</label>
               <input id="key" className="input selectable" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" autoCapitalize="off" spellCheck={false} />
               <p className="faint small">
-                Get one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer">console.anthropic.com</a>. Usage is billed to your Anthropic account.
+                Get one at <ExtLink href="https://console.anthropic.com/settings/keys">console.anthropic.com</ExtLink>. Usage is billed to your Anthropic account.
               </p>
             </div>
             {error && <div className="error-box">{error}</div>}

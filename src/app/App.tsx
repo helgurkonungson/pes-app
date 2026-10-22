@@ -50,6 +50,16 @@ export function App() {
   const { tab, stack, sheet } = useNav();
 
   useEffect(() => {
+    // keep focused fields visible above the on-screen keyboard
+    const onFocus = (e: FocusEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT")) setTimeout(() => el.scrollIntoView({ block: "center", behavior: "smooth" }), 350);
+    };
+    document.addEventListener("focusin", onFocus);
+    return () => document.removeEventListener("focusin", onFocus);
+  }, []);
+
+  useEffect(() => {
     getProfile(); // creates the default profile on first launch
     if (!Capacitor.isNativePlatform()) return;
     const sub = CapApp.addListener("backButton", () => {
