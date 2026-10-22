@@ -41,7 +41,7 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 | `android/` | Capacitor Android project |
 | `.github/workflows/android.yml` | CI: tests → build → APK → Release on new version |
 | `docs/` | Brief, architecture and ADRs |
-| `tools/` | Icon generator, release-notes helper |
+| `tools/` | Icon generator, release-notes helper, one-time GitHub setup script |
 
 ### Releasing
 
