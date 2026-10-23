@@ -3,7 +3,11 @@
  * Docs: https://platform.claude.com/docs — Messages API, tool use, web search tool.
  */
 import { type AiErrorKind, classifyApiError } from "../core/aiStatus";
+import { getProfile } from "../data/db";
+import type { ProviderId } from "../core/types";
+import { compatListModels, compatStructured } from "./compat";
 import { getApiKey } from "./key";
+import { activeProvider } from "./providers";
 
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
@@ -49,7 +53,7 @@ function headers(key: string): Record<string, string> {
 }
 
 async function request<T>(path: string, init: RequestInit & { key?: string; timeoutMs?: number } = {}): Promise<T> {
-  const key = init.key ?? (await getApiKey());
+  const key = init.key ?? (await getApiKey("anthropic"));
   if (!key) throw new AiError("Add your Claude API key in Settings first.", "no-key");
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), init.timeoutMs ?? 240_000);
@@ -96,6 +100,13 @@ export function createMessage(params: CreateParams, signal?: AbortSignal): Promi
 
 /** Forces a single tool call and returns its input — our way of getting reliable JSON. */
 export async function structured<T>(opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal }): Promise<T> {
+  const profile = await getProfile();
+  const provider = activeProvider(profile);
+  if (provider !== "anthropic") {
+    const key = await getApiKey(provider);
+    if (!key) throw new AiError("No API key for the selected provider.", "no-key");
+    return compatStructured<T>(provider, key, profile, opts);
+  }
   const res = await createMessage(
     {
       model: opts.model,
@@ -154,12 +165,19 @@ export interface ModelInfo {
   display_name: string;
 }
 
-export async function listModels(key?: string): Promise<ModelInfo[]> {
+export async function listModels(key?: string, providerIn?: ProviderId): Promise<ModelInfo[]> {
+  const profile = await getProfile();
+  const provider = providerIn ?? activeProvider(profile);
+  if (provider !== "anthropic") {
+    const k = key ?? (await getApiKey(provider));
+    if (!k) throw new AiError("No API key for the selected provider.", "no-key");
+    return compatListModels(provider, k, profile);
+  }
   const res = await request<{ data: ModelInfo[] }>("/models?limit=50", { method: "GET", key, timeoutMs: 20_000 });
   return res.data ?? [];
 }
 
-/** Cheap call used to validate a key. */
-export async function testKey(key: string): Promise<ModelInfo[]> {
-  return listModels(key);
+/** Cheap call used to validate a key (for Yandex the folder id must be saved first). */
+export async function testKey(key: string, provider?: ProviderId): Promise<ModelInfo[]> {
+  return listModels(key, provider);
 }

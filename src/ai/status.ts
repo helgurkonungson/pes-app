@@ -34,7 +34,7 @@ export function useAiState(keyVersion = 0): AiState | undefined {
     return () => {
       alive = false;
     };
-  }, [keyVersion, profile?.aiBlock?.at]);
+  }, [keyVersion, profile?.aiBlock?.at, profile?.provider]);
   if (!profile || hasKey === undefined) return undefined;
   return aiState(profile, hasKey);
 }

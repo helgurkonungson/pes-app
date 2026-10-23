@@ -9,6 +9,7 @@ import { AiError } from "../ai/client";
 import { reportAiError, reportAiOk } from "../ai/status";
 import { generateLesson, generatePlacement, type Progress } from "../ai/tutor";
 import { getApiKey } from "../ai/key";
+import { activeProvider, modelOf, PROVIDERS } from "../ai/providers";
 import { aiState, isBlocking } from "../core/aiStatus";
 import { buildCourseLesson, nextCourseLesson } from "../core/course";
 import { nowIso, uid } from "../core/ids";
@@ -160,7 +161,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
       if (kind === "placement") {
         opts.onProgress?.("writing");
         const samples = sampleChunks(chunks, 6);
-        base.placement = await generatePlacement({ model: profile.model, skillset, samples, sourceTitles: titles, count: placementSize(minutes), signal: opts.signal });
+        base.placement = await generatePlacement({ model: modelOf(profile), skillset, samples, sourceTitles: titles, count: placementSize(minutes), signal: opts.signal });
         base.chunkIds = samples.map((c) => c.id);
       } else {
         const plan = planSession(minutes);
@@ -173,7 +174,8 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
           .sort((a, b) => (a.finishedAt ?? "").localeCompare(b.finishedAt ?? ""))
           .map((s) => s.lesson!.title);
         const { lesson } = await generateLesson({
-          model: profile.model,
+          model: modelOf(profile),
+          webSearch: PROVIDERS[activeProvider(profile)].webSearch,
           skillset,
           plan,
           number,

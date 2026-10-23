@@ -11,6 +11,8 @@ export type AiMode = "auto" | "offline";
 export type LessonMode = "ai" | "offline" | "course";
 /** Error kinds that make AI unusable until the learner fixes something. */
 export type AiBlock = "no-key" | "auth" | "credits";
+/** AI provider whose key the learner uses. */
+export type ProviderId = "anthropic" | "openai" | "yandex" | "qwen";
 
 export interface Skillset {
   id: string;
@@ -190,6 +192,14 @@ export interface Profile {
   aiMode?: AiMode;
   /** Last persistent AI problem (cleared after the next successful AI call). */
   aiBlock?: { kind: AiBlock; at: string };
+  /** Active AI provider (default: anthropic; `model` above is the Claude model). */
+  provider?: ProviderId;
+  /** Chosen model per non-Claude provider. */
+  providerModels?: Partial<Record<ProviderId, string>>;
+  /** Yandex AI Studio folder id (needed for model URIs). */
+  yandexFolder?: string;
+  /** DashScope region for Qwen. */
+  qwenRegion?: "intl" | "cn";
 }
 
 // ---------- imported courses ----------

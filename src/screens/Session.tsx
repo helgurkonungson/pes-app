@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb,
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
 import { reportAiError, reportAiOk, useAiState } from "../ai/status";
+import { modelOf } from "../ai/providers";
 import { gradeAnswer } from "../ai/tutor";
 import { confirmDialog, ExtLink } from "../components/ui";
 import { BadgeIcon, Markdown, Rings, ScoreRing } from "../components/visuals";
@@ -502,7 +503,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
     try {
       const sk = await db.skillsets.get(session.skillsetId);
       const profile = await getProfile();
-      const g = await gradeAnswer({ model: profile.model, language: sk?.language ?? "English", lesson, answer: text });
+      const g = await gradeAnswer({ model: modelOf(profile), language: sk?.language ?? "English", lesson, answer: text });
       update({ openAnswer: text, grade: g });
       reportAiOk();
       haptic(g.score >= 6 ? "ok" : "tap");

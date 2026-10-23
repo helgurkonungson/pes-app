@@ -20,7 +20,7 @@ export type AiErrorKind = "no-key" | "auth" | "credits" | "rate" | "overloaded" 
 /** Maps an HTTP status + API error message to an error kind. */
 export function classifyApiError(status: number, message: string): AiErrorKind {
   const m = message.toLowerCase();
-  if (status === 402 || /credit balance|purchase credits|billing|insufficient (credit|funds|quota)|quota exceeded/.test(m)) return "credits";
+  if (status === 402 || /credit balance|purchase credits|billing|insufficient[ _](credit|funds|quota|balance)|quota exceeded|exceeded your current quota|arrearage|good standing|not enough (money|funds)|payment required/.test(m)) return "credits";
   if (status === 401 || status === 403) return "auth";
   if (status === 429) return "rate";
   if (status === 529 || status >= 500) return "overloaded";

@@ -2,6 +2,11 @@
 
 All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.3.0 — 2026-10-23
+
+- **More AI providers:** Settings → AI → Provider: Claude, ChatGPT (OpenAI), Alice AI (Yandex AI Studio: Alice AI LLM, YandexGPT and others — needs the folder ID) and Qwen (Alibaba DashScope, international or China region). One key per provider in secure storage; model picker per provider; “credits ran out” is recognised for every provider and lessons continue without AI. Web research (“Use the internet”) stays Claude-only.
+- Tests for the OpenAI-compatible client (request format, Yandex folder/model URI, error mapping) and end-to-end checks of the provider settings.
+
 ## 0.2.0 — 2026-10-23
 
 Works without AI, speaks Russian, never loses progress — and a redesigned interface.

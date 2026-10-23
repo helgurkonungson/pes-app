@@ -1,15 +1,16 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, Bot, Code, Download, Globe, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, Bot, Code, Download, Folder, Globe, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
+import { activeProvider, modelOf, pickOpenAiModel, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
 import { useBackupRestore } from "../components/FilePickers";
 import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, PageTitle, Segmented, SectionLabel, Sheet, toast } from "../components/ui";
-import type { AiMode, UiLanguage } from "../core/types";
+import type { AiMode, ProviderId, UiLanguage } from "../core/types";
 import { localDay } from "../core/dates";
 import { updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
@@ -28,31 +29,38 @@ export function Settings() {
   const [key, setKey] = useState<string | null>(null);
   const [keyVersion, setKeyVersion] = useState(0);
   const ai = useAiState(keyVersion);
-  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model">(null);
+  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder">(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [models, setModels] = useState<ModelInfo[] | null>(null);
   const restore = useBackupRestore(() => reset());
 
+  const provider = activeProvider(profile);
+  const meta = PROVIDERS[provider];
   useEffect(() => {
-    getApiKey().then(setKey);
-  }, [keyVersion]);
+    getApiKey(provider).then(setKey);
+  }, [keyVersion, provider]);
 
   if (!profile) return <div className="screen with-tabbar" />;
+
+  const setModel = (id: string) =>
+    updateProfile(provider === "anthropic" ? { model: id } : { providerModels: { ...profile.providerModels, [provider]: id } });
 
   const saveKey = async () => {
     setBusy(true);
     setErr(null);
     try {
-      await testKey(draft.trim());
-      await setApiKey(draft.trim());
+      if (provider === "yandex" && !profile.yandexFolder?.trim()) throw new Error(t("settings.folderFirst"));
+      const list = await testKey(draft.trim(), provider);
+      await setApiKey(draft.trim(), provider);
       await updateProfile({ aiBlock: undefined });
+      if (provider === "openai" && !profile.providerModels?.openai) await setModel(pickOpenAiModel(list.map((m) => m.id)));
       setKeyVersion((v) => v + 1);
       setSheet(null);
       toast(t("settings.keySaved"));
     } catch (e) {
-      setErr(e instanceof AiError ? aiErrorText(e, t) : t("settings.keyCheckFailed"));
+      setErr(e instanceof AiError ? aiErrorText(e, t) : e instanceof Error && e.message ? e.message : t("settings.keyCheckFailed"));
     } finally {
       setBusy(false);
     }
@@ -152,6 +160,34 @@ export function Settings() {
             ]}
           />
           <p className="faint small">{(profile.aiMode ?? "auto") === "auto" ? t("settings.aiAutoHint") : t("settings.aiOfflineHint")}</p>
+          <span className="label">{t("settings.provider")}</span>
+          <Segmented<ProviderId>
+            label={t("settings.provider")}
+            value={provider}
+            cols={2}
+            onChange={async (v) => {
+              await updateProfile({ provider: v, aiBlock: undefined });
+              setKeyVersion((x) => x + 1);
+            }}
+            options={[
+              { id: "anthropic", label: "Claude" },
+              { id: "openai", label: "ChatGPT" },
+              { id: "yandex", label: "Алиса AI" },
+              { id: "qwen", label: "Qwen" },
+            ]}
+          />
+          {!meta.webSearch && <p className="faint small">{t("settings.noWebSearch")}</p>}
+          {provider === "qwen" && (
+            <Segmented<"intl" | "cn">
+              label={t("settings.qwenRegion")}
+              value={profile.qwenRegion ?? "intl"}
+              onChange={(v) => updateProfile({ qwenRegion: v })}
+              options={[
+                { id: "intl", label: t("settings.qwenIntl") },
+                { id: "cn", label: t("settings.qwenCn") },
+              ]}
+            />
+          )}
           <Group>
             <MenuRow
               icon={<Activity size={20} />}
@@ -167,8 +203,11 @@ export function Settings() {
                   : undefined
               }
             />
-            <MenuRow icon={<KeyRound size={20} />} label={t("settings.key")} value={key ? maskKey(key) : t("settings.keyNotSet")} onClick={() => (setDraft(""), setErr(null), setSheet("key"))} />
-            <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={profile.model.replace(/^claude-/, "")} onClick={key ? openModels : undefined} />
+            {provider === "yandex" && (
+              <MenuRow icon={<Folder size={20} />} label={t("settings.folder")} hint={t("settings.folderHint")} value={profile.yandexFolder || t("settings.keyNotSet")} onClick={() => (setDraft(profile.yandexFolder ?? ""), setSheet("folder"))} />
+            )}
+            <MenuRow icon={<KeyRound size={20} />} label={t("settings.keyFor", { name: meta.name })} value={key ? maskKey(key) : t("settings.keyNotSet")} onClick={() => (setDraft(""), setErr(null), setSheet("key"))} />
+            <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={modelOf(profile).replace(/^claude-/, "") || "—"} onClick={key ? openModels : undefined} />
           </Group>
         </section>
 
@@ -224,12 +263,12 @@ export function Settings() {
       )}
 
       {sheet === "key" && (
-        <Sheet title={t("settings.key")} onClose={() => setSheet(null)}>
+        <Sheet title={t("settings.keyFor", { name: meta.name })} onClose={() => setSheet(null)}>
           <div className="stack-lg">
             <p className="muted small">
-              {t("settings.keyHelp")} <ExtLink href="https://console.anthropic.com/settings/keys">console.anthropic.com</ExtLink>
+              {t("settings.keyHelpAny", { name: meta.name })} <ExtLink href={meta.keyUrl}>{meta.keyUrl.replace(/^https:\/\//, "")}</ExtLink>
             </p>
-            <input className="input selectable" aria-label={t("settings.key")} placeholder="sk-ant-…" value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
+            <input className="input selectable" aria-label={t("settings.keyFor", { name: meta.name })} placeholder={meta.keyPlaceholder} value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
             {err && (
               <div className="error-box" role="alert">
                 {err}
@@ -242,7 +281,7 @@ export function Settings() {
               <button
                 className="btn danger block"
                 onClick={async () => {
-                  await clearApiKey();
+                  await clearApiKey(provider);
                   setKeyVersion((v) => v + 1);
                   setSheet(null);
                 }}
@@ -254,11 +293,30 @@ export function Settings() {
         </Sheet>
       )}
 
+      {sheet === "folder" && (
+        <Sheet title={t("settings.folder")} onClose={() => setSheet(null)}>
+          <div className="stack-lg">
+            <p className="muted small">{t("settings.folderHelp")}</p>
+            <input className="input selectable" aria-label={t("settings.folder")} placeholder="b1g…" value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
+            <button
+              className="btn primary block"
+              disabled={!draft.trim()}
+              onClick={async () => {
+                await updateProfile({ yandexFolder: draft.trim(), aiBlock: undefined });
+                setSheet(null);
+              }}
+            >
+              {t("common.save")}
+            </button>
+          </div>
+        </Sheet>
+      )}
+
       {sheet === "model" && (
         <Sheet title={t("settings.model")} onClose={() => setSheet(null)}>
           <div className="stack">
             <p className="muted small" style={{ marginBottom: 8 }}>
-              {t("settings.modelHelp")}
+              {provider === "anthropic" ? t("settings.modelHelp") : t("settings.modelHelpAny")}
             </p>
             {err && (
               <div className="error-box" role="alert">
@@ -269,10 +327,10 @@ export function Settings() {
             {models?.map((m) => (
               <button
                 key={m.id}
-                className={`list-card inner${m.id === profile.model ? " selected" : ""}`}
-                aria-pressed={m.id === profile.model}
+                className={`list-card inner${m.id === modelOf(profile) ? " selected" : ""}`}
+                aria-pressed={m.id === modelOf(profile)}
                 onClick={async () => {
-                  await updateProfile({ model: m.id });
+                  await setModel(m.id);
                   setSheet(null);
                   toast(t("settings.modelUsing", { name: m.display_name }));
                 }}

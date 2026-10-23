@@ -165,11 +165,13 @@ export async function generateLesson(opts: {
   previousTitles: string[];
   onProgress?: Progress;
   signal?: AbortSignal;
+  /** False when the provider has no web search tool. */
+  webSearch?: boolean;
 }): Promise<{ lesson: LessonContent; notes?: ResearchNotes }> {
   const { skillset: s, plan } = opts;
   let notes: ResearchNotes | undefined;
 
-  if (s.useInternet) {
+  if (s.useInternet && opts.webSearch !== false) {
     opts.onProgress?.("research", "Searching the web for fresh material…");
     const focus = opts.chunks.length ? opts.chunks.map((c) => c.title).join("; ") : `next topic after: ${opts.previousTitles.slice(-3).join("; ") || "the basics"}`;
     try {
