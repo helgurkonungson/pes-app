@@ -139,3 +139,8 @@ pes-app/
 
 ### ADR-010 — Test strategy and compatibility
 - **Decision:** test pyramid in CI — Vitest unit/integration (fake IndexedDB) → Playwright E2E on Chromium (Android WebView engine) and WebKit (iOS engine) device profiles + desktop, with axe accessibility and layout checks → Android emulator smoke tests of the real APK (API 31/34/36, small phone, tablet). Chromium E2E gates the release; WebKit/Firefox and emulator jobs report until stable. Details: `docs/TESTING.md`.
+
+### ADR-011 — Several AI providers
+- **Context:** Oleg wants to use ChatGPT, Alice AI and Qwen keys, not only Claude.
+- **Decision:** `src/ai/providers.ts` + `src/ai/compat.ts`: Claude keeps the Anthropic Messages API; ChatGPT (api.openai.com), Alice AI (Yandex AI Studio, `llm.api.cloud.yandex.net/v1`, model URI `gpt://<folder>/<model>`, header `OpenAI-Project`) and Qwen (DashScope compatible mode, intl/China) use OpenAI-compatible Chat Completions with function calling; Yandex gets `tool_choice: auto` plus a JSON-in-text fallback. On the phone requests go through Capacitor native HTTP (no CORS). One key per provider in secure storage; the old `anthropic_api_key` name is kept.
+- **Consequences:** web research stays Claude-only; lesson quality varies by model; provider error texts are mapped to the same kinds (credits/auth/rate…), so the offline fallback works for all.
