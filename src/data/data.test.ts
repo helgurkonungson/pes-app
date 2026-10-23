@@ -18,6 +18,7 @@ vi.mock("../ai/key", () => ({
     keyState.key = null;
   },
   maskKey: (k: string | null) => (k ? "sk-…" : "Not set"),
+  providerReady: async () => !!keyState.key,
 }));
 
 const tutor = vi.hoisted(() => ({ generateLesson: vi.fn(), generatePlacement: vi.fn(), gradeAnswer: vi.fn() }));

@@ -12,7 +12,7 @@ export type LessonMode = "ai" | "offline" | "course";
 /** Error kinds that make AI unusable until the learner fixes something. */
 export type AiBlock = "no-key" | "auth" | "credits";
 /** AI provider whose key the learner uses. */
-export type ProviderId = "anthropic" | "openai" | "yandex" | "qwen" | "nvidia";
+export type ProviderId = "anthropic" | "openai" | "gemini" | "yandex" | "qwen" | "groq" | "nvidia" | "custom";
 
 export interface Skillset {
   id: string;
@@ -200,6 +200,8 @@ export interface Profile {
   yandexFolder?: string;
   /** DashScope region for Qwen. */
   qwenRegion?: "intl" | "cn";
+  /** Base URL of a custom OpenAI-compatible server (Ollama, LM Studio, vLLM, a proxy…), e.g. http://192.168.1.10:11434/v1 */
+  customBaseUrl?: string;
 }
 
 // ---------- imported courses ----------

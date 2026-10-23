@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { compatListModels, compatStructured, extractJson } from "./compat";
-import { activeProvider, baseUrl, isChatModel, isNvidiaChatModel, modelOf, pickOpenAiModel, wireModel } from "./providers";
+import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
-const call = (id: "openai" | "yandex" | "qwen" | "nvidia", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
+const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
 
 function mockFetch(status: number, data: unknown) {
   const f = vi.fn(async () => new Response(JSON.stringify(data), { status }));
@@ -148,5 +148,55 @@ describe("error details", () => {
   it("keeps the provider's own message and id (Yandex folder permission)", async () => {
     mockFetch(403, { error: { message: "rpc error: code = PermissionDenied desc = Permission to [resource-manager.folder b1gx] denied", type: "permission_error" } });
     await expect(call("yandex", { yandexFolder: "b1gx" })).rejects.toMatchObject({ kind: "auth", status: 403, provider: "yandex", detail: expect.stringContaining("PermissionDenied") });
+  });
+});
+
+describe("Gemini, Groq, custom", () => {
+  it("endpoints and server address normalization", () => {
+    expect(baseUrl("gemini", {})).toBe("https://generativelanguage.googleapis.com/v1beta/openai");
+    expect(baseUrl("groq", {})).toBe("https://api.groq.com/openai/v1");
+    expect(normalizeBaseUrl(" 192.168.1.5:11434/v1/ ")).toBe("http://192.168.1.5:11434/v1");
+    expect(normalizeBaseUrl("https://my.proxy/v1/chat/completions")).toBe("https://my.proxy/v1");
+    expect(normalizeBaseUrl("")).toBe("");
+    expect(baseUrl("custom", { customBaseUrl: "localhost:1234/v1" })).toBe("http://localhost:1234/v1");
+  });
+  it("model lists and defaults", () => {
+    expect(chatModels("gemini", ["models/gemini-3.8-flash", "models/gemini-embedding-001", "models/imagen-4", "models/gemini-3.8-flash"])).toEqual(["gemini-3.8-flash"]);
+    expect(pickDefaultModel("gemini", ["models/gemini-2.5-flash", "models/gemini-3.8-flash", "models/gemini-3.8-flash-lite", "models/gemini-3-pro-preview"])).toBe("gemini-3.8-flash");
+    expect(pickDefaultModel("gemini", ["models/gemini-flash-latest"])).toBe("gemini-flash-latest");
+    expect(chatModels("groq", ["llama-3.3-70b-versatile", "whisper-large-v3", "meta-llama/llama-guard-4-12b", "openai/gpt-oss-120b"])).toEqual(["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]);
+    expect(pickDefaultModel("groq", ["llama-3.3-70b-versatile"])).toBe(""); // keep the built-in default
+    expect(pickDefaultModel("custom", ["qwen3:8b", "llama3.1:8b"])).toBe("llama3.1:8b");
+    expect(modelOf({ provider: "groq", model: "c" })).toBe("llama-3.3-70b-versatile");
+    expect(modelOf({ provider: "custom", model: "c" })).toBe("");
+  });
+  it("Groq forces the function; Gemini asks with auto", async () => {
+    let f = mockFetch(200, { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":1}' } }] } }] });
+    await call("groq");
+    expect(sent(f).url).toBe("https://api.groq.com/openai/v1/chat/completions");
+    expect(sent(f).body.tool_choice).toEqual({ type: "function", function: { name: "emit_x" } });
+    vi.unstubAllGlobals();
+    f = mockFetch(200, { choices: [{ message: { content: '{"a":2}' } }] });
+    expect(await call("gemini")).toEqual({ a: 2 });
+    expect(sent(f).body.tool_choice).toBe("auto");
+  });
+  it("custom: no Authorization header without a key; needs an address and a model", async () => {
+    const f = mockFetch(200, { choices: [{ message: { content: '{"a":9}' } }] });
+    expect(await compatStructured("custom", "", { customBaseUrl: "http://10.0.0.2:11434/v1" }, { model: "llama3.1:8b", system: "s", prompt: "p", tool, maxTokens: 100 })).toEqual({ a: 9 });
+    expect(sent(f).url).toBe("http://10.0.0.2:11434/v1/chat/completions");
+    expect(sent(f).headers.authorization).toBeUndefined();
+    await expect(compatStructured("custom", "", {}, { model: "m", system: "s", prompt: "p", tool, maxTokens: 100 })).rejects.toMatchObject({ kind: "no-key" });
+    await expect(compatStructured("custom", "", { customBaseUrl: "http://x/v1" }, { model: "", system: "s", prompt: "p", tool, maxTokens: 100 })).rejects.toMatchObject({ kind: "no-key" });
+  });
+  it("retries without forcing when a server rejects tool_choice", async () => {
+    const replies = [
+      new Response(JSON.stringify({ error: { message: "tool_choice is not supported" } }), { status: 400 }),
+      new Response(JSON.stringify({ choices: [{ message: { content: '{"a":5}' } }] }), { status: 200 }),
+    ];
+    const f = vi.fn(async () => replies.shift()!);
+    vi.stubGlobal("fetch", f);
+    expect(await call("groq")).toEqual({ a: 5 });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(String((f.mock.calls[1] as unknown as [string, RequestInit])[1].body)).tool_choice).toBe("auto");
   });
 });

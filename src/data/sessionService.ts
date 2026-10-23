@@ -8,7 +8,7 @@
 import { AiError } from "../ai/client";
 import { reportAiError, reportAiOk } from "../ai/status";
 import { generateLesson, generatePlacement, type Progress } from "../ai/tutor";
-import { getApiKey } from "../ai/key";
+import { providerReady } from "../ai/key";
 import { activeProvider, modelOf, PROVIDERS } from "../ai/providers";
 import { aiState, isBlocking } from "../core/aiStatus";
 import { buildCourseLesson, nextCourseLesson } from "../core/course";
@@ -127,7 +127,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
 
   const minutes = clampMinutes(minutesIn);
   const profile = await getProfile();
-  const state = aiState(profile, !!(await getApiKey()));
+  const state = aiState(profile, await providerReady());
   const useAi = !opts.offline && state === "ok";
 
   let kind: Session["kind"] = skillset.placement || skillset.placementSkipped ? "lesson" : "placement";
@@ -224,7 +224,7 @@ export async function prefetchNext(skillsetId: string, minutes: number): Promise
   const sk = await db.skillsets.get(skillsetId);
   if (!sk || sk.courseId) return;
   const profile = await getProfile();
-  if (aiState(profile, !!(await getApiKey())) !== "ok") return;
+  if (aiState(profile, await providerReady()) !== "ok") return;
   prepareSession(skillsetId, minutes).catch(() => {
     /* best effort — the learner can still generate on demand */
   });

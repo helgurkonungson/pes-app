@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown } from "./helpers";
+import { btn, chooseProvider, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown } from "./helpers";
 
 test.describe("AI lessons (mocked Claude API)", () => {
   test("placement test → AI lesson → AI-graded open answer", async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe("other AI providers", () => {
     });
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await page.getByRole("radio", { name: "ChatGPT" }).click();
+    await chooseProvider(page, "ChatGPT");
     await expect(page.getByText(/работает только с Claude/)).toBeVisible();
     await btn(page, /Ключ API ChatGPT/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("sk-openai-test-0123456789");
@@ -73,7 +73,7 @@ test.describe("other AI providers", () => {
     await mockApis(page);
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await page.getByRole("radio", { name: "Алиса AI" }).click();
+    await chooseProvider(page, "Алиса AI");
     await expect(page.getByText("ID каталога Yandex Cloud")).toBeVisible();
     await btn(page, /Ключ API Алиса AI/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("AQVN-test-0123456789abcdef");
@@ -94,7 +94,7 @@ test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
   });
   await onboard(page);
   await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-  await page.getByRole("radio", { name: "NVIDIA" }).click();
+  await chooseProvider(page, "NVIDIA");
   await btn(page, /Ключ API NVIDIA/).click();
   await page.getByRole("dialog").getByRole("textbox").fill("nvapi-test-0123456789abcdef");
   await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
@@ -115,7 +115,7 @@ test("Alice AI: a valid key without folder rights explains how to fix it", async
   );
   await onboard(page);
   await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-  await page.getByRole("radio", { name: "Алиса AI" }).click();
+  await chooseProvider(page, "Алиса AI");
   await btn(page, /ID каталога Yandex Cloud/).click();
   await page.getByRole("dialog").getByRole("textbox").fill("b1gtest");
   await page.getByRole("dialog").getByRole("button", { name: "Сохранить" }).click();
@@ -124,4 +124,98 @@ test("Alice AI: a valid key without folder rights explains how to fix it", async
   await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
   await expect(page.getByRole("alert")).toContainText("нет прав на этот каталог");
   await expect(page.getByRole("alert")).toContainText("ai.languageModels.user");
+});
+
+test.describe("Gemini, Groq and a custom server", () => {
+  const lessonReply = async (route: import("@playwright/test").Route, asText = false) => {
+    const { AI_LESSON } = await import("./helpers");
+    const body = JSON.parse(route.request().postData() ?? "{}");
+    const name = body.tool_choice?.function?.name ?? body.tools?.[0]?.function?.name;
+    const message = asText ? { content: JSON.stringify(AI_LESSON) } : { tool_calls: [{ function: { name, arguments: JSON.stringify(AI_LESSON) } }] };
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ choices: [{ message }] }) });
+  };
+
+  async function lessonWorks(page: import("@playwright/test").Page) {
+    await createSkillsetWithText(page);
+    await btn(page, "Пропустить").click();
+    await btn(page, /Начать · 15 мин/).click();
+    await skipCountdown(page);
+    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+  }
+
+  test("Gemini: key → newest Flash model picked → lesson", async ({ page }) => {
+    await mockApis(page, "credits");
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models"))
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-2.5-flash" }, { id: "models/gemini-3.8-flash" }, { id: "models/gemini-3.8-flash-lite" }, { id: "models/gemini-embedding-001" }] }) });
+      expect(route.request().headers()["authorization"]).toBe("Bearer AIza-test-0123456789abcdef");
+      return lessonReply(route, true);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");
+    await lessonWorks(page);
+  });
+
+  test("Groq: forced function call → lesson", async ({ page }) => {
+    await mockApis(page, "credits");
+    let forced = false;
+    await page.route("https://api.groq.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "llama-3.3-70b-versatile" }, { id: "whisper-large-v3" }] }) });
+      forced = typeof JSON.parse(route.request().postData() ?? "{}").tool_choice === "object";
+      return lessonReply(route);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Groq");
+    await btn(page, /Ключ API Groq/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("gsk_test_0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await lessonWorks(page);
+    expect(forced).toBe(true);
+  });
+
+  test("Custom API: local server without a key → models listed → lesson", async ({ page }) => {
+    await mockApis(page, "credits");
+    let auth: string | undefined = "unset";
+    await page.route("http://192.168.1.50:11434/v1/**", async (route) => {
+      const url = route.request().url();
+      auth = route.request().headers()["authorization"];
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "qwen3:8b" }, { id: "llama3.1:8b" }] }) });
+      return lessonReply(route, true);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Свой API");
+    await expect(page.getByText("Ключ API (необязательно)")).toBeVisible();
+    await btn(page, /Адрес сервера/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("192.168.1.50:11434/v1/");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText(/Подключено · найдено 2 модели/)).toBeVisible();
+    await expect(page.locator(".menu-row", { hasText: "Адрес сервера" })).toContainText("192.168.1.50:11434/v1");
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("llama3.1:8b");
+    await page.getByRole("navigation").getByRole("button", { name: "Главная" }).click();
+    await lessonWorks(page);
+    expect(auth).toBeUndefined(); // no key → no Authorization header
+  });
+
+  test("Custom API: unreachable server explains what to check", async ({ page }) => {
+    await mockApis(page);
+    await page.route("http://10.0.0.9:1234/v1/**", (r) => r.abort("connectionrefused"));
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Свой API");
+    await btn(page, /Адрес сервера/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("http://10.0.0.9:1234/v1");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByRole("alert")).toContainText("принимает подключения с других устройств");
+  });
 });

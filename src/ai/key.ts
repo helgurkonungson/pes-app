@@ -6,7 +6,7 @@
 import { SecureStorage } from "@aparajita/capacitor-secure-storage";
 import type { ProviderId } from "../core/types";
 import { getProfile } from "../data/db";
-import { activeProvider } from "./providers";
+import { activeProvider, baseUrl, modelOf, PROVIDERS } from "./providers";
 
 // "anthropic_api_key" is the v0.1 name — kept so existing keys keep working
 const storageKey = (p: ProviderId) => `${p}_api_key`;
@@ -49,4 +49,15 @@ export async function clearApiKey(provider?: ProviderId): Promise<void> {
 export function maskKey(key: string | null): string {
   if (!key) return "—";
   return key.length > 12 ? `${key.slice(0, 6)}…${key.slice(-4)}` : "••••";
+}
+
+/**
+ * True when the active provider can be called: a key is saved, or — for a
+ * custom/local server — an address and a model are set (the key is optional).
+ */
+export async function providerReady(): Promise<boolean> {
+  const profile = await getProfile();
+  const id = activeProvider(profile);
+  if (PROVIDERS[id].keyOptional) return !!baseUrl(id, profile) && !!modelOf(profile);
+  return !!(await getApiKey(id));
 }

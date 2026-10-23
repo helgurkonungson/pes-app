@@ -2,6 +2,15 @@
 
 All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.4.0 — 2026-10-23
+
+- **Three more AI options** (Settings → AI → Provider, now a list with descriptions):
+  - **Gemini** (Google AI Studio key `AIza…`); the newest stable Flash model is picked automatically after the key check.
+  - **Groq** (`gsk_…`, GroqCloud, very fast; default Llama 3.3 70B Versatile).
+  - **Custom API** — any OpenAI-compatible server: Ollama or LM Studio on your computer or phone, vLLM, a corporate proxy. Enter the address (e.g. `http://192.168.1.10:11434/v1`), the key is optional, models are listed from the server. Android now allows plain-http connections so local servers work.
+- Any model id can be typed in by hand for every non-Claude provider.
+- If a server rejects a forced function call, the app automatically retries in a plainer mode and accepts JSON in the answer.
+
 ## 0.3.2 — 2026-10-23
 
 - **Clearer AI key errors:** when a provider refuses a key, the app now shows the provider's own reason under the message. For Alice AI, “permission denied to the folder” comes with step-by-step help (role `ai.languageModels.user` on the folder, key scope `yc.ai.languageModels.execute`) instead of a generic “key rejected”.

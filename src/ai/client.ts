@@ -7,7 +7,7 @@ import { getProfile } from "../data/db";
 import type { ProviderId } from "../core/types";
 import { compatListModels, compatStructured } from "./compat";
 import { getApiKey } from "./key";
-import { activeProvider } from "./providers";
+import { activeProvider, PROVIDERS } from "./providers";
 
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
@@ -107,8 +107,8 @@ export async function structured<T>(opts: { model: string; system: string; promp
   const provider = activeProvider(profile);
   if (provider !== "anthropic") {
     const key = await getApiKey(provider);
-    if (!key) throw new AiError("No API key for the selected provider.", "no-key");
-    return compatStructured<T>(provider, key, profile, opts);
+    if (!key && !PROVIDERS[provider].keyOptional) throw new AiError("No API key for the selected provider.", "no-key");
+    return compatStructured<T>(provider, key ?? "", profile, opts);
   }
   const res = await createMessage(
     {
@@ -173,8 +173,8 @@ export async function listModels(key?: string, providerIn?: ProviderId): Promise
   const provider = providerIn ?? activeProvider(profile);
   if (provider !== "anthropic") {
     const k = key ?? (await getApiKey(provider));
-    if (!k) throw new AiError("No API key for the selected provider.", "no-key");
-    return compatListModels(provider, k, profile);
+    if (!k && !PROVIDERS[provider].keyOptional) throw new AiError("No API key for the selected provider.", "no-key");
+    return compatListModels(provider, k ?? "", profile);
   }
   const res = await request<{ data: ModelInfo[] }>("/models?limit=50", { method: "GET", key, timeoutMs: 20_000 });
   return res.data ?? [];

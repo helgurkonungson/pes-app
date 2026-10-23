@@ -1,7 +1,8 @@
 /**
  * AI providers the learner can bring a key for. Claude uses the Anthropic
- * Messages API; ChatGPT, Alice AI (Yandex AI Studio), NVIDIA (build.nvidia.com) and Qwen (Alibaba
- * DashScope) use OpenAI-compatible Chat Completions.
+ * Messages API; every other provider — ChatGPT, Gemini, Alice AI (Yandex AI
+ * Studio), Qwen (DashScope), Groq, NVIDIA and any custom/local OpenAI-compatible
+ * server (Ollama, LM Studio…) — uses OpenAI-compatible Chat Completions.
  */
 import type { Profile, ProviderId } from "../core/types";
 
@@ -16,6 +17,12 @@ export interface ProviderMeta {
   models?: { id: string; name: string }[];
   /** Server-side web search for "Use the internet" — Claude only for now. */
   webSearch: boolean;
+  /** Can force a specific function via tool_choice (else: "auto" + JSON fallback). */
+  forceTool?: boolean;
+  /** The key may be empty (local servers). */
+  keyOptional?: boolean;
+  /** One-line description in the provider picker (English; the UI translates by id). */
+  vendor: string;
 }
 
 export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
@@ -26,6 +33,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     keyPlaceholder: "sk-ant-…",
     defaultModel: "claude-sonnet-5-5",
     webSearch: true,
+    vendor: "Anthropic",
   },
   openai: {
     id: "openai",
@@ -34,6 +42,17 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     keyPlaceholder: "sk-…",
     defaultModel: "", // picked from /v1/models after the key is verified
     webSearch: false,
+    forceTool: true,
+    vendor: "OpenAI",
+  },
+  gemini: {
+    id: "gemini",
+    name: "Gemini",
+    keyUrl: "https://aistudio.google.com/apikey",
+    keyPlaceholder: "AIza…",
+    defaultModel: "gemini-flash-latest", // replaced by the newest Flash model from the list after the key is verified
+    webSearch: false,
+    vendor: "Google AI Studio",
   },
   yandex: {
     id: "yandex",
@@ -50,6 +69,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
       { id: "qwen3.6-35b-a3b", name: "Qwen3.6 35B" },
     ],
     webSearch: false,
+    vendor: "Yandex AI Studio",
   },
   nvidia: {
     id: "nvidia",
@@ -58,6 +78,27 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     keyPlaceholder: "nvapi-…",
     defaultModel: "meta/llama-3.3-70b-instruct",
     webSearch: false,
+    vendor: "build.nvidia.com",
+  },
+  groq: {
+    id: "groq",
+    name: "Groq",
+    keyUrl: "https://console.groq.com/keys",
+    keyPlaceholder: "gsk_…",
+    defaultModel: "llama-3.3-70b-versatile",
+    webSearch: false,
+    forceTool: true,
+    vendor: "GroqCloud",
+  },
+  custom: {
+    id: "custom",
+    name: "Custom API",
+    keyUrl: "https://ollama.com",
+    keyPlaceholder: "optional",
+    defaultModel: "",
+    webSearch: false,
+    keyOptional: true,
+    vendor: "Ollama, LM Studio, vLLM…",
   },
   qwen: {
     id: "qwen",
@@ -66,10 +107,12 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     keyPlaceholder: "sk-…",
     defaultModel: "qwen-plus",
     webSearch: false,
+    forceTool: true,
+    vendor: "Alibaba DashScope",
   },
 };
 
-export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "yandex", "qwen", "nvidia"];
+export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "gemini", "yandex", "qwen", "groq", "nvidia", "custom"];
 
 export function activeProvider(p: Pick<Profile, "provider"> | undefined): ProviderId {
   return p?.provider && PROVIDERS[p.provider] ? p.provider : "anthropic";
@@ -82,9 +125,23 @@ export function modelOf(p: Pick<Profile, "provider" | "model" | "providerModels"
   return p.providerModels?.[id] || PROVIDERS[id].defaultModel;
 }
 
+/** Normalizes a user-typed server address: adds http:// when missing, drops trailing slashes and "/chat/completions". */
+export function normalizeBaseUrl(raw: string | undefined): string {
+  let u = (raw ?? "").trim();
+  if (!u) return "";
+  if (!/^https?:\/\//i.test(u)) u = `http://${u}`;
+  return u.replace(/\/+$/, "").replace(/\/chat\/completions$/i, "");
+}
+
 /** Base URL of the OpenAI-compatible endpoint. */
-export function baseUrl(id: ProviderId, p: Pick<Profile, "qwenRegion">): string {
+export function baseUrl(id: ProviderId, p: Pick<Profile, "qwenRegion" | "customBaseUrl">): string {
   switch (id) {
+    case "gemini":
+      return "https://generativelanguage.googleapis.com/v1beta/openai";
+    case "groq":
+      return "https://api.groq.com/openai/v1";
+    case "custom":
+      return normalizeBaseUrl(p.customBaseUrl);
     case "openai":
       return "https://api.openai.com/v1";
     case "yandex":
@@ -112,6 +169,51 @@ export function isChatModel(id: string): boolean {
 /** NVIDIA's catalog mixes chat LLMs with embedding, reranking, speech and image models. */
 export function isNvidiaChatModel(id: string): boolean {
   return /(instruct|chat|nemotron|llama|qwen|deepseek|mistral|mixtral|gemma|phi|kimi|glm|gpt-oss)/i.test(id) && !/(embed|rerank|retriever|guard|safety|reward|vision|vlm|clip|parse|ocr|tts|asr|whisper|riva|image|flux|sdxl|stable-diffusion|base$)/i.test(id);
+}
+
+/** Gemini's list also has embedding, image, TTS and AQA models; ids may come as "models/…". */
+export function isGeminiChatModel(id: string): boolean {
+  return /gemini/i.test(id) && !/(embedding|image|imagen|tts|audio|live|aqa|veo|robotics|computer-use)/i.test(id);
+}
+
+export function isGroqChatModel(id: string): boolean {
+  return !/(whisper|guard|tts|playai|orpheus|prompt-guard|safeguard)/i.test(id);
+}
+
+/** Keeps models that can write lessons, per provider. */
+export function chatModels(id: ProviderId, ids: string[]): string[] {
+  const clean = ids.map((m) => m.replace(/^models\//, ""));
+  const keep = (m: string) => {
+    switch (id) {
+      case "openai":
+        return isChatModel(m);
+      case "nvidia":
+        return isNvidiaChatModel(m);
+      case "qwen":
+        return /^qwen/i.test(m);
+      case "gemini":
+        return isGeminiChatModel(m);
+      case "groq":
+        return isGroqChatModel(m);
+      default:
+        return true;
+    }
+  };
+  return [...new Set(clean.filter(keep))].sort();
+}
+
+/** Model to select automatically after a key is verified (empty = keep the default). */
+export function pickDefaultModel(id: ProviderId, ids: string[]): string {
+  const list = chatModels(id, ids);
+  if (id === "openai") return pickOpenAiModel(list);
+  if (id === "gemini") {
+    // newest stable Flash: highest version number, not lite/preview/experimental
+    const flash = list.filter((m) => /^gemini-[\d.]+-flash$/.test(m));
+    const ver = (m: string) => parseFloat(m.split("-")[1] ?? "0");
+    return flash.sort((a, b) => ver(b) - ver(a))[0] ?? (list.includes("gemini-flash-latest") ? "gemini-flash-latest" : "");
+  }
+  if (id === "custom") return list[0] ?? "";
+  return "";
 }
 
 /** Best default among listed OpenAI models: newest gpt "mini" class first (cheap, good enough for lessons). */

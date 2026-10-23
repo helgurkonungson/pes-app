@@ -1,16 +1,17 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, Bot, Code, Download, Folder, Globe, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, Bot, Check, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
-import { activeProvider, modelOf, pickOpenAiModel, PROVIDERS } from "../ai/providers";
+import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
 import { useBackupRestore } from "../components/FilePickers";
 import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, PageTitle, Segmented, SectionLabel, Sheet, toast } from "../components/ui";
 import type { AiMode, ProviderId, UiLanguage } from "../core/types";
+import type { T } from "../i18n";
 import { localDay } from "../core/dates";
 import { updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
@@ -29,7 +30,7 @@ export function Settings() {
   const [key, setKey] = useState<string | null>(null);
   const [keyVersion, setKeyVersion] = useState(0);
   const ai = useAiState(keyVersion);
-  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder">(null);
+  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server">(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -54,15 +55,37 @@ export function Settings() {
     setErr(null);
     try {
       if (provider === "yandex" && !profile.yandexFolder?.trim()) throw new Error(t("settings.folderFirst"));
+      if (provider === "custom" && !profile.customBaseUrl?.trim()) throw new Error(t("settings.serverFirst"));
       const list = await testKey(draft.trim(), provider);
       await setApiKey(draft.trim(), provider);
       await updateProfile({ aiBlock: undefined });
-      if (provider === "openai" && !profile.providerModels?.openai) await setModel(pickOpenAiModel(list.map((m) => m.id)));
+      if (provider !== "anthropic" && !profile.providerModels?.[provider]) {
+        const auto = pickDefaultModel(provider, list.map((m) => m.id));
+        if (auto) await setModel(auto);
+      }
       setKeyVersion((v) => v + 1);
       setSheet(null);
       toast(t("settings.keySaved"));
     } catch (e) {
       setErr(e instanceof AiError ? [aiErrorText(e, t), aiErrorDetail(e, t)].filter(Boolean).join("\n\n") : e instanceof Error && e.message ? e.message : t("settings.keyCheckFailed"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveServer = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const url = normalizeBaseUrl(draft);
+      await updateProfile({ customBaseUrl: url, aiBlock: undefined });
+      const list = await listModels(key ?? "", "custom");
+      if (!profile.providerModels?.custom && list[0]) await setModel(list[0].id);
+      setKeyVersion((v) => v + 1);
+      setSheet(null);
+      toast(t("settings.serverOk", { n: list.length }));
+    } catch (e) {
+      setErr(e instanceof AiError ? [aiErrorText(e, t), aiErrorDetail(e, t), t("settings.serverTroubleshoot")].filter(Boolean).join("\n\n") : t("settings.serverTroubleshoot"));
     } finally {
       setBusy(false);
     }
@@ -168,24 +191,28 @@ export function Settings() {
             ]}
           />
           <p className="faint small">{(profile.aiMode ?? "auto") === "auto" ? t("settings.aiAutoHint") : t("settings.aiOfflineHint")}</p>
-          <span className="label">{t("settings.provider")}</span>
-          <Segmented<ProviderId>
-            label={t("settings.provider")}
-            value={provider}
-            cols={3}
-            onChange={async (v) => {
-              await updateProfile({ provider: v, aiBlock: undefined });
-              setKeyVersion((x) => x + 1);
-            }}
-            options={[
-              { id: "anthropic", label: "Claude" },
-              { id: "openai", label: "ChatGPT" },
-              { id: "yandex", label: "Алиса AI" },
-              { id: "qwen", label: "Qwen" },
-              { id: "nvidia", label: "NVIDIA" },
-            ]}
-          />
-          {!meta.webSearch && <p className="faint small">{t("settings.noWebSearch")}</p>}
+          <Group>
+            <MenuRow icon={<Sparkles size={20} />} label={t("settings.provider")} value={providerName(provider, t)} onClick={() => setSheet("provider")} />
+            {provider === "custom" && (
+              <MenuRow
+                icon={<Server size={20} />}
+                label={t("settings.server")}
+                hint={t("settings.serverHint")}
+                value={profile.customBaseUrl ? normalizeBaseUrl(profile.customBaseUrl).replace(/^https?:\/\//, "") : t("settings.keyNotSet")}
+                onClick={() => (setDraft(profile.customBaseUrl ?? ""), setErr(null), setSheet("server"))}
+              />
+            )}
+            {provider === "yandex" && (
+              <MenuRow icon={<Folder size={20} />} label={t("settings.folder")} hint={t("settings.folderHint")} value={profile.yandexFolder || t("settings.keyNotSet")} onClick={() => (setDraft(profile.yandexFolder ?? ""), setSheet("folder"))} />
+            )}
+            <MenuRow
+              icon={<KeyRound size={20} />}
+              label={meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) })}
+              value={key ? maskKey(key) : t("settings.keyNotSet")}
+              onClick={() => (setDraft(""), setErr(null), setSheet("key"))}
+            />
+            <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={modelOf(profile).replace(/^claude-/, "") || "—"} onClick={key || (meta.keyOptional && profile.customBaseUrl) ? openModels : undefined} />
+          </Group>
           {provider === "qwen" && (
             <Segmented<"intl" | "cn">
               label={t("settings.qwenRegion")}
@@ -197,6 +224,7 @@ export function Settings() {
               ]}
             />
           )}
+          {!meta.webSearch && <p className="faint small">{t("settings.noWebSearch")}</p>}
           <Group>
             <MenuRow
               icon={<Activity size={20} />}
@@ -212,11 +240,6 @@ export function Settings() {
                   : undefined
               }
             />
-            {provider === "yandex" && (
-              <MenuRow icon={<Folder size={20} />} label={t("settings.folder")} hint={t("settings.folderHint")} value={profile.yandexFolder || t("settings.keyNotSet")} onClick={() => (setDraft(profile.yandexFolder ?? ""), setSheet("folder"))} />
-            )}
-            <MenuRow icon={<KeyRound size={20} />} label={t("settings.keyFor", { name: meta.name })} value={key ? maskKey(key) : t("settings.keyNotSet")} onClick={() => (setDraft(""), setErr(null), setSheet("key"))} />
-            <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={modelOf(profile).replace(/^claude-/, "") || "—"} onClick={key ? openModels : undefined} />
           </Group>
         </section>
 
@@ -272,18 +295,22 @@ export function Settings() {
       )}
 
       {sheet === "key" && (
-        <Sheet title={t("settings.keyFor", { name: meta.name })} onClose={() => setSheet(null)}>
+        <Sheet title={meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) })} onClose={() => setSheet(null)}>
           <div className="stack-lg">
-            <p className="muted small">
-              {t("settings.keyHelpAny", { name: meta.name })} <ExtLink href={meta.keyUrl}>{meta.keyUrl.replace(/^https:\/\//, "")}</ExtLink>
-            </p>
-            <input className="input selectable" aria-label={t("settings.keyFor", { name: meta.name })} placeholder={meta.keyPlaceholder} value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
+            {meta.keyOptional ? (
+              <p className="muted small">{t("settings.keyOptionalHelp")}</p>
+            ) : (
+              <p className="muted small">
+                {t("settings.keyHelpAny", { name: providerName(provider, t) })} <ExtLink href={meta.keyUrl}>{meta.keyUrl.replace(/^https:\/\//, "")}</ExtLink>
+              </p>
+            )}
+            <input className="input selectable" aria-label={meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) })} placeholder={meta.keyOptional ? t("settings.keyOptionalPh") : meta.keyPlaceholder} value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
             {err && (
               <div className="error-box" role="alert">
                 {err}
               </div>
             )}
-            <button className="btn primary block" onClick={saveKey} disabled={busy || draft.trim().length < 20}>
+            <button className="btn primary block" onClick={saveKey} disabled={busy || draft.trim().length < (meta.keyOptional ? 1 : 20)}>
               {busy ? t("common.checking") : t("settings.keyVerify")}
             </button>
             {key && (
@@ -298,6 +325,59 @@ export function Settings() {
                 {t("settings.keyRemove")}
               </button>
             )}
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "provider" && (
+        <Sheet title={t("settings.provider")} onClose={() => setSheet(null)}>
+          <div className="stack" role="radiogroup" aria-label={t("settings.provider")}>
+            {PROVIDER_IDS.map((id) => (
+              <button
+                key={id}
+                role="radio"
+                aria-checked={id === provider}
+                className={`list-card inner${id === provider ? " selected" : ""}`}
+                onClick={async () => {
+                  await updateProfile({ provider: id, aiBlock: undefined });
+                  setKeyVersion((x) => x + 1);
+                  setSheet(null);
+                }}
+              >
+                <span className="grow">
+                  <span className="bold block">{providerName(id, t)}</span>
+                  <span className="small muted block">{id === "custom" ? t("settings.customVendor") : PROVIDERS[id].vendor}</span>
+                </span>
+                {id === provider && <Check size={20} className="accent" />}
+              </button>
+            ))}
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "server" && (
+        <Sheet title={t("settings.server")} onClose={() => setSheet(null)}>
+          <div className="stack-lg">
+            <p className="muted small">{t("settings.serverHelp")}</p>
+            <input
+              className="input selectable"
+              inputMode="url"
+              aria-label={t("settings.server")}
+              placeholder="http://192.168.1.10:11434/v1"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              autoCapitalize="off"
+              spellCheck={false}
+              autoComplete="off"
+            />
+            {err && (
+              <div className="error-box" role="alert">
+                {err}
+              </div>
+            )}
+            <button className="btn primary block" onClick={saveServer} disabled={busy || !draft.trim()}>
+              {busy ? t("common.checking") : t("settings.serverCheck")}
+            </button>
           </div>
         </Sheet>
       )}
@@ -333,6 +413,24 @@ export function Settings() {
               </div>
             )}
             {!models && !err && <p className="muted pulse">{t("settings.modelsLoading")}</p>}
+            {provider !== "anthropic" && (
+              <form
+                className="row"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const v = (new FormData(e.currentTarget).get("model") as string | null)?.trim();
+                  if (!v) return;
+                  await setModel(v);
+                  setSheet(null);
+                  toast(t("settings.modelUsing", { name: v }));
+                }}
+              >
+                <input name="model" className="input selectable grow" aria-label={t("settings.modelManual")} placeholder={t("settings.modelManual")} autoCapitalize="off" spellCheck={false} autoComplete="off" />
+                <button className="btn dark sm" type="submit">
+                  {t("settings.modelUse")}
+                </button>
+              </form>
+            )}
             {models?.map((m) => (
               <button
                 key={m.id}
@@ -356,4 +454,11 @@ export function Settings() {
       )}
     </div>
   );
+}
+
+/** Display name of a provider (brands stay as is; Alice AI and Custom API are translated). */
+export function providerName(id: ProviderId, t: T): string {
+  if (id === "yandex") return t("provider.yandex");
+  if (id === "custom") return t("provider.custom");
+  return PROVIDERS[id].name;
 }

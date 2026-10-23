@@ -7,9 +7,9 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
 import type { Profile, ProviderId } from "../core/types";
 import { AiError, type ModelInfo, type ToolDef } from "./client";
-import { baseUrl, isChatModel, isNvidiaChatModel, PROVIDERS, wireModel } from "./providers";
+import { baseUrl, chatModels, PROVIDERS, wireModel } from "./providers";
 
-type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion">;
+type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl">;
 
 interface HttpResult {
   status: number;
@@ -54,7 +54,8 @@ async function http(url: string, opts: { method: "GET" | "POST"; headers: Record
 }
 
 function headers(id: ProviderId, key: string, cfg: Cfg): Record<string, string> {
-  const h: Record<string, string> = { "content-type": "application/json", authorization: `Bearer ${key}` };
+  const h: Record<string, string> = { "content-type": "application/json" };
+  if (key) h.authorization = `Bearer ${key}`; // local servers usually need no key
   if (id === "yandex" && cfg.yandexFolder) h["OpenAI-Project"] = cfg.yandexFolder.trim();
   return h;
 }
@@ -92,9 +93,10 @@ export async function compatStructured<T>(
   opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal },
 ): Promise<T> {
   if (id === "yandex" && !cfg.yandexFolder?.trim()) throw new AiError("Yandex folder id is missing.", "auth");
-  // Yandex accepts only tool_choice auto/none, and not every NVIDIA model supports a forced
-  // function — for them we ask in words and accept JSON in the text as a fallback
-  const forced = id !== "yandex" && id !== "nvidia";
+  if (id === "custom" && !baseUrl(id, cfg)) throw new AiError("Custom server address is missing.", "no-key");
+  if (!opts.model) throw new AiError("No model selected.", "no-key");
+  // providers that can't force a function (Yandex: only auto/none; many NVIDIA, Gemini and local
+  // models) are asked in words, and JSON in the text answer is accepted as a fallback
   const body: Record<string, unknown> = {
     model: wireModel(id, opts.model, cfg),
     messages: [
@@ -102,12 +104,23 @@ export async function compatStructured<T>(
       { role: "user", content: opts.prompt },
     ],
     tools: [{ type: "function", function: { name: opts.tool.name, description: opts.tool.description, parameters: opts.tool.input_schema } }],
-    tool_choice: forced ? { type: "function", function: { name: opts.tool.name } } : "auto",
+    tool_choice: PROVIDERS[id].forceTool ? { type: "function", function: { name: opts.tool.name } } : "auto",
   };
   // newer OpenAI models reject max_tokens; compatible APIs expect it
   if (id === "openai") body.max_completion_tokens = opts.maxTokens;
   else body.max_tokens = Math.min(opts.maxTokens, 16000);
-  const r = await http(`${baseUrl(id, cfg)}/chat/completions`, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal });
+  const url = `${baseUrl(id, cfg)}/chat/completions`;
+  const send = () => http(url, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal, timeoutMs: id === "custom" ? 600_000 : undefined });
+  let r = await send();
+  // a server that rejects the forced function (or tools at all) gets a second, plainer try
+  if (r.status === 400 && /tool/i.test(errorMessage(r.data, r.status))) {
+    if (typeof body.tool_choice === "object") body.tool_choice = "auto";
+    else {
+      delete body.tools;
+      delete body.tool_choice;
+    }
+    r = await send();
+  }
   check(id, r);
   const choice = (r.data as { choices?: { message?: { content?: string | null; tool_calls?: { function?: { name?: string; arguments?: string } }[] }; finish_reason?: string }[] })?.choices?.[0];
   const call = choice?.message?.tool_calls?.find((c) => c.function?.name === opts.tool.name) ?? choice?.message?.tool_calls?.[0];
@@ -136,9 +149,9 @@ export async function compatListModels(id: ProviderId, key: string, cfg: Cfg): P
     check(id, r);
     return fixed.map((m) => ({ id: m.id, display_name: m.name }));
   }
+  if (id === "custom" && !baseUrl(id, cfg)) throw new AiError("Custom server address is missing.", "no-key");
   const r = await http(`${baseUrl(id, cfg)}/models`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
   check(id, r);
-  const list = ((r.data as { data?: { id: string }[] })?.data ?? []).map((m) => m.id);
-  const chat = id === "openai" ? list.filter(isChatModel) : id === "nvidia" ? list.filter(isNvidiaChatModel) : list.filter((m) => /^qwen/i.test(m));
-  return chat.sort().map((m) => ({ id: m, display_name: m }));
+  const list = ((r.data as { data?: { id: string }[]; models?: { name?: string; model?: string }[] })?.data ?? []).map((m) => m.id);
+  return chatModels(id, list).map((m) => ({ id: m, display_name: m }));
 }
