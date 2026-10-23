@@ -71,7 +71,7 @@ export function Onboarding() {
             </h1>
             <p className="muted">{t("onb.lead")}</p>
           </div>
-          <div className="stack">
+          <div className="stack onb-actions">
             <button className="btn primary block" onClick={() => setStep(1)}>
               {t("onb.start")} <ArrowRight size={20} />
             </button>
@@ -97,7 +97,7 @@ export function Onboarding() {
               <p className="faint small">{t("onb.goalHint")}</p>
             </div>
           </div>
-          <div className="row">
+          <div className="row onb-actions">
             <button className="btn dark" onClick={() => setStep(0)}>
               {t("common.back")}
             </button>
@@ -130,7 +130,7 @@ export function Onboarding() {
               </div>
             )}
           </div>
-          <div className="stack">
+          <div className="stack onb-actions">
             <button className="btn primary block" onClick={() => finish(true)} disabled={busy || key.trim().length < 20}>
               {busy ? (
                 t("common.checking")

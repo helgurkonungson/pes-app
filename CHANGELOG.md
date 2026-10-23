@@ -10,6 +10,8 @@ All notable changes to PES. Versions follow semver; every new version on `main` 
   - **Custom API** — any OpenAI-compatible server: Ollama or LM Studio on your computer or phone, vLLM, a corporate proxy. Enter the address (e.g. `http://192.168.1.10:11434/v1`), the key is optional, models are listed from the server. Android now allows plain-http connections so local servers work.
 - Any model id can be typed in by hand for every non-Claude provider.
 - If a server rejects a forced function call, the app automatically retries in a plainer mode and accepts JSON in the answer.
+- **Small phones:** onboarding buttons stay pinned at the bottom of the screen (on 360 × 640 the “Continue without AI” button was off-screen — found by the emulator test).
+- Emulator results so far: no native top bar and data kept across reinstall on Android 14 (small phone, tablet) and Android 16. CI matrix: API 31 replaced by 33 (API 31's stock WebView is older than the supported minimum).
 
 ## 0.3.2 — 2026-10-23
 

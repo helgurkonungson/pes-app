@@ -201,7 +201,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { api-level: 31, profile: pixel_6, device: pixel6 }
+          # API 31's stock WebView is Chrome 91, below our minimum (94); real phones get updates from Play
+          - { api-level: 33, profile: pixel_6, device: pixel6 }
           - { api-level: 34, profile: pixel_6, device: pixel6 }
           - { api-level: 36, profile: pixel_6, device: pixel6 }
           - { api-level: 34, profile: "Nexus 5", device: nexus5 }     # small phone, 360x640 dp
