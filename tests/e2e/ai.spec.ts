@@ -163,6 +163,43 @@ test.describe("Gemini, Groq and a custom server", () => {
     await lessonWorks(page);
   });
 
+  test("Gemini overloaded: retries, then Google's own words + a hint; Retry then works", async ({ page }) => {
+    test.setTimeout(90_000);
+    await mockApis(page, "credits");
+    let calls = 0;
+    let effort: unknown;
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+      calls++;
+      const body = JSON.parse(route.request().postData() ?? "{}");
+      if (calls === 1) effort = body.reasoning_effort;
+      // 3 tries with tools + 3 tries without, all "overloaded" (Gemini wraps errors in an array)
+      if (calls <= 6)
+        return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify([{ error: { code: 503, message: "The model is overloaded. Please try again later.", status: "UNAVAILABLE" } }]) });
+      return lessonReply(route, !body.tools);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await createSkillsetWithText(page);
+    await btn(page, "Пропустить").click();
+    await btn(page, /Начать · 15 мин/).click();
+    await expect(page.getByRole("alert")).toContainText("перегружен", { timeout: 40_000 });
+    await expect(page.getByRole("alert")).toContainText("(503)");
+    await expect(page.getByText("Ответ сервиса: The model is overloaded. Please try again later. UNAVAILABLE")).toBeVisible();
+    await expect(page.getByText(/выберите другую модель/)).toBeVisible();
+    expect(calls).toBe(6);
+    expect(effort).toBe("low");
+    await btn(page, "Повторить").click();
+    await skipCountdown(page);
+    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+  });
+
   test("Groq: forced function call → lesson", async ({ page }) => {
     await mockApis(page, "credits");
     let forced = false;

@@ -46,14 +46,17 @@ const AI_ERR: Record<AiErrorKind, Key> = {
 
 /** Extra line under an AI error: a fix-it hint we know, or the provider's own words. */
 export function aiErrorDetail(e: unknown, t: T): string | null {
-  if (!(e instanceof AiError) || !e.detail) return null;
-  if (e.provider === "yandex" && e.status === 403 && /permission/i.test(e.detail)) return t("aiErr.yandexPermission");
-  if (e.kind === "auth" || e.kind === "api" || e.kind === "credits") return t("aiErr.detail", { text: e.detail.slice(0, 300) });
-  return null;
+  if (!(e instanceof AiError)) return null;
+  if (e.provider === "yandex" && e.status === 403 && e.detail && /permission/i.test(e.detail)) return t("aiErr.yandexPermission");
+  const lines: string[] = [];
+  if (e.detail && e.kind !== "aborted" && e.kind !== "network" && e.kind !== "no-key") lines.push(t("aiErr.detail", { text: e.detail.slice(0, 300) }));
+  // a busy or confused model is often fine on another model of the same provider
+  if (e.provider && e.provider !== "anthropic" && (e.kind === "overloaded" || e.kind === "bad-response")) lines.push(t("aiErr.otherModel"));
+  return lines.length ? lines.join("\n") : null;
 }
 
 export function aiErrorText(e: unknown, t: T): string {
-  if (e instanceof AiError) return t(AI_ERR[e.kind] ?? "aiErr.api") + (e.kind === "api" ? ` (${e.status ?? ""})` : "");
+  if (e instanceof AiError) return t(AI_ERR[e.kind] ?? "aiErr.api") + ((e.kind === "api" || e.kind === "overloaded" || e.kind === "rate") && e.status ? ` (${e.status})` : "");
   if (e instanceof OfflineError) return t(e.code === "no-sources" ? "offline.err.noSources" : "offline.err.finished");
   if (e instanceof CourseFinishedError) return t("course.finished");
   return e instanceof Error ? e.message : String(e);
@@ -219,6 +222,11 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
               <p className="muted small" style={{ maxWidth: 320 }} role="alert">
                 {aiErrorText(error, t)}
               </p>
+              {aiErrorDetail(error, t) && (
+                <p className="muted small err-detail" style={{ maxWidth: 320 }}>
+                  {aiErrorDetail(error, t)}
+                </p>
+              )}
               <div className="stack" style={{ width: "100%", maxWidth: 340 }}>
                 {canOffline && (
                   <button className="btn primary block" onClick={() => setForceOffline(true)}>

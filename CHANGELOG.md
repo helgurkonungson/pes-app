@@ -2,6 +2,15 @@
 
 All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.4.2 — 2026-10-23
+
+- **Gemini lessons no longer stop at “AI service is overloaded”.** The key check passed, but writing a lesson failed: Google answered the big lesson request with 503 “model is overloaded” or a 5xx/timeout after long thinking, and the app gave up at once.
+  - Gemini now thinks briefly (`reasoning_effort: low`) and gets extra token room for it — faster answers, fewer timeouts.
+  - A busy server (500/502/503) is retried automatically twice (after 2 s and 5 s); if it still fails or times out (504), the app asks once more in a plainer way — without function calling, with the JSON schema in the prompt. Works for every OpenAI-compatible provider.
+  - If a model refuses `reasoning_effort`, it is dropped and the request repeated.
+- **The real reason is shown.** The lesson error screen now shows the HTTP code and the provider's own words (e.g. “Ответ сервиса: The model is overloaded…”) plus “pick another model in Settings → AI” for non-Claude providers. Gemini's errors (wrapped in an array) were not read at all before.
+- Gemini's free-tier per-minute limit (“exceeded your current quota … retry in 41s”) is now a rate limit, not “credits ran out” — AI is no longer switched off for 6 hours. The credits message no longer names Anthropic for every provider.
+
 ## 0.4.1 — 2026-10-23
 
 - **Small phones:** onboarding buttons stay pinned at the bottom of the screen (on 360 × 640 the “Continue without AI” button was off-screen — found by the emulator test).

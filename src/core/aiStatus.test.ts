@@ -35,6 +35,8 @@ describe("classifyApiError", () => {
     [529, "overloaded_error", "overloaded"],
     [500, "api_error", "overloaded"],
     [404, "model not found", "api"],
+    [429, "You exceeded your current quota, please check your plan and billing details. * Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 10, model: gemini-3.8-flash Please retry in 41.2s. RESOURCE_EXHAUSTED", "rate"],
+    [429, "You exceeded your current quota, please check your plan and billing details. insufficient_quota", "credits"],
   ])("%i %s → %s", (status, msg, kind) => {
     expect(classifyApiError(status, msg)).toBe(kind);
   });

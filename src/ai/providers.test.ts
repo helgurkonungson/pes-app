@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { compatListModels, compatStructured, extractJson } from "./compat";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isGeminiThinking, retryPolicy } from "./compat";
 import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
@@ -15,6 +15,20 @@ const sent = (f: ReturnType<typeof mockFetch>) => {
   return { url, headers: init.headers as Record<string, string>, body: JSON.parse(String(init.body ?? "null")) };
 };
 
+/** Replies in order; the last one repeats. */
+function mockReplies(...replies: [number, unknown][]) {
+  const f = vi.fn(async () => {
+    const [status, data] = replies.length > 1 ? replies.shift()! : replies[0];
+    return new Response(JSON.stringify(data), { status });
+  });
+  vi.stubGlobal("fetch", f);
+  return f;
+}
+const bodyOf = (f: ReturnType<typeof vi.fn>, i: number) => JSON.parse(String((f.mock.calls[i] as unknown as [string, RequestInit])[1].body));
+
+beforeEach(() => {
+  retryPolicy.delaysMs = [0, 0];
+});
 afterEach(() => vi.unstubAllGlobals());
 
 describe("provider settings", () => {
@@ -198,5 +212,79 @@ describe("Gemini, Groq, custom", () => {
     expect(await call("groq")).toEqual({ a: 5 });
     expect(f).toHaveBeenCalledTimes(2);
     expect(JSON.parse(String((f.mock.calls[1] as unknown as [string, RequestInit])[1].body)).tool_choice).toBe("auto");
+  });
+});
+
+describe("Gemini lessons (0.4.2)", () => {
+  const overloaded = [{ error: { code: 503, message: "The model is overloaded. Please try again later.", status: "UNAVAILABLE" } }];
+  const ok = { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":1}' } }] }, finish_reason: "stop" }] };
+
+  it("low thinking and extra token room for thinking models only", async () => {
+    let f = mockFetch(200, ok);
+    await compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 });
+    expect(sent(f).body.reasoning_effort).toBe("low");
+    expect(sent(f).body.max_tokens).toBe(900 + GEMINI_THINKING_TOKENS);
+    vi.unstubAllGlobals();
+    f = mockFetch(200, ok);
+    await compatStructured("gemini", "K", {}, { model: "gemini-2.0-flash", system: "s", prompt: "p", tool, maxTokens: 900 });
+    expect(sent(f).body.reasoning_effort).toBeUndefined();
+    expect(isGeminiThinking("gemini-flash-latest")).toBe(true);
+    expect(isGeminiThinking("gemini-2.5-flash-lite")).toBe(true);
+    expect(isGeminiThinking("gemini-1.5-pro")).toBe(false);
+  });
+  it("other providers get no reasoning_effort", async () => {
+    const f = mockFetch(200, ok);
+    await call("nvidia");
+    expect(sent(f).body.reasoning_effort).toBeUndefined();
+  });
+  it("reads Gemini's array-wrapped errors and keeps status + message", async () => {
+    mockFetch(400, [{ error: { code: 400, message: "API key not valid. Please pass a valid API key.", status: "INVALID_ARGUMENT" } }]);
+    await expect(call("gemini")).rejects.toMatchObject({ kind: "api", status: 400, provider: "gemini", detail: "API key not valid. Please pass a valid API key. INVALID_ARGUMENT" });
+  });
+  it("re-sends a 503 and succeeds", async () => {
+    const f = mockReplies([503, overloaded], [503, overloaded], [200, ok]);
+    expect(await call("gemini")).toEqual({ a: 1 });
+    expect(f).toHaveBeenCalledTimes(3);
+    expect(bodyOf(f, 2).tools).toBeDefined();
+  });
+  it("still failing after the retries → one plainer round without tools, with the schema in the prompt", async () => {
+    const f = mockReplies([503, overloaded], [503, overloaded], [503, overloaded], [200, { choices: [{ message: { content: '{"a":6}' } }] }]);
+    expect(await call("gemini")).toEqual({ a: 6 });
+    expect(f).toHaveBeenCalledTimes(4);
+    const last = bodyOf(f, 3);
+    expect(last.tools).toBeUndefined();
+    expect(last.tool_choice).toBeUndefined();
+    expect(last.messages[0].content).toContain('"properties"');
+  });
+  it("a timeout (504) is not re-sent as is: goes straight to the plainer request", async () => {
+    const f = mockReplies([504, [{ error: { code: 504, message: "Deadline expired before operation could complete.", status: "DEADLINE_EXCEEDED" } }]], [200, { choices: [{ message: { content: '{"a":8}' } }] }]);
+    expect(await call("gemini")).toEqual({ a: 8 });
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(bodyOf(f, 1).tools).toBeUndefined();
+  });
+  it("gives up with the provider's words after the plainer round fails too", async () => {
+    const f = mockReplies([503, overloaded]);
+    await expect(call("gemini")).rejects.toMatchObject({ kind: "overloaded", status: 503, detail: "The model is overloaded. Please try again later. UNAVAILABLE" });
+    expect(f).toHaveBeenCalledTimes(6);
+  });
+  it("drops reasoning_effort when a model refuses it", async () => {
+    const f = mockReplies([400, [{ error: { code: 400, message: "Thinking is not supported for this model.", status: "INVALID_ARGUMENT" } }]], [200, ok]);
+    expect(await compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).toEqual({ a: 1 });
+    expect(bodyOf(f, 0).reasoning_effort).toBe("low");
+    expect(bodyOf(f, 1).reasoning_effort).toBeUndefined();
+    expect(bodyOf(f, 1).tools).toBeDefined();
+  });
+  it("cancelling during the pause stops the retries", async () => {
+    retryPolicy.delaysMs = [60_000];
+    const f = mockReplies([503, overloaded]);
+    const ctrl = new AbortController();
+    const p = compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900, signal: ctrl.signal });
+    await vi.waitFor(() => expect(f).toHaveBeenCalledTimes(1));
+    ctrl.abort();
+    await expect(p).rejects.toMatchObject({ kind: "aborted" });
+  });
+  it("format failures carry finish_reason", async () => {
+    mockFetch(200, { choices: [{ message: { content: null }, finish_reason: "length" }] });
+    await expect(call("gemini")).rejects.toMatchObject({ kind: "bad-response", detail: "finish_reason: length", provider: "gemini" });
   });
 });

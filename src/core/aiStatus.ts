@@ -20,6 +20,8 @@ export type AiErrorKind = "no-key" | "auth" | "credits" | "rate" | "overloaded" 
 /** Maps an HTTP status + API error message to an error kind. */
 export function classifyApiError(status: number, message: string): AiErrorKind {
   const m = message.toLowerCase();
+  // Gemini's free tier answers a per-minute limit with "You exceeded your current quota … Please retry in 41s"
+  if (status === 429 && /retry in \d|per ?minute|perminute/.test(m)) return "rate";
   if (status === 402 || /credit balance|purchase credits|billing|insufficient[ _](credit|funds|quota|balance)|quota exceeded|exceeded your current quota|arrearage|good standing|not enough (money|funds)|payment required/.test(m)) return "credits";
   if (status === 401 || status === 403) return "auth";
   if (status === 429) return "rate";

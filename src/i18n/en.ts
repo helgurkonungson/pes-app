@@ -292,7 +292,7 @@ export const en = {
   // AI errors
   "aiErr.noKey": "Add your Claude API key in Settings to use AI.",
   "aiErr.auth": "Your API key was rejected. Check it in Settings.",
-  "aiErr.credits": "Your Anthropic account has run out of credits. Lessons continue without AI until you top up.",
+  "aiErr.credits": "Your AI account has run out of credits or quota. Lessons continue without AI until you top up.",
   "aiErr.rate": "Rate limit reached on your key. Wait a minute and retry.",
   "aiErr.overloaded": "The AI service is busy right now. Retry in a moment.",
   "aiErr.network": "No connection to the AI service. Check the internet — or study without AI.",
@@ -300,6 +300,7 @@ export const en = {
   "aiErr.api": "The AI request failed.",
   "aiErr.aborted": "Cancelled.",
   "aiErr.detail": "Service response: {text}",
+  "aiErr.otherModel": "If it keeps happening, pick another model in Settings → AI.",
   "aiErr.yandexPermission": "The key itself is valid, but its service account has no access to this folder. In the Yandex Cloud console open the folder → Access bindings → assign the service account the role ai.languageModels.user (on the folder, not on the service account itself). If the key was created with scopes, it needs yc.ai.languageModels.execute. Changes take a minute or two.",
 
   // result
