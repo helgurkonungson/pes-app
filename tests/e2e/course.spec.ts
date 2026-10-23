@@ -30,7 +30,7 @@ test.describe("imported courses", () => {
     await mockApis(page);
     await onboard(page);
     await page.setInputFiles('[data-testid="course-file"]', { name: "notes.json", mimeType: "application/json", buffer: Buffer.from('{"hello":"world"}') });
-    await expect(page.getByText("Этот JSON-файл — не курс PES.")).toBeVisible();
+    await expect(page.getByText("Этот JSON-файл — не курс «Грызи».")).toBeVisible();
     await page.setInputFiles('[data-testid="course-file"]', { name: "broken.json", mimeType: "application/json", buffer: Buffer.from("{oops") });
     await expect(page.getByText("Это не файл курса (не JSON).")).toBeVisible();
   });

@@ -37,3 +37,21 @@ describe("update safety", () => {
     expect(activity).toContain("bar.hide()");
   });
 });
+
+describe("branding", () => {
+  const res = (p: string) => new URL(`../android/app/src/main/res/${p}`, import.meta.url);
+  it("names the app Chompbook, and Грызи for Russian phones", () => {
+    expect(readFileSync(res("values/strings.xml"), "utf8")).toContain('<string name="app_name">Chompbook</string>');
+    expect(readFileSync(res("values-ru/strings.xml"), "utf8")).toContain('<string name="app_name">Грызи</string>');
+  });
+  it("ships an adaptive icon with a themed (monochrome) layer at every density", () => {
+    for (const f of ["ic_launcher", "ic_launcher_round"]) {
+      const xml = readFileSync(res(`mipmap-anydpi-v26/${f}.xml`), "utf8");
+      expect(xml).toContain("@mipmap/ic_launcher_foreground");
+      expect(xml).toContain("@mipmap/ic_launcher_monochrome");
+    }
+    for (const d of ["mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"])
+      for (const f of ["ic_launcher", "ic_launcher_round", "ic_launcher_foreground", "ic_launcher_monochrome"])
+        expect(readFileSync(res(`mipmap-${d}/${f}.png`)).subarray(1, 4).toString()).toBe("PNG");
+  });
+});

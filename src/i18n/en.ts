@@ -196,7 +196,7 @@ export const en = {
   "course.added": { one: "Course “{title}” added · {n} lesson", other: "Course “{title}” added · {n} lessons" },
   "course.updated": { one: "“{title}” updated · {n} new lesson · progress kept", other: "“{title}” updated · {n} new lessons · progress kept" },
   "course.err.notJson": "This file isn't a course (not JSON).",
-  "course.err.notCourse": "This JSON file isn't a PES course.",
+  "course.err.notCourse": "This JSON file isn't a Chompbook course.",
   "course.err.newer": "This course needs a newer version of the app. Update first.",
   "course.err.broken": "The course file is damaged or incomplete.",
   "course.err.read": "Couldn't read the file.",
@@ -444,7 +444,7 @@ export const en = {
   "settings.data": "Data",
   "settings.export": "Export backup",
   "settings.exportHint": "Save or send a file with everything",
-  "settings.backupShareTitle": "PES backup",
+  "settings.backupShareTitle": "Chompbook backup",
   "settings.exportFailed": "Export failed",
   "settings.restore": "Restore from backup",
   "settings.autoBackup": "Automatic backup is on",
@@ -463,7 +463,7 @@ export const en = {
   "settings.latest": "You have the latest version",
   "settings.githubFailed": "Couldn't reach GitHub",
   "settings.source": "Source code",
-  "settings.footer": "PES v{v} · your data stays on this phone",
+  "settings.footer": "Chompbook v{v} · your data stays on this phone",
 
   // backup
   "backup.restoreConfirm": "Replace all data with this backup?",
@@ -471,7 +471,7 @@ export const en = {
   "backup.restoreOk": "Restore",
   "backup.restored": "Backup restored",
   "backup.autoRestored": "Your progress was restored from the automatic backup",
-  "backup.err.notBackup": "This file isn't a PES backup.",
+  "backup.err.notBackup": "This file isn't a Chompbook backup.",
   "backup.err.newer": "This backup comes from a newer app version. Update first.",
 
   // onboarding
@@ -488,7 +488,7 @@ export const en = {
   "onb.goal": "Daily goal",
   "onb.goalHint": "You can choose a different portion every time.",
   "onb.keyTitle": "AI key (optional)",
-  "onb.keyLead": "With your own Claude API key, PES writes lessons from your sources and grades open answers. The key stays in your phone's secure storage and is sent only to Anthropic.",
+  "onb.keyLead": "With your own Claude API key, Chompbook writes lessons from your sources and grades open answers. The key stays in your phone's secure storage and is sent only to Anthropic.",
   "onb.keyOptional": "No key? You can still study: imported courses and lessons built from your sources work without AI and offline. ChatGPT, Gemini, Alice AI, Qwen, Groq, NVIDIA or your own server can be set up in Settings.",
   "onb.keyWhere": "Get a key at",
   "onb.saveStart": "Save and start",

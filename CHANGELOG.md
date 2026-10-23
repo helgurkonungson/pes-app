@@ -1,6 +1,11 @@
 # Changelog
 
-All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
+All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
+
+## 0.5.0 — 2026-10-23
+
+- **New name and icon.** The app is now **Chompbook** (on Russian-language phones: **Грызи**, from "грызть гранит науки"). New icon: an open book with a bite taken out of it, on a sunny yellow background — adaptive on Android 8+, with a themed (monochrome) version for Android 13+ and a matching splash screen.
+- Nothing else changes: same app id, data, settings and progress; backups stay in Documents/PES.
 
 ## 0.4.2 — 2026-10-23
 

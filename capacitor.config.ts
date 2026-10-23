@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "io.github.helgurkonungson.pes",
-  appName: "PES",
+  appName: "Chompbook",
   webDir: "dist",
   backgroundColor: "#141517",
   android: {

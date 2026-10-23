@@ -201,7 +201,7 @@ export const ru: Dict = {
     other: "«{title}» обновлён · {n} новых урока · прогресс сохранён",
   },
   "course.err.notJson": "Это не файл курса (не JSON).",
-  "course.err.notCourse": "Этот JSON-файл — не курс PES.",
+  "course.err.notCourse": "Этот JSON-файл — не курс «Грызи».",
   "course.err.newer": "Для этого курса нужна более новая версия приложения. Сначала обновитесь.",
   "course.err.broken": "Файл курса повреждён или неполный.",
   "course.err.read": "Не удалось прочитать файл.",
@@ -449,7 +449,7 @@ export const ru: Dict = {
   "settings.data": "Данные",
   "settings.export": "Сохранить резервную копию",
   "settings.exportHint": "Файл со всеми данными — сохранить или отправить",
-  "settings.backupShareTitle": "Резервная копия PES",
+  "settings.backupShareTitle": "Резервная копия «Грызи»",
   "settings.exportFailed": "Не удалось сохранить копию",
   "settings.restore": "Восстановить из копии",
   "settings.autoBackup": "Автоматическое резервирование включено",
@@ -468,7 +468,7 @@ export const ru: Dict = {
   "settings.latest": "У вас последняя версия",
   "settings.githubFailed": "Не удалось связаться с GitHub",
   "settings.source": "Исходный код",
-  "settings.footer": "PES v{v} · данные хранятся только на этом телефоне",
+  "settings.footer": "«Грызи» v{v} · данные хранятся только на этом телефоне",
 
   // backup
   "backup.restoreConfirm": "Заменить все данные этой копией?",
@@ -476,7 +476,7 @@ export const ru: Dict = {
   "backup.restoreOk": "Восстановить",
   "backup.restored": "Копия восстановлена",
   "backup.autoRestored": "Прогресс восстановлен из автоматической копии",
-  "backup.err.notBackup": "Этот файл — не резервная копия PES.",
+  "backup.err.notBackup": "Этот файл — не резервная копия «Грызи».",
   "backup.err.newer": "Копия сделана в более новой версии приложения. Сначала обновитесь.",
 
   // onboarding
