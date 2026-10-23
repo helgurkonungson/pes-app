@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.6.1 — 2026-10-24
+
+- **Lessons from books start with the actual content.** Title page, copyright/ISBN page, table of contents, preface, introduction, acknowledgements are skipped — the lesson begins at "Глава 1" / "Chapter 1" (or, in books without chapter headings, after the recognisable front matter). Index, bibliography and notes at the end are skipped too. A source is never skipped entirely.
+- **No more junk characters.** Control characters, invisible marks, broken PDF glyphs (�), page numbers, dot leaders ("Введение ....... 9"), symbol rows and words split by line-end hyphens are cleaned up — for new imports and for books you already added.
+- Applies to lessons without AI and to the excerpts sent to the AI.
+
 ## 0.6.0 — 2026-10-24
 
 - **AI lessons (Gemini especially) are written in small steps instead of one huge request:** first a plan, then each part of the theory, then the review and the quiz. Each answer is short, so it finishes within Gemini's limits; a malformed answer is re-asked once; Gemini's per-minute limit ("retry in 41s") is waited out automatically.

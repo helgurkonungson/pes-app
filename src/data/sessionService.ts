@@ -11,6 +11,7 @@ import { generateLesson, generatePlacement, type Progress } from "../ai/tutor";
 import { providerReady } from "../ai/key";
 import { activeProvider, modelOf, PROVIDERS } from "../ai/providers";
 import { aiState, isBlocking } from "../core/aiStatus";
+import { lessonChunks } from "../core/cleanText";
 import { buildCourseLesson, nextCourseLesson } from "../core/course";
 import { nowIso, uid } from "../core/ids";
 import { buildOfflineLesson, type OfflineLabels } from "../core/offline";
@@ -100,7 +101,8 @@ async function prepareCourseSession(skillset: Skillset): Promise<Session> {
 }
 
 async function buildOffline(skillset: Skillset, minutes: number, fallback: LessonContent["fallback"]): Promise<{ lesson: LessonContent; chunkIds: string[] }> {
-  const chunks = await skillsetChunks(skillset.id);
+  // no title pages, contents, prefaces or index; no PDF debris
+  const chunks = lessonChunks(await skillsetChunks(skillset.id));
   const last = await lastDoneLesson(skillset.id);
   const mistakes = await recentMistakes(skillset.id);
   const lesson = buildOfflineLesson({
@@ -166,7 +168,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
 
   if (useAi) {
     try {
-      const chunks = await skillsetChunks(skillsetId);
+      const chunks = lessonChunks(await skillsetChunks(skillsetId));
       const titles = await sourceTitles(skillsetId);
       if (kind === "placement") {
         opts.onProgress?.("writing");

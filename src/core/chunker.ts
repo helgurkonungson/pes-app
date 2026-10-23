@@ -2,6 +2,7 @@
  * Splits imported text into teachable chunks (~1,500 words) that follow the
  * source's own structure (pages, chapters, headings) where possible.
  */
+import { cleanSourceText } from "./cleanText";
 
 export interface TextSection {
   /** Short location label, e.g. "p. 12" or a chapter title. */
@@ -129,7 +130,7 @@ export function buildChunks(sections: TextSection[], sourceTitle: string, target
   };
 
   for (const raw of sections) {
-    const s = { ...raw, text: normalizeText(raw.text) };
+    const s = { ...raw, text: cleanSourceText(normalizeText(raw.text)) };
     const w = countWords(s.text) + (s.heading ? countWords(s.heading) : 0);
     if (w === 0) continue;
     if (w > max) {
