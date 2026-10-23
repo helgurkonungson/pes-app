@@ -16,6 +16,8 @@ public class MainActivity extends BridgeActivity {
         // Draw behind the system bars on every Android version; the SystemBars
         // plugin (insetsHandling: "css") passes the insets to the web layer.
         EdgeToEdge.enable(this);
+        // Local plugins must be registered before the bridge starts.
+        registerPlugin(ScreenAwakePlugin.class);
         super.onCreate(savedInstanceState);
         // Belt and braces: the web layer has its own top bar.
         ActionBar bar = getSupportActionBar();

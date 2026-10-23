@@ -44,12 +44,12 @@ test.describe("other AI providers", () => {
       calls.push(url);
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "gpt-5-mini" }, { id: "text-embedding-3-small" }] }) });
       const body = JSON.parse(route.request().postData() ?? "{}");
-      const name = body.tool_choice?.function?.name;
-      const { AI_LESSON } = await import("./helpers");
+      const { compatRequest, toolInput } = await import("./helpers");
+      const { tool, prompt } = compatRequest(body);
       return route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({ choices: [{ message: { tool_calls: [{ function: { name, arguments: JSON.stringify(AI_LESSON) } }] } }] }),
+        body: JSON.stringify({ choices: [{ message: { tool_calls: [{ function: { name: tool, arguments: JSON.stringify(toolInput(tool, prompt)) } }] } }] }),
       });
     });
     await onboard(page);
@@ -89,8 +89,9 @@ test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
     const url = route.request().url();
     calls.push(url);
     if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "meta/llama-3.3-70b-instruct" }, { id: "nvidia/nv-embedqa-e5-v5" }] }) });
-    const { AI_LESSON } = await import("./helpers");
-    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content: "Вот урок:\n```json\n" + JSON.stringify(AI_LESSON) + "\n```" } }] }) });
+    const { compatRequest, toolInput } = await import("./helpers");
+    const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content: "Вот ответ:\n```json\n" + JSON.stringify(toolInput(tool, prompt)) + "\n```" } }] }) });
   });
   await onboard(page);
   await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
@@ -128,10 +129,10 @@ test("Alice AI: a valid key without folder rights explains how to fix it", async
 
 test.describe("Gemini, Groq and a custom server", () => {
   const lessonReply = async (route: import("@playwright/test").Route, asText = false) => {
-    const { AI_LESSON } = await import("./helpers");
-    const body = JSON.parse(route.request().postData() ?? "{}");
-    const name = body.tool_choice?.function?.name ?? body.tools?.[0]?.function?.name;
-    const message = asText ? { content: JSON.stringify(AI_LESSON) } : { tool_calls: [{ function: { name, arguments: JSON.stringify(AI_LESSON) } }] };
+    const { compatRequest, toolInput } = await import("./helpers");
+    const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+    const input = JSON.stringify(toolInput(tool, prompt));
+    const message = asText ? { content: input } : { tool_calls: [{ function: { name: tool, arguments: input } }] };
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ choices: [{ message }] }) });
   };
 
@@ -198,6 +199,85 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, "Повторить").click();
     await skipCountdown(page);
     await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+  });
+
+  test("phone asleep mid-lesson: written parts are kept and the lesson continues by itself", async ({ page }) => {
+    test.setTimeout(90_000);
+    // let the test switch the page to "hidden" (phone asleep / app in background) and back
+    await page.addInitScript(() => {
+      Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (window as unknown as { __vis?: string }).__vis ?? "visible" });
+    });
+    const setVis = (v: "hidden" | "visible") =>
+      page.evaluate((v) => {
+        (window as unknown as { __vis?: string }).__vis = v;
+        document.dispatchEvent(new Event("visibilitychange"));
+      }, v);
+    await mockApis(page, "credits");
+    const tools: string[] = [];
+    let cut = false;
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+      const { compatRequest } = await import("./helpers");
+      const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+      tools.push(tool);
+      if (tool === "emit_section" && prompt.includes("SECTION 2 of") && !cut) {
+        cut = true;
+        await setVis("hidden"); // the phone falls asleep while part 2 is being written…
+        return route.abort("connectionreset"); // …and the connection drops
+      }
+      return lessonReply(route);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await createSkillsetWithText(page);
+    await btn(page, "Пропустить").click();
+    await btn(page, /Начать · 15 мин/).click();
+    await expect(page.locator(".preparing [role=status]")).toContainText("свёрнуто");
+    await expect(page.getByRole("alert")).toHaveCount(0); // no error screen while asleep
+    await setVis("visible"); // the learner comes back
+    await skipCountdown(page);
+    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    // the plan and part 1 were not written twice
+    expect(tools.filter((t) => t === "emit_plan")).toHaveLength(1);
+    expect(tools).toEqual(["emit_plan", "emit_section", "emit_section", "emit_section", "emit_review", "emit_quiz"]);
+  });
+
+  test("a failed step keeps the finished ones: Retry continues instead of starting over", async ({ page }) => {
+    await mockApis(page, "credits");
+    const tools: string[] = [];
+    let failQuiz = true;
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+      const { compatRequest } = await import("./helpers");
+      const { tool } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+      tools.push(tool);
+      if (tool === "emit_quiz" && failQuiz) return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify([{ error: { code: 400, message: "Request contains an invalid argument.", status: "INVALID_ARGUMENT" } }]) });
+      return lessonReply(route);
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await createSkillsetWithText(page);
+    await btn(page, "Пропустить").click();
+    await btn(page, /Начать · 15 мин/).click();
+    await expect(page.getByRole("alert")).toBeVisible();
+    const before = tools.length;
+    failQuiz = false;
+    await btn(page, "Повторить").click();
+    await skipCountdown(page);
+    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    expect(tools.slice(before)).toEqual(["emit_quiz"]);
   });
 
   test("Groq: forced function call → lesson", async ({ page }) => {

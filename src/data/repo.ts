@@ -51,11 +51,12 @@ export async function updateSkillset(id: string, patch: Partial<Skillset>): Prom
 }
 
 export async function deleteSkillset(id: string): Promise<void> {
-  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions, db.courses], async () => {
+  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions, db.courses, db.drafts], async () => {
     const sk = await db.skillsets.get(id);
     await db.chunks.where("skillsetId").equals(id).delete();
     await db.sources.where("skillsetId").equals(id).delete();
     await db.sessions.where("skillsetId").equals(id).delete();
+    await db.drafts.where("skillsetId").equals(id).delete();
     await db.skillsets.delete(id);
     if (sk?.courseId) {
       const others = (await db.skillsets.toArray()).some((x) => x.courseId === sk.courseId);

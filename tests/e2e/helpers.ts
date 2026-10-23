@@ -34,6 +34,32 @@ export const AI_LESSON = {
   open: { q: "Как вы распределите права решений по данным о клиентах?", rubric: ["Назван владелец", "Есть стюард", "Есть метрика"] },
 };
 
+/** What a mocked AI returns for each tool; a lesson is written in steps (plan, sections, review, quiz). */
+export function toolInput(tool: string, prompt = ""): unknown {
+  if (tool === "emit_plan")
+    return {
+      title: AI_LESSON.title,
+      sections: AI_LESSON.theory.sections.map((s, i) => ({ heading: s.heading, focus: `Часть ${i + 1}`, excerpts: [i + 1] })),
+      keyPoints: AI_LESSON.theory.keyPoints,
+      open: AI_LESSON.open,
+    };
+  if (tool === "emit_section") {
+    const i = Number(prompt.match(/SECTION (\d+) of/)?.[1] ?? 1) - 1;
+    return { body: AI_LESSON.theory.sections[i]?.body ?? AI_LESSON.theory.sections[0].body };
+  }
+  if (tool === "emit_review") return AI_LESSON.review;
+  if (tool === "emit_quiz") return { questions: AI_LESSON.quiz };
+  if (tool === "emit_placement") return { intro: "Короткий тест.", questions: [1, 2, 3, 4, 5, 6].map((i) => mcq(i, i % 2 ? "Основы" : "Качество")) };
+  if (tool === "grade_answer") return { score: 9, verdict: "Сильный ответ.", strengths: ["Назван владелец"], gaps: ["Добавьте метрику"], modelAnswer: "Владелец — коммерческий директор, стюард — аналитик CRM." };
+  return AI_LESSON;
+}
+
+/** Tool name and prompt of an OpenAI-compatible request (also when it was re-sent without tools). */
+export function compatRequest(body: { tools?: { function?: { name?: string } }[]; tool_choice?: { function?: { name?: string } }; messages?: { content?: string }[] }): { tool: string; prompt: string } {
+  const tool = body.tool_choice?.function?.name ?? body.tools?.[0]?.function?.name ?? body.messages?.[0]?.content?.match(/result of "(\w+)"|function (\w+)/)?.slice(1).find(Boolean) ?? "";
+  return { tool, prompt: body.messages?.[1]?.content ?? "" };
+}
+
 type AiMode = "ok" | "credits" | "network" | "auth";
 
 /** Mocks the Claude API (and GitHub releases) so tests never leave the machine. */
@@ -58,12 +84,7 @@ export async function mockApis(page: Page, mode: AiMode = "credits"): Promise<{ 
     if (mode === "auth") return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ error: { type: "authentication_error", message: "invalid x-api-key" } }) });
     const body = JSON.parse(route.request().postData() ?? "{}");
     const tool = body.tool_choice?.name as string;
-    const input =
-      tool === "emit_placement"
-        ? { intro: "Короткий тест.", questions: [1, 2, 3, 4, 5, 6].map((i) => mcq(i, i % 2 ? "Основы" : "Качество")) }
-        : tool === "grade_answer"
-          ? { score: 9, verdict: "Сильный ответ.", strengths: ["Назван владелец"], gaps: ["Добавьте метрику"], modelAnswer: "Владелец — коммерческий директор, стюард — аналитик CRM." }
-          : AI_LESSON;
+    const input = toolInput(tool, body.messages?.[0]?.content ?? "");
     return route.fulfill({
       status: 200,
       contentType: "application/json",

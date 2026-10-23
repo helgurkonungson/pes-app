@@ -28,12 +28,12 @@ import { AiError } from "../ai/client";
 import { buildCourseLesson } from "../core/course";
 import { localDay } from "../core/dates";
 import { OfflineError } from "../core/offline";
-import type { LessonContent, Session } from "../core/types";
+import type { LessonContent, LessonDraft, Session } from "../core/types";
 import { importCourse } from "./courses";
-import { db, getProfile, PesDb, updateProfile } from "./db";
+import { db, DB_VERSION, getProfile, PesDb, updateProfile } from "./db";
 import { addSource, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, wipeAll } from "./repo";
 import { clearSnapshots, readSnapshot, restoreIfEmpty, setSnapshotStore, SNAPSHOT, SNAPSHOT_PREV, type SnapshotStore, writeSnapshot } from "./safety";
-import { CourseFinishedError, prepareSession, restartReading } from "./sessionService";
+import { CourseFinishedError, prepareSession, restartReading, usableDraft } from "./sessionService";
 
 const fixture = (name: string) => readFileSync(new URL(`../../tests/fixtures/${name}`, import.meta.url), "utf8");
 
@@ -252,6 +252,44 @@ describe("AI lessons and fallback", () => {
     expect((await prepareSession(s.id, 15, { offline: true })).lesson?.mode).toBe("offline");
   });
 
+  it("an interrupted AI lesson continues from its saved steps, then the draft is removed", async () => {
+    const s = await newSkillset();
+    await db.skillsets.update(s.id, { placementSkipped: true });
+    let saved: LessonDraft | undefined;
+    tutor.generateLesson.mockImplementationOnce(async (o: { draft?: LessonDraft; saveDraft: (d: LessonDraft) => Promise<void>; chunks: { id: string }[]; number: number }) => {
+      expect(o.draft).toBeUndefined();
+      saved = { id: s.id, skillsetId: s.id, minutes: 15, number: o.number, chunkIds: o.chunks.map((c) => c.id), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sections: ["Part one, already written.", null] };
+      await o.saveDraft(saved);
+      throw new AiError("socket closed while the phone slept", "network");
+    });
+    await expect(prepareSession(s.id, 15)).rejects.toMatchObject({ kind: "network" });
+    expect((await db.drafts.get(s.id))?.sections[0]).toBe("Part one, already written.");
+    tutor.generateLesson.mockImplementationOnce(async (o: { draft?: LessonDraft }) => {
+      expect(o.draft?.sections[0]).toBe("Part one, already written.");
+      return { lesson: aiLesson() };
+    });
+    const session = await prepareSession(s.id, 15);
+    expect(session.lesson?.mode).toBe("ai");
+    expect(session.number).toBe(saved!.number);
+    expect(await db.drafts.get(s.id)).toBeUndefined();
+  });
+
+  it("a draft is reused only for the same portion and material, and not when stale", () => {
+    const d: LessonDraft = { id: "sk", skillsetId: "sk", minutes: 15, number: 3, chunkIds: ["a", "b"], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sections: [] };
+    expect(usableDraft(d, 15, ["a", "b"])).toBe(d);
+    expect(usableDraft(d, 30, ["a", "b"])).toBeUndefined();
+    expect(usableDraft(d, 15, ["a", "c"])).toBeUndefined();
+    expect(usableDraft({ ...d, updatedAt: "2026-01-01T00:00:00.000Z" }, 15, ["a", "b"])).toBeUndefined();
+    expect(usableDraft(undefined, 15, ["a"])).toBeUndefined();
+  });
+
+  it("deleting a skillset also deletes its half-written lesson", async () => {
+    const s = await newSkillset();
+    await db.drafts.put({ id: s.id, skillsetId: s.id, minutes: 15, number: 1, chunkIds: [], createdAt: "x", updatedAt: "x", sections: [] });
+    await deleteSkillset(s.id);
+    expect(await db.drafts.count()).toBe(0);
+  });
+
   it("a ready offline lesson is replaced by an AI lesson once AI works again", async () => {
     const s = await newSkillset();
     await db.skillsets.update(s.id, { placementSkipped: true });
@@ -416,7 +454,7 @@ describe("automatic snapshots (updates never reset progress)", () => {
 });
 
 describe("schema migration", () => {
-  it("v1 databases open as v2 with every row intact", async () => {
+  it("v1 databases open at the current version with every row intact", async () => {
     const name = "pes-migration-test";
     await Dexie.delete(name);
     const old = new Dexie(name);
@@ -436,11 +474,12 @@ describe("schema migration", () => {
 
     const upgraded = new PesDb(name);
     await upgraded.open();
-    expect(upgraded.verno).toBe(2);
+    expect(upgraded.verno).toBe(DB_VERSION);
     expect((await upgraded.profile.get("me"))?.xp).toBe(730);
     expect((await upgraded.skillsets.get("sk1"))?.cursor).toBe(5);
     expect((await upgraded.sessions.get("se1"))?.lesson?.title).toBe("Old lesson");
     expect(await upgraded.courses.count()).toBe(0);
+    expect(await upgraded.drafts.count()).toBe(0);
     upgraded.close();
   });
 });

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isGeminiThinking, retryPolicy } from "./compat";
+import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isGeminiThinking, rateLimitWaitMs, retryPolicy } from "./compat";
 import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
@@ -286,5 +286,32 @@ describe("Gemini lessons (0.4.2)", () => {
   it("format failures carry finish_reason", async () => {
     mockFetch(200, { choices: [{ message: { content: null }, finish_reason: "length" }] });
     await expect(call("gemini")).rejects.toMatchObject({ kind: "bad-response", detail: "finish_reason: length", provider: "gemini" });
+  });
+});
+
+describe("per-minute rate limits (0.6.0)", () => {
+  const perMinute = [{ error: { code: 429, message: "You exceeded your current quota. Please retry in 41.2s.", status: "RESOURCE_EXHAUSTED", details: [{ "@type": "type.googleapis.com/google.rpc.RetryInfo", retryDelay: "41s" }] } }];
+  const ok = { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":1}' } }] }, finish_reason: "stop" }] };
+  afterEach(() => {
+    retryPolicy.rateScale = 1;
+  });
+  it("reads how long to wait, and refuses daily quotas or long waits", () => {
+    expect(rateLimitWaitMs(perMinute)).toBe(42_200);
+    expect(rateLimitWaitMs({ error: { details: [{ retryDelay: "12s" }] } })).toBe(13_000);
+    expect(rateLimitWaitMs({ error: { message: "Quota exceeded for metric: generate_content_free_tier_requests, limit: 250, GenerateRequestsPerDayPerProjectPerModel. Please retry in 30s." } })).toBeNull();
+    expect(rateLimitWaitMs({ error: { message: "Please retry in 300s." } })).toBeNull();
+    expect(rateLimitWaitMs({ error: { message: "Too many requests" } })).toBeNull();
+  });
+  it("waits out a per-minute 429 and continues", async () => {
+    retryPolicy.rateScale = 0;
+    const f = mockReplies([429, perMinute], [200, ok]);
+    expect(await compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).toEqual({ a: 1 });
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+  it("still limited after two waits → rate error with Google's words", async () => {
+    retryPolicy.rateScale = 0;
+    const f = mockReplies([429, perMinute]);
+    await expect(compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).rejects.toMatchObject({ kind: "rate", status: 429 });
+    expect(f).toHaveBeenCalledTimes(3);
   });
 });

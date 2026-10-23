@@ -3,7 +3,7 @@
  * `this.version(n)` block with an upgrade — never edit an existing version.
  */
 import Dexie, { type Table } from "dexie";
-import type { Chunk, Course, DayActivity, Profile, Session, Skillset, Source } from "../core/types";
+import type { Chunk, Course, DayActivity, LessonDraft, Profile, Session, Skillset, Source } from "../core/types";
 import { nowIso } from "../core/ids";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -16,6 +16,7 @@ export class PesDb extends Dexie {
   profile!: Table<Profile, string>;
   activity!: Table<DayActivity, string>;
   courses!: Table<Course, string>;
+  drafts!: Table<LessonDraft, string>;
 
   constructor(name = "pes") {
     super(name);
@@ -31,11 +32,15 @@ export class PesDb extends Dexie {
     this.version(2).stores({
       courses: "id",
     });
+    // v0.6: AI lessons written step by step keep their finished steps here. Additive only.
+    this.version(3).stores({
+      drafts: "id, skillsetId",
+    });
   }
 }
 
 /** Current schema version — bump together with a new `this.version(n)` above. */
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export const db = new PesDb();
 

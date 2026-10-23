@@ -75,7 +75,21 @@ function errorMessage(data: unknown, status: number): string {
 const transient = (status: number) => status === 500 || status === 502 || status === 503 || status === 529;
 
 /** Pauses before each re-send of a transient failure. Tests set it to [0, 0]. */
-export const retryPolicy = { delaysMs: [2_000, 5_000] };
+export const retryPolicy = { delaysMs: [2_000, 5_000], rateWaits: 2, maxRateWaitMs: 65_000, rateScale: 1 };
+
+/**
+ * How long a 429 asks us to wait ("retry in 41.2s", Google's RetryInfo "retryDelay": "41s"),
+ * or null when it is not a short per-minute limit (a daily quota, no hint, or too long).
+ */
+export function rateLimitWaitMs(data: unknown): number | null {
+  const text = JSON.stringify(data ?? "");
+  if (/per ?day|PerDay|daily/i.test(text)) return null;
+  const m = text.match(/retry (?:in|after) ([\d.]+) ?s/i) ?? text.match(/retryDelay\\?":\s*\\?"([\d.]+)s/i);
+  if (!m) return null;
+  const ms = Math.ceil(parseFloat(m[1]) * 1000) + 1000;
+  if (!Number.isFinite(ms) || ms > retryPolicy.maxRateWaitMs) return null;
+  return Math.round(ms * retryPolicy.rateScale);
+}
 
 function pause(ms: number, signal?: AbortSignal): Promise<void> {
   if (signal?.aborted) return Promise.reject(new AiError("Cancelled.", "aborted"));
@@ -154,6 +168,13 @@ export async function compatStructured<T>(
     for (const ms of retryPolicy.delaysMs) {
       if (!transient(res.status)) break;
       await pause(ms, opts.signal);
+      res = await post();
+    }
+    // per-minute limits (Gemini free tier: "Please retry in 41s"): wait it out, a lesson takes several requests
+    for (let i = 0; i < retryPolicy.rateWaits && res.status === 429; i++) {
+      const wait = rateLimitWaitMs(res.data);
+      if (wait === null) break;
+      await pause(wait, opts.signal);
       res = await post();
     }
     return res;

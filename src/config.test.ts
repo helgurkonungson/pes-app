@@ -38,6 +38,18 @@ describe("update safety", () => {
   });
 });
 
+describe("keep-awake plugin", () => {
+  it("is registered before the bridge starts and only toggles FLAG_KEEP_SCREEN_ON", () => {
+    const dir = "../android/app/src/main/java/io/github/helgurkonungson/pes/";
+    const activity = readFileSync(new URL(`${dir}MainActivity.java`, import.meta.url), "utf8");
+    expect(activity.indexOf("registerPlugin(ScreenAwakePlugin.class);")).toBeGreaterThan(0);
+    expect(activity.indexOf("registerPlugin(ScreenAwakePlugin.class);")).toBeLessThan(activity.indexOf("super.onCreate(savedInstanceState);"));
+    const plugin = readFileSync(new URL(`${dir}ScreenAwakePlugin.java`, import.meta.url), "utf8");
+    expect(plugin).toContain('@CapacitorPlugin(name = "ScreenAwake")');
+    expect(plugin).toContain("FLAG_KEEP_SCREEN_ON");
+  });
+});
+
 describe("branding", () => {
   const res = (p: string) => new URL(`../android/app/src/main/res/${p}`, import.meta.url);
   it("names the app Chompbook, and Грызи for Russian phones", () => {

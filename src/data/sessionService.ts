@@ -15,7 +15,7 @@ import { buildCourseLesson, nextCourseLesson } from "../core/course";
 import { nowIso, uid } from "../core/ids";
 import { buildOfflineLesson, type OfflineLabels } from "../core/offline";
 import { clampMinutes, pickChunks, placementSize, planSession, sampleChunks } from "../core/planner";
-import type { LessonContent, Session, Skillset } from "../core/types";
+import type { LessonContent, LessonDraft, Session, Skillset } from "../core/types";
 import { t } from "../i18n";
 import { db, getProfile } from "./db";
 import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetChunks } from "./repo";
@@ -120,6 +120,16 @@ async function buildOffline(skillset: Skillset, minutes: number, fallback: Lesso
   return { lesson, chunkIds: [...ids] };
 }
 
+/** Drafts older than this are dropped: the sources or the learner have moved on. */
+const DRAFT_TTL_MS = 3 * 24 * 3600_000;
+
+export function usableDraft(d: LessonDraft | undefined, minutes: number, chunkIds: string[]): LessonDraft | undefined {
+  if (!d || d.minutes !== minutes) return undefined;
+  if (Date.now() - Date.parse(d.updatedAt) > DRAFT_TTL_MS) return undefined;
+  if (d.chunkIds.length !== chunkIds.length || d.chunkIds.some((id, i) => id !== chunkIds[i])) return undefined;
+  return d;
+}
+
 async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOptions): Promise<Session> {
   let skillset = await db.skillsets.get(skillsetId);
   if (!skillset) throw new Error("Skillset not found");
@@ -173,12 +183,15 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
           .filter((s) => s.lesson)
           .sort((a, b) => (a.finishedAt ?? "").localeCompare(b.finishedAt ?? ""))
           .map((s) => s.lesson!.title);
+        // continue a lesson that was interrupted half-written (same portion, same material)
+        const draft = usableDraft(await db.drafts.get(skillsetId), minutes, picked.map((c) => c.id));
+        if (draft) base.number = draft.number;
         const { lesson } = await generateLesson({
           model: modelOf(profile),
           webSearch: PROVIDERS[activeProvider(profile)].webSearch,
           skillset,
           plan,
-          number,
+          number: base.number,
           chunks: picked,
           sourceTitles: titles,
           lastLesson: last?.lesson,
@@ -186,7 +199,12 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
           previousTitles,
           onProgress: opts.onProgress,
           signal: opts.signal,
+          draft,
+          saveDraft: async (d) => {
+            await db.drafts.put(d);
+          },
         });
+        await db.drafts.delete(skillsetId);
         lesson.mode = "ai";
         base.lesson = lesson;
         base.chunkIds = picked.map((c) => c.id);

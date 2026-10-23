@@ -21,6 +21,7 @@ import { writeSnapshot } from "../data/safety";
 import { CourseFinishedError, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
 import { type Key, type T, useT } from "../i18n";
 import { useNav } from "../nav/store";
+import { keepScreenOn } from "../native/awake";
 
 type Phase = "loading" | "error" | "countdown" | "run" | "finishing" | "done";
 
@@ -74,7 +75,12 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
   const [count, setCount] = useState(3);
   const [attempt, setAttempt] = useState(0);
   const [forceOffline, setForceOffline] = useState(!!offline);
+  const [genSteps, setGenSteps] = useState<{ done: number; total: number } | null>(null);
+  const [sectionOf, setSectionOf] = useState({ i: 1, n: 1 });
   const abortRef = useRef<AbortController | null>(null);
+  /** The app went to the background (phone asleep, switched away) while the lesson was being written. */
+  const wasHiddenRef = useRef(false);
+  const autoResumesRef = useRef(0);
   const progressRef = useRef(progress);
   progressRef.current = progress;
 
@@ -84,23 +90,64 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     abortRef.current = ctrl;
     setPhase("loading");
     setError(null);
+    // keep the phone awake while an AI lesson is written; finished steps are saved either way
+    const release = forceOffline ? () => undefined : keepScreenOn();
+    const onHide = () => {
+      if (document.visibilityState === "hidden") wasHiddenRef.current = true;
+    };
+    document.addEventListener("visibilitychange", onHide);
     prepareSession(skillsetId, minutes, {
       offline: forceOffline,
       signal: ctrl.signal,
-      onProgress: (s) => setStage(s === "research" ? "session.researching" : s === "grading" ? "session.grading" : "session.writing"),
+      onProgress: (s, detail, st) => {
+        if (st) setGenSteps(st);
+        if (s === "research") return setStage("session.researching");
+        if (s === "grading") return setStage("session.grading");
+        if (detail === "plan") return setStage("session.stepPlan");
+        if (detail === "review") return setStage("session.stepReview");
+        if (detail === "quiz") return setStage("session.stepQuiz");
+        const m = detail?.match(/^section (\d+)\/(\d+)$/);
+        if (m) {
+          setSectionOf({ i: Number(m[1]), n: Number(m[2]) });
+          return setStage("session.stepSection");
+        }
+        setStage("session.writing");
+      },
     })
       .then((s) => {
         if (ctrl.signal.aborted) return;
+        autoResumesRef.current = 0;
         setSession(s);
         setProgress(s.progress);
         setPhase(s.status === "active" ? "run" : "countdown");
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return;
+        // a request cut off by sleep / background: continue from the saved steps on return
+        const kind = e instanceof AiError ? e.kind : undefined;
+        const resumable = kind === "network" || kind === "overloaded" || (kind === "api" && (e.status ?? 0) >= 500);
+        if (resumable && (wasHiddenRef.current || document.visibilityState === "hidden") && autoResumesRef.current < 3) {
+          autoResumesRef.current++;
+          wasHiddenRef.current = false;
+          setStage("session.paused");
+          const go = () => {
+            if (document.visibilityState !== "visible") return;
+            document.removeEventListener("visibilitychange", go);
+            setStage("session.resuming");
+            setAttempt((a) => a + 1);
+          };
+          document.addEventListener("visibilitychange", go);
+          go();
+          return;
+        }
         setError(e);
         setPhase("error");
       });
-    return () => ctrl.abort();
+    return () => {
+      ctrl.abort();
+      release();
+      document.removeEventListener("visibilitychange", onHide);
+    };
   }, [skillsetId, minutes, attempt, forceOffline]);
 
   // ---- countdown ----
@@ -207,8 +254,16 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
                 <Rings values={[0.72, 0.5, 0.3]} size={150} stroke={14} />
               </div>
               <h2 className="section-title" role="status">
-                {t(stage)}
+                {stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)}
               </h2>
+              {genSteps && genSteps.total > 1 && !forceOffline && (
+                <div className="gen-steps">
+                  <div className="gen-bar" role="progressbar" aria-valuemin={0} aria-valuemax={genSteps.total} aria-valuenow={genSteps.done} aria-label={t("session.stepCount", { i: Math.min(genSteps.done + 1, genSteps.total), n: genSteps.total })}>
+                    <span style={{ width: `${Math.round((genSteps.done / genSteps.total) * 100)}%` }} />
+                  </div>
+                  <p className="muted small">{t("session.stepCount", { i: Math.min(genSteps.done + 1, genSteps.total), n: genSteps.total })}</p>
+                </div>
+              )}
               <p className="muted small" style={{ maxWidth: 300 }}>
                 {forceOffline ? t("session.offlineFast") : t("session.slowHint")}
               </p>

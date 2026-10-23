@@ -2,6 +2,14 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.6.0 — 2026-10-24
+
+- **AI lessons (Gemini especially) are written in small steps instead of one huge request:** first a plan, then each part of the theory, then the review and the quiz. Each answer is short, so it finishes within Gemini's limits; a malformed answer is re-asked once; Gemini's per-minute limit ("retry in 41s") is waited out automatically.
+- **Nothing is lost when the phone sleeps.** Every finished step is saved. If the connection drops while the app is in the background, the lesson continues by itself when you come back — from the step where it stopped. Retry after an error and reopening the lesson later also continue instead of starting over.
+- While a lesson is being written, the screen stays on.
+- The loading screen shows the step ("Writing part 2 of 3…", "Step 3 of 6") with a progress bar.
+- Data: new local table for half-written lessons (database v3, additive — nothing existing changes).
+
 ## 0.5.1 — 2026-10-24
 
 - **“A new version is available” pop-up.** The first time you open the app each day (or come back to it on a new day), it checks GitHub for a newer release. If there is one, a pop-up shows the new version, what's new, and two buttons: **Update** (saves a backup first, then downloads the APK) and **Later**. “Later” keeps the banner on the Home screen; the pop-up comes back the next day.

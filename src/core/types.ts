@@ -259,3 +259,36 @@ export interface DayActivity {
   correct: number;
   total: number;
 }
+
+/** One theory section as planned before it is written. */
+export interface DraftSectionPlan {
+  heading: string;
+  /** What exactly this section teaches (1–2 sentences). */
+  focus: string;
+  /** 1-based numbers of the source excerpts it draws on. */
+  excerpts: number[];
+}
+
+/**
+ * An AI lesson being written step by step (plan → sections → review → quiz).
+ * Every finished step is saved, so an interrupted lesson (phone asleep, app
+ * closed, provider error) continues where it stopped instead of starting over.
+ */
+export interface LessonDraft {
+  /** = skillsetId: one lesson in the works per skillset. */
+  id: string;
+  skillsetId: string;
+  minutes: number;
+  number: number;
+  /** Source chunks the lesson teaches; a different set means a new draft. */
+  chunkIds: string[];
+  createdAt: string;
+  updatedAt: string;
+  /** Web notes (Claude only); null = searched, nothing usable. */
+  research?: { text: string; links: { title: string; url: string }[] } | null;
+  plan?: { title: string; sections: DraftSectionPlan[]; keyPoints: string[]; open: { q: string; rubric: string[] } };
+  /** Section bodies by index; missing = not written yet. */
+  sections: (string | null)[];
+  review?: { recap: string[]; questions: unknown[] };
+  quiz?: unknown[];
+}
