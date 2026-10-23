@@ -202,6 +202,26 @@ export interface Profile {
   qwenRegion?: "intl" | "cn";
   /** Base URL of a custom OpenAI-compatible server (Ollama, LM Studio, vLLM, a proxy…), e.g. http://192.168.1.10:11434/v1 */
   customBaseUrl?: string;
+  /** Last automatic update check (the first launch of each day). */
+  updateCheck?: UpdateCheck;
+}
+
+/** A newer app release found on GitHub. */
+export interface UpdateInfo {
+  version: string;
+  /** Release notes (the CHANGELOG section, Markdown). */
+  notes: string;
+  apkUrl?: string;
+  pageUrl: string;
+  publishedAt: string;
+}
+
+/** Result of the automatic update check, kept so later launches that day need no network. */
+export interface UpdateCheck {
+  /** Local day of the check, "YYYY-MM-DD". */
+  day: string;
+  /** The newer release found then, if any. */
+  available?: UpdateInfo;
 }
 
 // ---------- imported courses ----------

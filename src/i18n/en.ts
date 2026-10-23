@@ -86,6 +86,12 @@ export const en = {
   "update.ready": "Update {v} is ready",
   "update.tap": "Your progress is backed up first, then the download starts",
   "update.backupSaved": "Backup saved: {path}",
+  "update.popupTitle": "A new version is available",
+  "update.popupText": "Version {v} is ready to install. You have {current}.",
+  "update.whatsNew": "What's new",
+  "update.later": "Later",
+  "update.install": "Update",
+  "update.failed": "Couldn't start the download. Try again from Settings → Check for updates.",
 
   // skillsets
   "skillsets.new": "New skillset",

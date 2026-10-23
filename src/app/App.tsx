@@ -18,13 +18,24 @@ import { SkillsetDetail } from "../screens/SkillsetDetail";
 import { SkillsetEdit } from "../screens/SkillsetEdit";
 import { Skillsets } from "../screens/Skillsets";
 import { Sources } from "../screens/Sources";
-import { canSelfUpdate, checkForUpdate, type UpdateInfo } from "../update/updater";
+import { autoUpdateCheckEnabled, dailyUpdateCheck, type UpdateInfo } from "../update/updater";
 import { TabBar } from "./TabBar";
+import { UpdatePrompt } from "./UpdatePrompt";
 
-export const useUpdate = create<{ info: UpdateInfo | null; set: (i: UpdateInfo | null) => void }>((set) => ({
+/** The newer release (Home banner, Settings row) and whether the "new version" pop-up is open. */
+export const useUpdate = create<{ info: UpdateInfo | null; prompt: boolean; set: (i: UpdateInfo | null) => void; closePrompt: () => void }>((set) => ({
   info: null,
+  prompt: false,
   set: (info) => set({ info }),
+  closePrompt: () => set({ prompt: false }),
 }));
+
+/** Daily update check: on start and whenever the app comes back to the foreground on a new day. */
+function runDailyUpdateCheck(): void {
+  dailyUpdateCheck()
+    .then(({ info, fresh }) => useUpdate.setState((s) => ({ info, prompt: s.prompt || (fresh && !!info) })))
+    .catch(() => undefined); // offline or GitHub down — retried on the next launch
+}
 
 function RouteView({ route }: { route: Route }) {
   switch (route.name) {
@@ -110,11 +121,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!canSelfUpdate()) return;
-    checkForUpdate()
-      .then((i) => useUpdate.getState().set(i))
-      .catch(() => undefined);
-  }, []);
+    // after boot: the check writes to the profile, and an empty database must be restored first
+    if (!ready || !autoUpdateCheckEnabled()) return;
+    runDailyUpdateCheck();
+    if (!Capacitor.isNativePlatform()) return;
+    const sub = CapApp.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) runDailyUpdateCheck();
+    });
+    return () => {
+      sub.then((s) => s.remove());
+    };
+  }, [ready]);
 
   if (!ready || !profile) return <div className="app" />;
   if (!profile.onboarded) {
@@ -141,6 +158,7 @@ export function App() {
           <TabBar />
         </>
       )}
+      <UpdatePrompt />
       <ConfirmHost />
       <Toaster />
     </div>

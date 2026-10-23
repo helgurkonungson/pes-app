@@ -86,6 +86,12 @@ export const ru: Dict = {
   "update.ready": "Готово обновление {v}",
   "update.tap": "Сначала сохраню резервную копию, потом начнётся загрузка",
   "update.backupSaved": "Резервная копия: {path}",
+  "update.popupTitle": "Доступна новая версия",
+  "update.popupText": "Версия {v} готова к установке. У вас {current}.",
+  "update.whatsNew": "Что нового",
+  "update.later": "Позже",
+  "update.install": "Обновить",
+  "update.failed": "Не удалось начать загрузку. Попробуйте ещё раз: Настройки → Проверить обновления.",
 
   // skillsets
   "skillsets.new": "Новый навык",

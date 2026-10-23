@@ -2,6 +2,13 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.5.1 — 2026-10-24
+
+- **“A new version is available” pop-up.** The first time you open the app each day (or come back to it on a new day), it checks GitHub for a newer release. If there is one, a pop-up shows the new version, what's new, and two buttons: **Update** (saves a backup first, then downloads the APK) and **Later**. “Later” keeps the banner on the Home screen; the pop-up comes back the next day.
+  - One check a day: later launches that day use the saved answer and need no internet. No internet or GitHub down → nothing is shown, and the next launch tries again.
+  - The pop-up never opens over a lesson — it waits until you leave it.
+  - Settings → Check for updates still checks right away.
+
 ## 0.5.0 — 2026-10-23
 
 - **New name and icon.** The app is now **Chompbook** (on Russian-language phones: **Грызи**, from "грызть гранит науки"). New icon: an open book with a bite taken out of it, on a sunny yellow background — adaptive on Android 8+, with a themed (monochrome) version for Android 13+ and a matching splash screen.

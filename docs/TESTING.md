@@ -43,3 +43,4 @@ bash scripts/android-smoke.sh PES-x.y.z.apk out/   # with an emulator or phone a
 5. Real Claude key: AI lesson and grading; with an empty balance → “credits ran out” banner and lessons continue without AI.
 6. Airplane mode → lessons from sources and courses still work.
 7. Settings → Install update → a backup appears in Documents/PES.
+8. Daily update pop-up: with an older APK installed, the first launch of the day shows “A new version is available”; “Later” → no pop-up on the next launch that day; the next morning it appears again (also when the app was only in the background overnight).

@@ -111,7 +111,7 @@ pes-app/
 
 ### ADR-004 — APKs built by GitHub Actions, self-update from GitHub Releases
 - **Context:** Claude's workspace cannot reach Google's Android build servers.
-- **Decision:** public repo `helgurkonungson/pes-app`; each push builds and tests; a new `package.json` version publishes Release `vX.Y.Z` with the APK; the app checks `releases/latest` and offers the download. Release signing key kept in GitHub secrets.
+- **Decision:** public repo `helgurkonungson/pes-app`; each push builds and tests; a new `package.json` version publishes Release `vX.Y.Z` with the APK; the app checks `releases/latest` and offers the download — automatically once per local day (first launch or first return to the foreground; result cached in `profile.updateCheck`, a failed check is not recorded) with a pop-up that never opens over a lesson, and on demand in Settings (0.5.1). Release signing key kept in GitHub secrets.
 - **Consequences:** every shipped change needs a version bump + CHANGELOG entry; losing the signing key means reinstalling the app (back it up).
 
 ### ADR-005 — Lesson engine: sources → chunks → time-sized sessions

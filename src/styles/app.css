@@ -407,6 +407,8 @@ button.menu-row:active { opacity: .7; }
 .segmented button { min-height: var(--touch); border-radius: 14px; font-size: 14px; font-weight: 600; color: var(--muted); padding: 0 6px; line-height: 1.15; }
 .segmented button.on { background: var(--accent); color: var(--on-accent); }
 
+.update-notes { background: var(--surface-2); border-radius: var(--r-md); padding: 12px 14px; max-height: 38vh; overflow-y: auto; overscroll-behavior: contain; font-size: 14px; }
+.update-notes .section-label { margin: 0 0 6px; }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
 .sheet-head h2 { margin: 0; }
 
