@@ -445,6 +445,8 @@ export const ru: Dict = {
   "settings.install": "Установить {v}",
   "settings.installHint": "Сначала копия сохранится в Documents/PES",
   "settings.updateAvailable": "Доступна версия {v}",
+  "settings.latestAt": "У вас последняя версия · проверено в {time}",
+  "settings.checkingUpdates": "Проверяю GitHub…",
   "settings.latest": "У вас последняя версия",
   "settings.githubFailed": "Не удалось связаться с GitHub",
   "settings.source": "Исходный код",

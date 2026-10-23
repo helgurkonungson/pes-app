@@ -440,6 +440,8 @@ export const en = {
   "settings.install": "Install {v}",
   "settings.installHint": "A backup is saved to Documents/PES first",
   "settings.updateAvailable": "Version {v} is available",
+  "settings.latestAt": "You have the latest version · checked at {time}",
+  "settings.checkingUpdates": "Checking GitHub…",
   "settings.latest": "You have the latest version",
   "settings.githubFailed": "Couldn't reach GitHub",
   "settings.source": "Source code",

@@ -1,7 +1,7 @@
 # Quality gates, then the Android APK.
 #   checks      — type-check, unit tests (Vitest), web build
-#   e2e         — Playwright end-to-end tests per browser engine and device profile
-#                 (Chromium = Android WebView: blocking; WebKit = iOS, Firefox: reported, not blocking yet)
+#   e2e         — Playwright on Chromium (Android WebView engine) device profiles: blocking
+#   e2e-cross   — Playwright on WebKit (iOS engine) and Firefox: reported, never delays a release
 #   build       — APK; when package.json has a new version, publishes Release "vX.Y.Z"
 #   device-tests — smoke tests of the APK on Android emulators (API 31/34/36, small phone, tablet)
 name: Android
@@ -37,17 +37,44 @@ jobs:
       - name: Web build
         run: npm run build
 
+  # Chromium = the Android WebView engine. Gates the APK release.
   e2e:
+    name: E2E (chromium · Android profiles)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Playwright
+        run: npx playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome
+        env:
+          CI: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-chromium
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # WebKit (iOS engine) and Firefox: reported only, never delay an Android release.
+  e2e-cross:
     name: E2E (${{ matrix.engine }})
     runs-on: ubuntu-latest
-    timeout-minutes: 40
-    continue-on-error: ${{ matrix.engine != 'chromium' }}
+    timeout-minutes: 25
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         include:
-          - engine: chromium
-            projects: --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome
           - engine: webkit
             projects: --project=iphone-se --project=iphone-15-pro-max --project=ipad-mini --project=desktop-safari
           - engine: firefox
@@ -62,7 +89,8 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Playwright
-        run: npx playwright test ${{ matrix.projects }}
+        # no retries here: a failing engine should report quickly instead of retrying 60 s timeouts
+        run: npx playwright test ${{ matrix.projects }} --retries=0 --max-failures=15
         env:
           CI: "1"
       - uses: actions/upload-artifact@v4

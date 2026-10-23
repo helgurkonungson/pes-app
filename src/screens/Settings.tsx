@@ -16,7 +16,7 @@ import { updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
 import { exportBackup, wipeAll } from "../data/repo";
 import { clearSnapshots } from "../data/safety";
-import { useT } from "../i18n";
+import { locale, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { APP_REPO, APP_VERSION, checkForUpdate, installUpdateSafely } from "../update/updater";
 import { aiErrorText } from "./Session";
@@ -32,6 +32,8 @@ export function Settings() {
   const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder">(null);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkNote, setCheckNote] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [models, setModels] = useState<ModelInfo[] | null>(null);
   const restore = useBackupRestore(() => reset());
@@ -96,16 +98,22 @@ export function Settings() {
     }
   };
 
+  // the result is shown right in the row (a toast alone is easy to miss)
   const doCheck = async () => {
-    setBusy(true);
+    setChecking(true);
+    setCheckNote(null);
+    const time = new Date().toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
     try {
       const info = await checkForUpdate();
       update.set(info);
-      toast(info ? t("settings.updateAvailable", { v: info.version }) : t("settings.latest"));
+      const note = info ? t("settings.updateAvailable", { v: info.version }) : t("settings.latestAt", { time });
+      setCheckNote(note);
+      toast(note);
     } catch {
+      setCheckNote(t("settings.githubFailed"));
       toast(t("settings.githubFailed"));
     } finally {
-      setBusy(false);
+      setChecking(false);
     }
   };
 
@@ -225,7 +233,7 @@ export function Settings() {
         <section className="stack">
           <SectionLabel>{t("settings.about")}</SectionLabel>
           <Group>
-            <MenuRow icon={<RefreshCw size={20} />} label={t("settings.checkUpdates")} value={`v${APP_VERSION}`} onClick={busy ? undefined : doCheck} />
+            <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
             {update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
             <MenuRow icon={<Code size={20} />} label={t("settings.source")} value={APP_REPO.split("/")[1]} onClick={() => openExternal(`https://github.com/${APP_REPO}`)} />
           </Group>
