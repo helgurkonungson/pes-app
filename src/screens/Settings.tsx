@@ -19,7 +19,7 @@ import { clearSnapshots } from "../data/safety";
 import { locale, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { APP_REPO, APP_VERSION, checkForUpdate, installUpdateSafely } from "../update/updater";
-import { aiErrorText } from "./Session";
+import { aiErrorDetail, aiErrorText } from "./Session";
 
 export function Settings() {
   const t = useT();
@@ -62,7 +62,7 @@ export function Settings() {
       setSheet(null);
       toast(t("settings.keySaved"));
     } catch (e) {
-      setErr(e instanceof AiError ? aiErrorText(e, t) : e instanceof Error && e.message ? e.message : t("settings.keyCheckFailed"));
+      setErr(e instanceof AiError ? [aiErrorText(e, t), aiErrorDetail(e, t)].filter(Boolean).join("\n\n") : e instanceof Error && e.message ? e.message : t("settings.keyCheckFailed"));
     } finally {
       setBusy(false);
     }

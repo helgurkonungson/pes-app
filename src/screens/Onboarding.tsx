@@ -7,7 +7,7 @@ import { ExtLink, MinutesPicker, Segmented, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
 import { updateProfile } from "../data/db";
 import { type Lang, useLang, useT } from "../i18n";
-import { aiErrorText } from "./Session";
+import { aiErrorDetail, aiErrorText } from "./Session";
 
 export function Onboarding() {
   const t = useT();
@@ -32,7 +32,7 @@ export function Onboarding() {
       await updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang });
       toast(withKey ? t("onb.keySaved") : t("onb.noKey"));
     } catch (e) {
-      setError(e instanceof AiError ? aiErrorText(e, t) : t("onb.keyFailed"));
+      setError(e instanceof AiError ? [aiErrorText(e, t), aiErrorDetail(e, t)].filter(Boolean).join("\n\n") : t("onb.keyFailed"));
     } finally {
       setBusy(false);
     }

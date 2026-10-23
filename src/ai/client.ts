@@ -18,6 +18,9 @@ export class AiError extends Error {
     message: string,
     public kind: AiErrorKind,
     public status?: number,
+    /** The provider's own error text, shown to the learner as a detail. */
+    public detail?: string,
+    public provider?: ProviderId,
   ) {
     super(message);
   }
@@ -79,7 +82,7 @@ async function request<T>(path: string, init: RequestInit & { key?: string; time
     } catch {
       /* ignore */
     }
-    throw new AiError(`AI request failed (${res.status}): ${msg}`, classifyApiError(res.status, msg), res.status);
+    throw new AiError(`AI request failed (${res.status}): ${msg}`, classifyApiError(res.status, msg), res.status, msg, "anthropic");
   }
   return (await res.json()) as T;
 }

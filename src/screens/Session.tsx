@@ -44,6 +44,14 @@ const AI_ERR: Record<AiErrorKind, Key> = {
   aborted: "aiErr.aborted",
 };
 
+/** Extra line under an AI error: a fix-it hint we know, or the provider's own words. */
+export function aiErrorDetail(e: unknown, t: T): string | null {
+  if (!(e instanceof AiError) || !e.detail) return null;
+  if (e.provider === "yandex" && e.status === 403 && /permission/i.test(e.detail)) return t("aiErr.yandexPermission");
+  if (e.kind === "auth" || e.kind === "api" || e.kind === "credits") return t("aiErr.detail", { text: e.detail.slice(0, 300) });
+  return null;
+}
+
 export function aiErrorText(e: unknown, t: T): string {
   if (e instanceof AiError) return t(AI_ERR[e.kind] ?? "aiErr.api") + (e.kind === "api" ? ` (${e.status ?? ""})` : "");
   if (e instanceof OfflineError) return t(e.code === "no-sources" ? "offline.err.noSources" : "offline.err.finished");

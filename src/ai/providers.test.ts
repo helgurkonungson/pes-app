@@ -143,3 +143,10 @@ describe("NVIDIA", () => {
     await expect(call("nvidia")).rejects.toMatchObject({ kind: "credits" });
   });
 });
+
+describe("error details", () => {
+  it("keeps the provider's own message and id (Yandex folder permission)", async () => {
+    mockFetch(403, { error: { message: "rpc error: code = PermissionDenied desc = Permission to [resource-manager.folder b1gx] denied", type: "permission_error" } });
+    await expect(call("yandex", { yandexFolder: "b1gx" })).rejects.toMatchObject({ kind: "auth", status: 403, provider: "yandex", detail: expect.stringContaining("PermissionDenied") });
+  });
+});

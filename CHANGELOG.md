@@ -2,6 +2,10 @@
 
 All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.3.2 — 2026-10-23
+
+- **Clearer AI key errors:** when a provider refuses a key, the app now shows the provider's own reason under the message. For Alice AI, “permission denied to the folder” comes with step-by-step help (role `ai.languageModels.user` on the folder, key scope `yc.ai.languageModels.execute`) instead of a generic “key rejected”.
+
 ## 0.3.1 — 2026-10-23
 
 - **NVIDIA as an AI provider:** Settings → AI → Provider → NVIDIA. Use an API key from build.nvidia.com (`nvapi-…`); default model Llama 3.3 70B Instruct, any chat model from NVIDIA's catalog can be picked. Lessons accept either a function call or JSON in the answer, because not every NVIDIA model supports forced function calls.

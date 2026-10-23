@@ -107,3 +107,21 @@ test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
   await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
   expect(calls.some((c) => c.endsWith("/chat/completions"))).toBe(true);
 });
+
+test("Alice AI: a valid key without folder rights explains how to fix it", async ({ page }) => {
+  await mockApis(page);
+  await page.route("https://llm.api.cloud.yandex.net/**", (r) =>
+    r.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ error: { message: "rpc error: code = PermissionDenied desc = Permission to [resource-manager.folder b1gtest] denied", type: "permission_error" } }) }),
+  );
+  await onboard(page);
+  await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+  await page.getByRole("radio", { name: "Алиса AI" }).click();
+  await btn(page, /ID каталога Yandex Cloud/).click();
+  await page.getByRole("dialog").getByRole("textbox").fill("b1gtest");
+  await page.getByRole("dialog").getByRole("button", { name: "Сохранить" }).click();
+  await btn(page, /Ключ API Алиса AI/).click();
+  await page.getByRole("dialog").getByRole("textbox").fill("AQVN-test-0123456789abcdef");
+  await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+  await expect(page.getByRole("alert")).toContainText("нет прав на этот каталог");
+  await expect(page.getByRole("alert")).toContainText("ai.languageModels.user");
+});

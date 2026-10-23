@@ -299,6 +299,8 @@ export const en = {
   "aiErr.badResponse": "The AI answered in an unexpected format. Try again.",
   "aiErr.api": "The AI request failed.",
   "aiErr.aborted": "Cancelled.",
+  "aiErr.detail": "Service response: {text}",
+  "aiErr.yandexPermission": "The key itself is valid, but its service account has no access to this folder. In the Yandex Cloud console open the folder → Access bindings → assign the service account the role ai.languageModels.user (on the folder, not on the service account itself). If the key was created with scopes, it needs yc.ai.languageModels.execute. Changes take a minute or two.",
 
   // result
   "done.title": "Well done!",

@@ -350,7 +350,7 @@ a { color: var(--accent); }
 }
 .banner { display: flex; align-items: center; gap: 12px; background: var(--accent-soft); border-radius: var(--r-lg); padding: 14px 16px; color: var(--ink); width: 100%; text-align: left; }
 .banner.warn { background: rgba(246, 201, 107, 0.13); }
-.error-box { background: var(--bad-soft); color: var(--bad); border-radius: var(--r-md); padding: 12px 14px; font-size: 14px; }
+.error-box { background: var(--bad-soft); color: var(--bad); border-radius: var(--r-md); padding: 12px 14px; font-size: 14px; white-space: pre-line; overflow-wrap: anywhere; }
 
 /* ---------- badges & leaderboard ---------- */
 .badges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }

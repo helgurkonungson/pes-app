@@ -68,7 +68,7 @@ function errorMessage(data: unknown, status: number): string {
 function check(id: ProviderId, r: HttpResult): void {
   if (r.status >= 200 && r.status < 300) return;
   const msg = errorMessage(r.data, r.status);
-  throw new AiError(`${PROVIDERS[id].name} request failed (${r.status}): ${msg}`, classifyApiError(r.status, msg), r.status);
+  throw new AiError(`${PROVIDERS[id].name} request failed (${r.status}): ${msg}`, classifyApiError(r.status, msg), r.status, msg, id);
 }
 
 /** Pulls a JSON object out of a model's text answer (fallback when it doesn't call the tool). */
