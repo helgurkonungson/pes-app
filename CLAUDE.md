@@ -9,6 +9,11 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - AI output is untrusted: always pass it through `src/core/normalize.ts`.
 - No developer secrets in the repo or app. The user's key lives only in secure storage.
 - Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark theme, Tiffany accent `#81d8d0`; 360 px min width; safe-area variables.
-- Before a release: `npm run build && npm test`, run the Playwright walk-through if UI changed, bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK.
+- Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **both** `en.ts` and `ru.ts` (Russian needs one/few/many/other for plurals).
+- Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.
+- Never break update safety (ADR-009): don't change the app id, signing key, WebView origin or existing Dexie versions.
+- Tests: `npm run typecheck && npm test && npm run e2e` before every release (see `docs/TESTING.md`). New logic → unit test; new screen or flow → Playwright test.
+- Before a release: bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK after the CI gates pass.
+- Oleg's private course files (e.g. the CDO test course) never go into this public repo.
 - My workspace can't reach Google's Android build servers: APKs come from GitHub Actions.
 - Commit messages end with the attribution lines the session asks for.

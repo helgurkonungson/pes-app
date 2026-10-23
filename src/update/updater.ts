@@ -6,6 +6,9 @@
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
 import { compareVersions } from "../core/semver";
+import { saveExternalBackup, writeSnapshot } from "../data/safety";
+import { toast } from "../components/ui";
+import { t } from "../i18n";
 
 export const APP_VERSION: string = __APP_VERSION__;
 export const APP_REPO: string = __APP_REPO__;
@@ -45,3 +48,15 @@ export async function installUpdate(u: UpdateInfo): Promise<void> {
 }
 
 export const canSelfUpdate = () => Capacitor.getPlatform() === "android";
+
+/**
+ * Saves the learner's progress first (private snapshot + a backup file in
+ * Documents/PES that survives even an uninstall), then opens the APK download.
+ * Installing over the app keeps its data; the backup is the safety net.
+ */
+export async function installUpdateSafely(u: UpdateInfo): Promise<void> {
+  await writeSnapshot();
+  const where = await saveExternalBackup();
+  if (where) toast(t("update.backupSaved", { path: where }));
+  await installUpdate(u);
+}

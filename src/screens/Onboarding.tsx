@@ -1,18 +1,25 @@
-import { ArrowRight, Check, KeyRound } from "lucide-react";
+import { ArrowRight, Check, KeyRound, Upload } from "lucide-react";
 import { useState } from "react";
 import { AiError, testKey } from "../ai/client";
 import { setApiKey } from "../ai/key";
+import { useBackupRestore } from "../components/FilePickers";
+import { ExtLink, MinutesPicker, Segmented, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
-import { ExtLink, MinutesPicker, toast } from "../components/ui";
 import { updateProfile } from "../data/db";
+import { type Lang, useLang, useT } from "../i18n";
+import { aiErrorText } from "./Session";
 
 export function Onboarding() {
+  const t = useT();
+  const lang = useLang((s) => s.lang);
+  const setLang = useLang((s) => s.set);
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [goal, setGoal] = useState(15);
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const restore = useBackupRestore();
 
   const finish = async (withKey: boolean) => {
     setBusy(true);
@@ -22,18 +29,18 @@ export function Onboarding() {
         await testKey(key.trim());
         await setApiKey(key.trim());
       }
-      await updateProfile({ name: name.trim() || "Learner", dailyGoal: goal, onboarded: true });
-      toast(withKey ? "Key saved. Let's create your first skillset!" : "You can add your key later in Settings.");
+      await updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang });
+      toast(withKey ? t("onb.keySaved") : t("onb.noKey"));
     } catch (e) {
-      setError(e instanceof AiError ? e.message : "Couldn't check the key. Check your connection.");
+      setError(e instanceof AiError ? aiErrorText(e, t) : t("onb.keyFailed"));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="onb">
-      <div className="dots" aria-hidden>
+    <main className="onb">
+      <div className="dots" role="img" aria-label={t("onb.stepOf", { i: step + 1, n: 3 })}>
         {[0, 1, 2].map((i) => (
           <i key={i} className={i === step ? "on" : ""} />
         ))}
@@ -41,79 +48,104 @@ export function Onboarding() {
 
       {step === 0 && (
         <>
+          <Segmented<Lang>
+            label={t("settings.language")}
+            value={lang}
+            onChange={setLang}
+            options={[
+              { id: "ru", label: "Русский" },
+              { id: "en", label: "English" },
+            ]}
+          />
           <div className="hero-art">
             <HeroBg hue={174} name="P" big />
             <div style={{ position: "relative", zIndex: 1 }}>
-              <Rings values={[0.82, 0.6, 0.38]} size={190} stroke={18} />
+              <Rings values={[0.82, 0.6, 0.38]} size={170} stroke={16} />
             </div>
           </div>
           <div className="stack-lg">
             <h1 className="display">
-              Learn anything
+              {t("onb.title1")}
               <br />
-              <span className="accent">in daily portions</span>
+              <span className="accent">{t("onb.title2")}</span>
             </h1>
-            <p className="muted">Add your books, articles and notes. Pick 5, 15, 30 or 60 minutes a day. Each session reviews, teaches, quizzes and checks your thinking.</p>
+            <p className="muted">{t("onb.lead")}</p>
           </div>
-          <button className="btn primary block" onClick={() => setStep(1)}>
-            Get started <ArrowRight size={20} />
-          </button>
+          <div className="stack">
+            <button className="btn primary block" onClick={() => setStep(1)}>
+              {t("onb.start")} <ArrowRight size={20} />
+            </button>
+            <button className="btn ghost block" onClick={restore.open}>
+              <Upload size={18} /> {t("onb.restore")}
+            </button>
+            {restore.input}
+          </div>
         </>
       )}
 
       {step === 1 && (
         <>
           <div className="stack-lg" style={{ flex: 1 }}>
-            <h1 className="display">About you</h1>
+            <h1 className="display">{t("onb.aboutYou")}</h1>
             <div className="field">
-              <label htmlFor="name">Your name</label>
-              <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Oleg" autoComplete="given-name" />
+              <label htmlFor="name">{t("onb.name")}</label>
+              <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={t("onb.namePh")} autoComplete="given-name" maxLength={40} />
             </div>
             <div className="field">
-              <label>Daily goal</label>
-              <MinutesPicker value={goal} onChange={setGoal} />
-              <p className="faint small">You can choose a different portion every session.</p>
+              <span className="label">{t("onb.goal")}</span>
+              <MinutesPicker value={goal} onChange={setGoal} label={t("onb.goal")} />
+              <p className="faint small">{t("onb.goalHint")}</p>
             </div>
           </div>
-          <button className="btn primary block" onClick={() => setStep(2)} disabled={!name.trim()}>
-            Continue <ArrowRight size={20} />
-          </button>
+          <div className="row">
+            <button className="btn dark" onClick={() => setStep(0)}>
+              {t("common.back")}
+            </button>
+            <button className="btn primary grow" onClick={() => setStep(2)} disabled={!name.trim()}>
+              {t("common.continue")} <ArrowRight size={20} />
+            </button>
+          </div>
         </>
       )}
 
       {step === 2 && (
         <>
           <div className="stack-lg" style={{ flex: 1 }}>
-            <div className="icon-dot accent" style={{ width: 56, height: 56 }}>
+            <span className="icon-dot accent" style={{ width: 56, height: 56 }}>
               <KeyRound size={26} />
-            </div>
-            <h1 className="display">Your AI key</h1>
-            <p className="muted">
-              PES writes lessons and checks your answers with Claude, using your own API key. The key stays in your phone's secure storage and is sent only to Anthropic.
-            </p>
+            </span>
+            <h1 className="display">{t("onb.keyTitle")}</h1>
+            <p className="muted">{t("onb.keyLead")}</p>
+            <div className="card flat tight small">{t("onb.keyOptional")}</div>
             <div className="field">
-              <label htmlFor="key">Claude API key</label>
+              <label htmlFor="key">{t("settings.key")}</label>
               <input id="key" className="input selectable" value={key} onChange={(e) => setKey(e.target.value)} placeholder="sk-ant-…" autoComplete="off" autoCapitalize="off" spellCheck={false} />
               <p className="faint small">
-                Get one at <ExtLink href="https://console.anthropic.com/settings/keys">console.anthropic.com</ExtLink>. Usage is billed to your Anthropic account.
+                {t("onb.keyWhere")} <ExtLink href="https://console.anthropic.com/settings/keys">console.anthropic.com</ExtLink>
               </p>
             </div>
-            {error && <div className="error-box">{error}</div>}
+            {error && (
+              <div className="error-box" role="alert">
+                {error}
+              </div>
+            )}
           </div>
           <div className="stack">
             <button className="btn primary block" onClick={() => finish(true)} disabled={busy || key.trim().length < 20}>
-              {busy ? "Checking…" : (
+              {busy ? (
+                t("common.checking")
+              ) : (
                 <>
-                  <Check size={20} /> Save and start
+                  <Check size={20} /> {t("onb.saveStart")}
                 </>
               )}
             </button>
-            <button className="btn ghost block" onClick={() => finish(false)} disabled={busy}>
-              Skip for now
+            <button className="btn dark block" onClick={() => finish(false)} disabled={busy}>
+              {t("onb.skip")}
             </button>
           </div>
         </>
       )}
-    </div>
+    </main>
   );
 }

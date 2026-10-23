@@ -1,23 +1,23 @@
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { create } from "zustand";
-import { ConfirmHost, Toaster } from "../components/ui";
+import { ConfirmHost, toast, Toaster } from "../components/ui";
 import { db, getProfile } from "../data/db";
+import { requestPersistentStorage, restoreIfEmpty, writeSnapshot } from "../data/safety";
+import { resolveLang, t, useLang } from "../i18n";
 import { type Route, useNav } from "../nav/store";
 import { History, LessonView } from "../screens/History";
 import { Home } from "../screens/Home";
 import { Onboarding } from "../screens/Onboarding";
-import { QuickStart } from "../screens/QuickStart";
-import { Rewards } from "../screens/Rewards";
+import { Progress } from "../screens/Progress";
 import { SessionScreen } from "../screens/Session";
 import { Settings } from "../screens/Settings";
 import { SkillsetDetail } from "../screens/SkillsetDetail";
 import { SkillsetEdit } from "../screens/SkillsetEdit";
 import { Skillsets } from "../screens/Skillsets";
 import { Sources } from "../screens/Sources";
-import { Stats } from "../screens/Stats";
 import { canSelfUpdate, checkForUpdate, type UpdateInfo } from "../update/updater";
 import { TabBar } from "./TabBar";
 
@@ -35,19 +35,54 @@ function RouteView({ route }: { route: Route }) {
     case "sources":
       return <Sources id={route.id} />;
     case "session":
-      return <SessionScreen skillsetId={route.skillsetId} minutes={route.minutes} />;
+      return <SessionScreen skillsetId={route.skillsetId} minutes={route.minutes} offline={route.offline} />;
     case "history":
       return <History id={route.id} />;
     case "lesson":
       return <LessonView sessionId={route.sessionId} />;
-    case "settings":
-      return <Settings />;
   }
 }
 
+/** Startup: recover from an empty database, keep storage persistent, then show the app. */
+function useBoot(): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        if (await restoreIfEmpty()) toast(t("backup.autoRestored"));
+      } catch {
+        /* never block the app on recovery */
+      }
+      await getProfile(); // creates the default profile on first launch
+      if (alive) setReady(true);
+      requestPersistentStorage();
+      // refresh the automatic snapshot a little after start, off the critical path
+      setTimeout(() => writeSnapshot(), 8000);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return ready;
+}
+
 export function App() {
-  const profile = useLiveQuery(() => db.profile.get("me"), []);
-  const { tab, stack, sheet } = useNav();
+  const ready = useBoot();
+  // null = no profile row (first launch or after "Delete all data"); undefined = still loading
+  const profile = useLiveQuery(() => db.profile.get("me").then((p) => p ?? null), []);
+  const { tab, stack } = useNav();
+  const setLang = useLang((s) => s.set);
+
+  // the interface language follows the profile (or the phone when set to "system")
+  useEffect(() => {
+    // no saved preference (e.g. right after "Delete all data") → keep the language in use
+    if (profile?.uiLanguage) setLang(resolveLang(profile.uiLanguage));
+  }, [profile?.uiLanguage, profile, setLang]);
+
+  useEffect(() => {
+    if (ready && profile === null) getProfile(); // recreate the default profile → onboarding
+  }, [ready, profile]);
 
   useEffect(() => {
     // keep focused fields visible above the on-screen keyboard
@@ -60,13 +95,17 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    getProfile(); // creates the default profile on first launch
     if (!Capacitor.isNativePlatform()) return;
     const sub = CapApp.addListener("backButton", () => {
       if (!useNav.getState().back()) CapApp.minimizeApp();
     });
+    // snapshot when the app goes to the background (the OS may kill it later)
+    const state = CapApp.addListener("appStateChange", ({ isActive }) => {
+      if (!isActive) writeSnapshot();
+    });
     return () => {
       sub.then((s) => s.remove());
+      state.then((s) => s.remove());
     };
   }, []);
 
@@ -77,11 +116,12 @@ export function App() {
       .catch(() => undefined);
   }, []);
 
-  if (profile === undefined) return <div className="app" />;
+  if (!ready || !profile) return <div className="app" />;
   if (!profile.onboarded) {
     return (
       <div className="app">
         <Onboarding />
+        <ConfirmHost />
         <Toaster />
       </div>
     );
@@ -96,12 +136,11 @@ export function App() {
         <>
           {tab === "home" && <Home />}
           {tab === "skillsets" && <Skillsets />}
-          {tab === "stats" && <Stats />}
-          {tab === "rewards" && <Rewards />}
+          {tab === "progress" && <Progress />}
+          {tab === "settings" && <Settings />}
           <TabBar />
         </>
       )}
-      {sheet === "quickstart" && <QuickStart />}
       <ConfirmHost />
       <Toaster />
     </div>

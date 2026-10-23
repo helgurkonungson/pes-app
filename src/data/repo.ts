@@ -51,12 +51,23 @@ export async function updateSkillset(id: string, patch: Partial<Skillset>): Prom
 }
 
 export async function deleteSkillset(id: string): Promise<void> {
-  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions], async () => {
+  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions, db.courses], async () => {
+    const sk = await db.skillsets.get(id);
     await db.chunks.where("skillsetId").equals(id).delete();
     await db.sources.where("skillsetId").equals(id).delete();
     await db.sessions.where("skillsetId").equals(id).delete();
     await db.skillsets.delete(id);
+    if (sk?.courseId) {
+      const others = (await db.skillsets.toArray()).some((x) => x.courseId === sk.courseId);
+      if (!others) await db.courses.delete(sk.courseId);
+    }
   });
+}
+
+/** Ids of course lessons already completed in a skillset. */
+export async function doneCourseLessonIds(skillsetId: string): Promise<Set<string>> {
+  const done = await db.sessions.where("[skillsetId+status]").equals([skillsetId, "done"]).toArray();
+  return new Set(done.map((s) => s.lesson?.courseLessonId).filter((x): x is string => !!x));
 }
 
 // ---------- sources ----------
@@ -157,7 +168,7 @@ async function bumpActivity(day: string, patch: Omit<DayActivity, "day">): Promi
 
 /** Closes a session: XP, streak, cursor, activity and badges. Returns the result shown to the learner. */
 export async function completeSession(sessionId: string): Promise<SessionResult> {
-  return db.transaction("rw", [db.sessions, db.skillsets, db.profile, db.activity, db.chunks], async () => {
+  return db.transaction("rw", [db.sessions, db.skillsets, db.profile, db.activity, db.chunks, db.courses], async () => {
     const session = await db.sessions.get(sessionId);
     if (!session) throw new Error("Session not found");
     if (session.status === "done" && session.result) return session.result;
@@ -181,15 +192,32 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
       xp = XP.placement + r.score * 5;
       skillsetPatch.placement = r;
     } else if (session.lesson) {
-      const t = tallyLesson(session.lesson, session.progress, session.minutes, streakState.current);
+      const lesson = session.lesson;
+      const t = tallyLesson(lesson, session.progress, session.minutes, streakState.current);
       xp = t.xp;
       correct = t.correct;
       total = t.total;
-      openScore = session.progress.grade?.score;
+      // badges like "Deep Thinker" need an AI grade; self-checks still earn XP
+      openScore = session.progress.grade && !session.progress.grade.self ? session.progress.grade.score : undefined;
       const chunks = (await db.chunks.bulkGet(session.chunkIds)).filter((c): c is Chunk => !!c);
       const at = nowIso();
-      await db.chunks.bulkPut(chunks.map((c) => ({ ...c, coveredAt: c.coveredAt ?? at })));
-      skillsetPatch.cursor = advanceCursor(skillset.cursor, chunks);
+      if (lesson.mode === "course") {
+        // progress lives in the done sessions (by lesson id); the cursor just mirrors the count
+        skillsetPatch.cursor = (await doneCourseLessonIds(skillset.id)).add(lesson.courseLessonId ?? "").size;
+      } else if (lesson.mode === "offline" && lesson.readTo) {
+        const read = chunks.filter((c) => c.order < lesson.readTo!.cursor);
+        await db.chunks.bulkPut(read.map((c) => ({ ...c, coveredAt: c.coveredAt ?? at })));
+        // never move backwards (e.g. an older offline session finished late)
+        const ahead = lesson.readTo.cursor > skillset.cursor || (lesson.readTo.cursor === skillset.cursor && lesson.readTo.word > (skillset.cursorWord ?? 0));
+        if (ahead) {
+          skillsetPatch.cursor = lesson.readTo.cursor;
+          skillsetPatch.cursorWord = lesson.readTo.word;
+        }
+      } else {
+        await db.chunks.bulkPut(chunks.map((c) => ({ ...c, coveredAt: c.coveredAt ?? at })));
+        skillsetPatch.cursor = advanceCursor(skillset.cursor, chunks);
+        if (skillsetPatch.cursor !== skillset.cursor) skillsetPatch.cursorWord = 0;
+      }
       skillsetPatch.lessonsDone = skillset.lessonsDone + 1;
     }
 
@@ -197,7 +225,8 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
     const levelBefore = levelFromXp(profile.xp);
     const levelAfter = levelFromXp(newXp);
 
-    const totalChunks = await db.chunks.where("skillsetId").equals(skillset.id).count();
+    const course = skillset.courseId ? await db.courses.get(skillset.courseId) : undefined;
+    const totalChunks = course ? course.lessons.length : await db.chunks.where("skillsetId").equals(skillset.id).count();
     const allDone = await db.sessions.where("status").equals("done").toArray();
     const sessionsDone = allDone.filter((s) => s.kind === "lesson").length + (session.kind === "lesson" ? 1 : 0);
     const placementsDone = allDone.filter((s) => s.kind === "placement").length + (session.kind === "placement" ? 1 : 0);
@@ -257,20 +286,33 @@ export interface Backup {
   data: Record<string, unknown[]>;
 }
 
+/** Backup file format version (v1 = app 0.1, v2 adds `courses`). Older files still restore. */
+export const BACKUP_VERSION = 2;
+
+export class BackupError extends Error {}
+
 export async function exportBackup(): Promise<Backup> {
   const data: Record<string, unknown[]> = {};
-  for (const t of db.tables) data[t.name] = await t.toArray();
-  return { app: "pes", version: 1, exportedAt: nowIso(), data };
+  await db.transaction("r", db.tables, async () => {
+    for (const t of db.tables) data[t.name] = await t.toArray();
+  });
+  return { app: "pes", version: BACKUP_VERSION, exportedAt: nowIso(), data };
 }
 
-export async function importBackup(b: Backup): Promise<void> {
-  if (b?.app !== "pes" || !b.data) throw new Error("This file is not a PES backup.");
+export function isBackup(b: unknown): b is Backup {
+  const o = b as Backup | null;
+  return !!o && o.app === "pes" && typeof o.data === "object" && o.data !== null && typeof o.version === "number";
+}
+
+/** Replaces everything in the app with the backup. Tables missing from older backups end up empty. */
+export async function importBackup(b: unknown): Promise<void> {
+  if (!isBackup(b)) throw new BackupError("not-backup");
+  if (b.version > BACKUP_VERSION) throw new BackupError("newer-backup");
   await db.transaction("rw", db.tables, async () => {
     for (const t of db.tables) {
-      const rows = b.data[t.name];
-      if (!Array.isArray(rows)) continue;
       await t.clear();
-      await t.bulkPut(rows as never[]);
+      const rows = b.data[t.name];
+      if (Array.isArray(rows) && rows.length) await t.bulkPut(rows as never[]);
     }
   });
 }

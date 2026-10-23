@@ -1,49 +1,49 @@
 /** App navigation: four tabs plus a stack of pushed screens. */
 import { create } from "zustand";
 
-export type Tab = "home" | "skillsets" | "stats" | "rewards";
+export type Tab = "home" | "skillsets" | "progress" | "settings";
 
 export type Route =
   | { name: "skillset"; id: string }
   | { name: "skillsetEdit"; id?: string }
   | { name: "sources"; id: string }
-  | { name: "session"; skillsetId: string; minutes: number }
+  | { name: "session"; skillsetId: string; minutes: number; offline?: boolean }
   | { name: "history"; id: string }
-  | { name: "lesson"; sessionId: string }
-  | { name: "settings" };
+  | { name: "lesson"; sessionId: string };
 
 interface NavState {
   tab: Tab;
   stack: Route[];
-  sheet: null | "quickstart";
   setTab: (t: Tab) => void;
   push: (r: Route) => void;
   replace: (r: Route) => void;
   pop: () => void;
   reset: () => void;
-  openSheet: (s: "quickstart") => void;
-  closeSheet: () => void;
   /** Handles the Android back button. Returns false when the app should exit. */
   back: () => boolean;
+}
+
+/** Sheets and dialogs register here so the hardware back button closes them first. */
+const backHandlers: (() => boolean)[] = [];
+export function onBack(handler: () => boolean): () => void {
+  backHandlers.push(handler);
+  return () => {
+    const i = backHandlers.lastIndexOf(handler);
+    if (i >= 0) backHandlers.splice(i, 1);
+  };
 }
 
 export const useNav = create<NavState>((set, get) => ({
   tab: "home",
   stack: [],
-  sheet: null,
   setTab: (tab) => set({ tab, stack: [] }),
-  push: (r) => set((s) => ({ stack: [...s.stack, r], sheet: null })),
+  push: (r) => set((s) => ({ stack: [...s.stack, r] })),
   replace: (r) => set((s) => ({ stack: [...s.stack.slice(0, -1), r] })),
   pop: () => set((s) => ({ stack: s.stack.slice(0, -1) })),
-  reset: () => set({ stack: [], tab: "home", sheet: null }),
-  openSheet: (sheet) => set({ sheet }),
-  closeSheet: () => set({ sheet: null }),
+  reset: () => set({ stack: [], tab: "home" }),
   back: () => {
+    for (let i = backHandlers.length - 1; i >= 0; i--) if (backHandlers[i]()) return true;
     const s = get();
-    if (s.sheet) {
-      set({ sheet: null });
-      return true;
-    }
     if (s.stack.length) {
       // the session screen handles its own back (asks before leaving)
       const top = s.stack[s.stack.length - 1];

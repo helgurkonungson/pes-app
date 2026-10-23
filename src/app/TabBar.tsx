@@ -1,30 +1,28 @@
-import { ChartColumn, House, LayoutGrid, Plus, Trophy } from "lucide-react";
+import { ChartColumn, House, LayoutGrid, Settings } from "lucide-react";
+import type { Key } from "../i18n";
+import { useT } from "../i18n";
 import { type Tab, useNav } from "../nav/store";
 
-const TABS: { id: Tab; label: string; Icon: typeof House }[] = [
-  { id: "home", label: "Home", Icon: House },
-  { id: "skillsets", label: "Skillsets", Icon: LayoutGrid },
-  { id: "stats", label: "Statistics", Icon: ChartColumn },
-  { id: "rewards", label: "Rewards", Icon: Trophy },
+const TABS: { id: Tab; label: Key; Icon: typeof House }[] = [
+  { id: "home", label: "tab.home", Icon: House },
+  { id: "skillsets", label: "tab.skillsets", Icon: LayoutGrid },
+  { id: "progress", label: "tab.progress", Icon: ChartColumn },
+  { id: "settings", label: "tab.settings", Icon: Settings },
 ];
 
 export function TabBar() {
-  const { tab, setTab, openSheet } = useNav();
-  const btn = (t: (typeof TABS)[number]) => (
-    <button key={t.id} className={`tab${tab === t.id ? " on" : ""}`} onClick={() => setTab(t.id)} aria-current={tab === t.id ? "page" : undefined}>
-      <t.Icon size={22} strokeWidth={2.2} />
-      {t.label}
-    </button>
-  );
+  const { tab, setTab } = useNav();
+  const t = useT();
   return (
-    <nav className="tabbar" aria-label="Main">
-      {btn(TABS[0])}
-      {btn(TABS[1])}
-      <button className="fab" aria-label="Start a session" onClick={() => openSheet("quickstart")}>
-        <Plus size={30} strokeWidth={2.6} />
-      </button>
-      {btn(TABS[2])}
-      {btn(TABS[3])}
+    <nav className="tabbar" aria-label={t("tab.nav")}>
+      {TABS.map((x) => (
+        <button key={x.id} className={`tab${tab === x.id ? " on" : ""}`} onClick={() => setTab(x.id)} aria-current={tab === x.id ? "page" : undefined}>
+          <span className="tab-icon">
+            <x.Icon size={22} strokeWidth={2.1} />
+          </span>
+          {t(x.label)}
+        </button>
+      ))}
     </nav>
   );
 }

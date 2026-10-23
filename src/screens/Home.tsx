@@ -1,167 +1,232 @@
-import { Download, Flame, Plus, Settings as Gear, Sparkles, Trophy } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, Sparkles } from "lucide-react";
 import { useUpdate } from "../app/App";
-import { Bar, Chevron, Empty } from "../components/ui";
-import { Rings } from "../components/visuals";
+import { useAiState } from "../ai/status";
+import { useCourseImport } from "../components/FilePickers";
+import { Bar, Chevron, SectionLabel } from "../components/ui";
+import { HeroBg } from "../components/visuals";
+import type { AiState } from "../core/aiStatus";
+import { lastNDays, localDay, longDate, parseDay, weekdayLetter } from "../core/dates";
 import { pct } from "../core/scoring";
 import { liveStreak } from "../core/streak";
-import { localDay } from "../core/dates";
-import { useProfile, useSkillsetSummaries, useToday } from "../data/hooks";
+import { db } from "../data/db";
+import { pickCurrent, type SkillsetSummary, useProfile, useSkillsetSummaries, useToday } from "../data/hooks";
+import { locale, type T, useT } from "../i18n";
 import { useNav } from "../nav/store";
-import { installUpdate } from "../update/updater";
-import { HeroBg } from "../components/visuals";
+import { installUpdateSafely } from "../update/updater";
 
-export function Home() {
+export function modeOf(x: SkillsetSummary, ai: AiState | undefined): "course" | "ai" | "offline" {
+  if (x.s.courseId) return "course";
+  if (x.open?.lesson?.mode === "offline") return "offline";
+  if (x.open?.lesson?.mode === "ai" || x.open?.placement) return "ai";
+  return ai === "ok" ? "ai" : "offline";
+}
+
+export function nextTitle(x: SkillsetSummary, ai: AiState | undefined, t: T): string {
+  if (x.course) return x.course.finished ? t("next.courseDone") : (x.course.nextTitle ?? "");
+  if (x.open?.placement) return t("next.placement");
+  if (x.open?.lesson) return x.open.lesson.title;
+  if (!x.s.placement && !x.s.placementSkipped && ai === "ok") return t("next.placement");
+  return t("next.lessonN", { n: x.s.lessonsDone + 1 });
+}
+
+export function progressLabel(x: SkillsetSummary, t: T): string {
+  if (x.course) return t("progress.lessonsOf", { done: x.course.done, total: x.course.total });
+  if (!x.chunks) return t("progress.noSources");
+  return t("progress.read", { p: Math.round(x.coverage * 100) });
+}
+
+function AiBanner({ state }: { state: AiState }) {
+  const t = useT();
+  const setTab = useNav((s) => s.setTab);
+  if (state === "ok" || state === "off") return null;
+  const text = state === "credits" ? t("home.ai.credits") : state === "auth" ? t("home.ai.auth") : t("home.ai.noKey");
+  return (
+    <button className={`banner${state === "no-key" ? "" : " warn"}`} onClick={() => setTab("settings")}>
+      <span className="icon-dot">{state === "no-key" ? <KeyRound size={20} /> : <CloudOff size={20} />}</span>
+      <span className="grow small">{text}</span>
+      <Chevron />
+    </button>
+  );
+}
+
+function NextUp({ x, ai }: { x: SkillsetSummary; ai: AiState | undefined }) {
+  const t = useT();
+  const push = useNav((s) => s.push);
+  const mode = modeOf(x, ai);
+  const finished = !!x.course?.finished;
+  const minutes = x.open?.minutes ?? x.s.minutes;
+  const resume = x.open?.status === "active";
+  return (
+    <section className="next-card" aria-label={t("home.nextUp")}>
+      <HeroBg hue={x.s.hue} name={x.s.name} big />
+      <div className="next-inner">
+        <div className="row" style={{ gap: 6, flexWrap: "wrap" }}>
+          <span className="pill">{t(`mode.${mode}`)}</span>
+          {!finished && <span className="pill">{t("portion.min", { n: minutes })}</span>}
+        </div>
+        <button className="next-skill" onClick={() => push({ name: "skillset", id: x.s.id })}>
+          {x.s.name} <Chevron />
+        </button>
+        <h2 className="next-title">{nextTitle(x, ai, t)}</h2>
+        <div className="next-progress">
+          <Bar value={x.coverage} thin label={progressLabel(x, t)} />
+          <span>{progressLabel(x, t)}</span>
+        </div>
+        {!finished && (
+          <button className="btn primary block" onClick={() => push({ name: "session", skillsetId: x.s.id, minutes })}>
+            <Play size={20} fill="currentColor" /> {resume ? t("home.resume") : t("home.start")}
+          </button>
+        )}
+        {finished && (
+          <button className="btn dark block" onClick={() => push({ name: "skillset", id: x.s.id })}>
+            {t("home.openSkillset")}
+          </button>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function Today() {
+  const t = useT();
   const profile = useProfile();
   const today = useToday();
-  const list = useSkillsetSummaries();
-  const { push, setTab } = useNav();
-  const update = useUpdate((s) => s.info);
-  if (!profile) return <div className="screen" />;
-
+  const days = lastNDays(7);
+  const activity = useLiveQuery(() => db.activity.where("day").between(days[0], days[6], true, true).toArray(), [days[0]]) ?? [];
+  const active = new Set(activity.filter((a) => a.sessions > 0).map((a) => a.day));
+  if (!profile) return null;
   const goal = profile.dailyGoal || 15;
   const ratio = today.minutes / goal;
-  const streak = liveStreak(profile.streak, localDay());
+  const left = Math.max(0, goal - today.minutes);
   const acc = today.total ? today.correct / today.total : null;
-  const firstName = profile.name.split(" ")[0] || "there";
+  return (
+    <section className="card" aria-label={t("home.today")}>
+      <div className="row-between" style={{ marginBottom: 10 }}>
+        <h2 className="card-h">{t("home.today")}</h2>
+        <span className={`small ${left === 0 ? "accent bold" : "muted"}`}>{left === 0 ? t("home.goalDone") : t("home.minLeft", { n: left })}</span>
+      </div>
+      <div className="today-grid">
+        <div>
+          <div className="big-number">
+            {today.minutes}
+            <small>/ {t("portion.min", { n: goal })}</small>
+          </div>
+        </div>
+        <div>
+          <div className="k">{t("stat.xp")}</div>
+          <div className="v">{today.xp}</div>
+        </div>
+        <div>
+          <div className="k">{t("stat.accuracy")}</div>
+          <div className="v">{pct(acc)}</div>
+        </div>
+      </div>
+      <Bar value={ratio} label={t("home.today")} />
+      <div className="mini-week" aria-label={t("home.last7")}>
+        {days.map((d) => (
+          <div key={d} className={`${active.has(d) ? "on" : ""}${d === localDay() ? " today" : ""}`}>
+            <i />
+            <span>{weekdayLetter((parseDay(d).getDay() + 6) % 7, locale())}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function Home() {
+  const t = useT();
+  const profile = useProfile();
+  const list = useSkillsetSummaries();
+  const ai = useAiState();
+  const { push } = useNav();
+  const setTab = useNav((s) => s.setTab);
+  const update = useUpdate((s) => s.info);
+  const course = useCourseImport();
+  if (!profile || !list) return <div className="screen with-tabbar" />;
+
+  const streak = liveStreak(profile.streak, localDay());
+  const firstName = profile.name.split(" ")[0] || "";
+  const current = pickCurrent(list);
+  const others = list.filter((x) => x !== current);
+  const needsAiNote = list.some((x) => !x.s.courseId);
 
   return (
     <div className="screen with-tabbar">
-      <div className="stack">
-        <div className="greet">
-          <button className="avatar" aria-label="Settings" onClick={() => push({ name: "settings" })}>
-            {firstName[0]?.toUpperCase()}
-          </button>
+      <div className="stack-lg">
+        <header className="home-head">
           <div className="grow">
-            <h1>Hello {firstName}!</h1>
-            <p className="muted small">{today.sessions ? "Nice work today" : "Let's start your day"}</p>
+            <p className="muted small">{longDate(localDay(), locale())}</p>
+            <h1>{firstName ? t("home.hello", { name: firstName }) : t("home.helloAnon")}</h1>
           </div>
-          <button className="round-btn" aria-label="Rewards" onClick={() => setTab("rewards")} style={{ borderRadius: "50%", background: "var(--surface-2)" }}>
-            <Trophy size={20} />
+          <button className={`streak-chip${streak ? " on" : ""}`} onClick={() => setTab("progress")} aria-label={t("home.streakAria", { n: streak })}>
+            <Flame size={18} /> {streak}
           </button>
-        </div>
+        </header>
 
         {update && (
-          <button className="banner" onClick={() => installUpdate(update)}>
-            <div className="icon-dot accent">
+          <button className="banner" onClick={() => installUpdateSafely(update)}>
+            <span className="icon-dot accent">
               <Download size={20} />
-            </div>
-            <div className="grow">
-              <b>Update {update.version} is ready</b>
-              <p className="muted small">Tap to download and install</p>
-            </div>
+            </span>
+            <span className="grow">
+              <b>{t("update.ready", { v: update.version })}</b>
+              <span className="muted small block">{t("update.tap")}</span>
+            </span>
           </button>
         )}
 
-        <div className="card">
-          <div className="row-between" style={{ marginBottom: 6 }}>
-            <h2 className="section-title">Today</h2>
-            <span className="row small muted" style={{ gap: 4 }}>
-              <Flame size={16} color={streak ? "var(--accent)" : "currentColor"} /> {streak} day streak
-            </span>
-          </div>
-          <div className="row">
-            <div className="big-number grow">
-              {today.minutes}
-              <small>/ {goal} min</small>
-            </div>
-            <div style={{ width: "46%" }}>
-              <p className="tiny muted" style={{ textAlign: "right", marginBottom: 4 }}>
-                {Math.min(100, Math.round(ratio * 100))}%
-              </p>
-              <Bar value={ratio} knob />
-            </div>
-          </div>
-        </div>
+        {ai && needsAiNote && <AiBanner state={ai} />}
 
-        <div className="card">
-          <div className="card-head">
-            <h2>Daily activity</h2>
-            <button className="see-all" onClick={() => setTab("stats")}>
-              See all
+        {current ? (
+          <NextUp x={current} ai={ai} />
+        ) : (
+          <section className="card stack-lg center-col">
+            <div className="empty-art">
+              <Sparkles size={34} />
+            </div>
+            <h2 className="section-title">{t("home.empty.title")}</h2>
+            <p className="muted small">{t("home.empty.text")}</p>
+            <button className="btn primary block" onClick={() => push({ name: "skillsetEdit" })}>
+              <Plus size={20} /> {t("skillsets.new")}
             </button>
-          </div>
-          <div className="row">
-            <div className="ring-legend grow">
-              <div>
-                <div className="k">Minutes</div>
-                <div className="v">
-                  {today.minutes}
-                  <small> / {goal}</small>
-                </div>
-              </div>
-              <div>
-                <div className="k">XP earned</div>
-                <div className="v">
-                  {today.xp}
-                  <small> / 100</small>
-                </div>
-              </div>
-              <div>
-                <div className="k">Accuracy</div>
-                <div className="v">{pct(acc)}</div>
-              </div>
-            </div>
-            <Rings values={[ratio, today.xp / 100, acc ?? 0]} size={136} stroke={14} />
-          </div>
-        </div>
+            <button className="btn dark block" onClick={course.open}>
+              <FileUp size={20} /> {t("skillsets.importCourse")}
+            </button>
+            {course.input}
+          </section>
+        )}
 
-        <div className="card">
-          <div className="card-head">
-            <h2>Skillsets</h2>
-            {list && list.length > 0 && (
-              <button className="see-all" onClick={() => setTab("skillsets")}>
-                See all
-              </button>
-            )}
-          </div>
-          {list === undefined ? null : list.length === 0 ? (
-            <Empty
-              icon={<Sparkles size={34} />}
-              title="Create your first skillset"
-              text="A skillset is a profession or skill you want to learn, with its own sources."
-              action={
-                <button className="btn primary" onClick={() => push({ name: "skillsetEdit" })}>
-                  <Plus size={20} /> New skillset
-                </button>
-              }
-            />
-          ) : (
-            <div className="stack">
-              {list.map((x) => (
-                <button key={x.s.id} className="list-card inner" onClick={() => push({ name: "skillset", id: x.s.id })}>
-                  <div className="icon-dot" style={{ position: "relative", overflow: "hidden", color: "#fff", fontWeight: 700 }}>
+        <Today />
+
+        {others.length > 0 && (
+          <section className="stack">
+            <SectionLabel>{t("home.others")}</SectionLabel>
+            {others.map((x) => (
+              <div key={x.s.id} className="list-card">
+                <button className="row grow" style={{ gap: 14, textAlign: "left" }} onClick={() => push({ name: "skillset", id: x.s.id })}>
+                  <span className="mono" aria-hidden>
                     <HeroBg hue={x.s.hue} name={x.s.name} />
-                    <span style={{ position: "relative" }}>{x.s.name[0]?.toUpperCase()}</span>
-                  </div>
-                  <div className="grow">
-                    <div className="bold ellipsis">{x.s.name}</div>
-                    <div className="small muted ellipsis">
-                      {x.nextLabel}
-                      {x.hasReady ? " · ready" : ""}
-                    </div>
-                    {x.chunks > 0 && (
-                      <div style={{ marginTop: 6 }}>
-                        <Bar value={x.coverage} thin />
-                      </div>
-                    )}
-                  </div>
-                  <Chevron />
+                    {x.s.courseId ? <BookOpen size={18} /> : <b>{x.s.name[0]?.toUpperCase()}</b>}
+                  </span>
+                  <span className="grow">
+                    <span className="bold ellipsis block">{x.s.name}</span>
+                    <span className="small muted ellipsis block">{nextTitle(x, ai, t)}</span>
+                    <span className="block" style={{ marginTop: 6 }}>
+                      <Bar value={x.coverage} thin label={progressLabel(x, t)} />
+                    </span>
+                  </span>
                 </button>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <button className="list-card" onClick={() => push({ name: "settings" })}>
-          <div className="icon-dot">
-            <Gear size={20} />
-          </div>
-          <div className="grow">
-            <div className="bold">Settings</div>
-            <div className="small muted">Key, daily goal, backup, updates</div>
-          </div>
-          <Chevron />
-        </button>
+                {!x.course?.finished && (
+                  <button className="round-btn accent" aria-label={t("home.startIn", { name: x.s.name })} onClick={() => push({ name: "session", skillsetId: x.s.id, minutes: x.open?.minutes ?? x.s.minutes })}>
+                    <Play size={18} fill="currentColor" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
       </div>
     </div>
   );

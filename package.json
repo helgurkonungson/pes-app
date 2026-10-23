@@ -1,16 +1,19 @@
 {
   "name": "pes-app",
   "private": true,
-  "version": "0.1.0",
-  "description": "PES — learn any skillset in daily portions, from your own sources.",
+  "version": "0.2.0",
+  "description": "PES \u2014 learn any skillset in daily portions, from your own sources.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "sync": "npm run build && cap sync android"
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json --noEmit",
+    "sync": "npm run build && cap sync android",
+    "e2e": "playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome",
+    "e2e:all": "playwright test",
+    "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@aparajita/capacitor-secure-storage": "^8.0.1",
@@ -33,7 +36,9 @@
     "zustand": "^5.0.16"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@capacitor/cli": "^8.5.3",
+    "@playwright/test": "1.63.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",

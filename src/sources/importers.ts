@@ -5,6 +5,7 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { buildChunks, type ChunkDraft, sectionsFromPlainText, type TextSection } from "../core/chunker";
 import type { SourceKind } from "../core/types";
+import { t } from "../i18n";
 
 export interface Imported {
   kind: SourceKind;
@@ -40,15 +41,15 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
   } else {
     sections = sectionsFromPlainText(await file.text());
   }
-  onProgress?.("Splitting into lessons…", 1);
+  onProgress?.(t("import.splitting"), 1);
   const drafts = buildChunks(sections, title);
-  if (!drafts.length) throw new Error(kind === "pdf" ? "No text found in this PDF (it may be scanned images)." : "No readable text found in this file.");
+  if (!drafts.length) throw new Error(kind === "pdf" ? t("import.err.pdfEmpty") : t("import.err.empty"));
   return { kind, title, origin: name, drafts };
 }
 
 export function importText(title: string, text: string): Imported {
   const drafts = buildChunks(sectionsFromPlainText(text), title || "Notes");
-  if (!drafts.length) throw new Error("The text is empty.");
+  if (!drafts.length) throw new Error(t("import.err.textEmpty"));
   return { kind: "text", title: title || "Notes", origin: "pasted", drafts };
 }
 
@@ -57,12 +58,12 @@ export async function importUrl(url: string): Promise<Imported> {
   try {
     u = new URL(url.trim().match(/^https?:\/\//i) ? url.trim() : `https://${url.trim()}`);
   } catch {
-    throw new Error("That doesn't look like a web address.");
+    throw new Error(t("import.err.badUrl"));
   }
   let html: string;
   if (Capacitor.isNativePlatform()) {
     const res = await CapacitorHttp.get({ url: u.toString(), headers: { Accept: "text/html,application/xhtml+xml" }, responseType: "text" });
-    if (res.status >= 400) throw new Error(`The page answered with error ${res.status}.`);
+    if (res.status >= 400) throw new Error(t("import.err.http", { status: res.status }));
     html = typeof res.data === "string" ? res.data : String(res.data ?? "");
   } else {
     try {
@@ -70,13 +71,13 @@ export async function importUrl(url: string): Promise<Imported> {
       if (!res.ok) throw new Error(String(res.status));
       html = await res.text();
     } catch {
-      throw new Error("Browsers block reading other sites. Web links work in the phone app; here, paste the article text instead.");
+      throw new Error(t("import.err.cors"));
     }
   }
   const doc = new DOMParser().parseFromString(html, "text/html");
   const title = doc.querySelector("meta[property='og:title']")?.getAttribute("content") || doc.title || u.hostname;
   const drafts = buildChunks(htmlSections(html), title);
-  if (!drafts.length) throw new Error("Couldn't find article text on that page.");
+  if (!drafts.length) throw new Error(t("import.err.noArticle"));
   return { kind: "url", title: title.trim(), origin: u.toString(), drafts };
 }
 
@@ -121,7 +122,7 @@ async function pdfSections(file: File, onProgress?: ImportProgress): Promise<Tex
   const doc = await task.promise;
   const sections: TextSection[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
-    if (i === 1 || i % 10 === 0) onProgress?.(`Reading page ${i} of ${doc.numPages}…`, i / doc.numPages);
+    if (i === 1 || i % 10 === 0) onProgress?.(t("import.page", { i, n: doc.numPages }), i / doc.numPages);
     const page = await doc.getPage(i);
     const content = await page.getTextContent();
     let text = "";
@@ -160,7 +161,7 @@ async function epubSections(file: File, onProgress?: ImportProgress): Promise<Te
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const container = await zip.file("META-INF/container.xml")?.async("string");
   const opfPath = container?.match(/full-path="([^"]+)"/)?.[1];
-  if (!opfPath) throw new Error("This EPUB looks damaged.");
+  if (!opfPath) throw new Error(t("import.err.epub"));
   const opf = new DOMParser().parseFromString((await zip.file(opfPath)?.async("string")) ?? "", "application/xml");
   const base = opfPath.includes("/") ? opfPath.slice(0, opfPath.lastIndexOf("/") + 1) : "";
   const manifest = new Map<string, string>();
@@ -168,7 +169,7 @@ async function epubSections(file: File, onProgress?: ImportProgress): Promise<Te
   const spine = [...opf.querySelectorAll("spine > itemref")].map((r) => manifest.get(r.getAttribute("idref") ?? "")).filter((h): h is string => !!h);
   const sections: TextSection[] = [];
   for (let i = 0; i < spine.length; i++) {
-    onProgress?.(`Reading chapter ${i + 1} of ${spine.length}…`, (i + 1) / spine.length);
+    onProgress?.(t("import.chapter", { i: i + 1, n: spine.length }), (i + 1) / spine.length);
     const path = decodeURIComponent(base + spine[i]).replace(/\/\.\//g, "/");
     const html = await zip.file(path)?.async("string");
     if (html) sections.push(...htmlSections(html));
@@ -180,7 +181,7 @@ async function docxSections(file: File): Promise<TextSection[]> {
   const { default: JSZip } = await import("jszip");
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const xml = await zip.file("word/document.xml")?.async("string");
-  if (!xml) throw new Error("This Word file looks damaged.");
+  if (!xml) throw new Error(t("import.err.docx"));
   const doc = new DOMParser().parseFromString(xml, "application/xml");
   const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
   const sections: TextSection[] = [];

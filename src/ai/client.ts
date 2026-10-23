@@ -2,15 +2,17 @@
  * Minimal Claude Messages API client that runs on the device with the user's key.
  * Docs: https://platform.claude.com/docs — Messages API, tool use, web search tool.
  */
+import { type AiErrorKind, classifyApiError } from "../core/aiStatus";
 import { getApiKey } from "./key";
 
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
 
+/** AI failure. `message` is for logs (English); the UI shows a localized text by `kind`. */
 export class AiError extends Error {
   constructor(
     message: string,
-    public kind: "no-key" | "auth" | "rate" | "overloaded" | "network" | "bad-response" | "api" | "aborted",
+    public kind: AiErrorKind,
     public status?: number,
   ) {
     super(message);
@@ -73,10 +75,7 @@ async function request<T>(path: string, init: RequestInit & { key?: string; time
     } catch {
       /* ignore */
     }
-    if (res.status === 401 || res.status === 403) throw new AiError("Your API key was rejected. Check it in Settings.", "auth", res.status);
-    if (res.status === 429) throw new AiError("Rate limit reached on your key. Wait a minute and retry.", "rate", res.status);
-    if (res.status === 529 || res.status >= 500) throw new AiError("The AI service is busy right now. Retry in a moment.", "overloaded", res.status);
-    throw new AiError(`AI request failed: ${msg}`, "api", res.status);
+    throw new AiError(`AI request failed (${res.status}): ${msg}`, classifyApiError(res.status, msg), res.status);
   }
   return (await res.json()) as T;
 }

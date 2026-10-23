@@ -14,14 +14,6 @@ export type Page =
   | { kind: "open"; step: "open"; q: string; rubric: string[] }
   | { kind: "intro"; step: "placement"; text: string; count: number };
 
-export const STEP_LABEL: Record<StepKey, string> = {
-  review: "Review",
-  theory: "New theory",
-  quiz: "Quiz",
-  open: "Open question",
-  placement: "Placement test",
-};
-
 export function lessonPages(l: LessonContent): Page[] {
   const pages: Page[] = [];
   if (l.review.recap.length) pages.push({ kind: "recap", step: "review", recap: l.review.recap });
@@ -88,7 +80,7 @@ export function tallyLesson(l: LessonContent, progress: SessionProgress, minutes
       xp += quizXp(q);
     }
   }
-  if (progress.grade) xp += Math.round(progress.grade.score) * XP.openPerPoint;
+  if (progress.grade) xp += Math.round(progress.grade.score) * (progress.grade.self ? XP.openSelfPerPoint : XP.openPerPoint);
   xp += XP.completionBase + Math.round(minutes * XP.perMinute) + streakBonus(streak);
   return {
     correct: reviewCorrect + quizCorrect,

@@ -18,3 +18,6 @@ android/app/release/
 # iOS
 ios/App/Pods/
 ios/App/build/
+playwright-report/
+test-results/
+blob-report/

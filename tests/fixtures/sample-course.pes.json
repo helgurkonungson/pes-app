@@ -1,0 +1,323 @@
+{
+ "format": "pes-course",
+ "formatVersion": 1,
+ "id": "demo-course",
+ "version": 1,
+ "title": "Demo course",
+ "description": "A tiny course used by automated tests.",
+ "goal": "Check that courses work without AI.",
+ "language": "English",
+ "minutes": 10,
+ "hue": 200,
+ "lessons": [
+  {
+   "id": "demo-01",
+   "module": "Module one",
+   "title": "Basics",
+   "sources": [
+    "Demo source"
+   ],
+   "theory": {
+    "sections": [
+     {
+      "heading": "Basics: part 1",
+      "body": "Paragraph 1 of section 1 in **Basics** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 1 in **Basics** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 1 in **Basics** explains one idea with a concrete example and a number such as 17 percent."
+     },
+     {
+      "heading": "Basics: part 2",
+      "body": "Paragraph 1 of section 2 in **Basics** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 2 in **Basics** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 2 in **Basics** explains one idea with a concrete example and a number such as 17 percent."
+     }
+    ],
+    "keyPoints": [
+     "Basics key point 1",
+     "Basics key point 2",
+     "Basics key point 3"
+    ]
+   },
+   "quiz": [
+    {
+     "q": "Basics \u2014 quiz question 1?",
+     "options": [
+      "Option A1",
+      "Option B1",
+      "Option C1",
+      "Option D1"
+     ],
+     "answer": 1,
+     "explanation": "Because option b1 is right here.",
+     "difficulty": "m",
+     "topic": "Basics"
+    },
+    {
+     "q": "Basics \u2014 quiz question 2?",
+     "options": [
+      "Option A2",
+      "Option B2",
+      "Option C2",
+      "Option D2"
+     ],
+     "answer": 2,
+     "explanation": "Because option c2 is right here.",
+     "difficulty": "h",
+     "topic": "Basics"
+    },
+    {
+     "q": "Basics \u2014 quiz question 3?",
+     "options": [
+      "Option A3",
+      "Option B3",
+      "Option C3",
+      "Option D3"
+     ],
+     "answer": 3,
+     "explanation": "Because option d3 is right here.",
+     "difficulty": "e",
+     "topic": "Basics"
+    }
+   ],
+   "recall": [
+    {
+     "q": "Recall Basics 1?",
+     "options": [
+      "R1 one",
+      "R1 two",
+      "R1 three",
+      "R1 four"
+     ],
+     "answer": 2,
+     "explanation": "Because r1 three is right here.",
+     "difficulty": "m",
+     "topic": "Basics"
+    },
+    {
+     "q": "Recall Basics 2?",
+     "options": [
+      "R2 one",
+      "R2 two",
+      "R2 three",
+      "R2 four"
+     ],
+     "answer": 3,
+     "explanation": "Because r2 four is right here.",
+     "difficulty": "m",
+     "topic": "Basics"
+    }
+   ],
+   "open": {
+    "q": "How would you apply Basics at work?",
+    "rubric": [
+     "Names the goal",
+     "Gives an example",
+     "Says how to measure it"
+    ],
+    "modelAnswer": "I would apply Basics by naming the goal, giving an example and measuring the result."
+   }
+  },
+  {
+   "id": "demo-02",
+   "module": "Module one",
+   "title": "Practice",
+   "sources": [
+    "Demo source"
+   ],
+   "theory": {
+    "sections": [
+     {
+      "heading": "Practice: part 1",
+      "body": "Paragraph 1 of section 1 in **Practice** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 1 in **Practice** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 1 in **Practice** explains one idea with a concrete example and a number such as 17 percent."
+     },
+     {
+      "heading": "Practice: part 2",
+      "body": "Paragraph 1 of section 2 in **Practice** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 2 in **Practice** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 2 in **Practice** explains one idea with a concrete example and a number such as 17 percent."
+     }
+    ],
+    "keyPoints": [
+     "Practice key point 1",
+     "Practice key point 2",
+     "Practice key point 3"
+    ]
+   },
+   "quiz": [
+    {
+     "q": "Practice \u2014 quiz question 1?",
+     "options": [
+      "Option A1",
+      "Option B1",
+      "Option C1",
+      "Option D1"
+     ],
+     "answer": 1,
+     "explanation": "Because option b1 is right here.",
+     "difficulty": "m",
+     "topic": "Practice"
+    },
+    {
+     "q": "Practice \u2014 quiz question 2?",
+     "options": [
+      "Option A2",
+      "Option B2",
+      "Option C2",
+      "Option D2"
+     ],
+     "answer": 2,
+     "explanation": "Because option c2 is right here.",
+     "difficulty": "h",
+     "topic": "Practice"
+    },
+    {
+     "q": "Practice \u2014 quiz question 3?",
+     "options": [
+      "Option A3",
+      "Option B3",
+      "Option C3",
+      "Option D3"
+     ],
+     "answer": 3,
+     "explanation": "Because option d3 is right here.",
+     "difficulty": "e",
+     "topic": "Practice"
+    }
+   ],
+   "recall": [
+    {
+     "q": "Recall Practice 1?",
+     "options": [
+      "R1 one",
+      "R1 two",
+      "R1 three",
+      "R1 four"
+     ],
+     "answer": 2,
+     "explanation": "Because r1 three is right here.",
+     "difficulty": "m",
+     "topic": "Practice"
+    },
+    {
+     "q": "Recall Practice 2?",
+     "options": [
+      "R2 one",
+      "R2 two",
+      "R2 three",
+      "R2 four"
+     ],
+     "answer": 3,
+     "explanation": "Because r2 four is right here.",
+     "difficulty": "m",
+     "topic": "Practice"
+    }
+   ],
+   "open": {
+    "q": "How would you apply Practice at work?",
+    "rubric": [
+     "Names the goal",
+     "Gives an example",
+     "Says how to measure it"
+    ],
+    "modelAnswer": "I would apply Practice by naming the goal, giving an example and measuring the result."
+   }
+  },
+  {
+   "id": "demo-03",
+   "module": "Module two",
+   "title": "Mastery",
+   "sources": [
+    "Demo source"
+   ],
+   "theory": {
+    "sections": [
+     {
+      "heading": "Mastery: part 1",
+      "body": "Paragraph 1 of section 1 in **Mastery** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 1 in **Mastery** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 1 in **Mastery** explains one idea with a concrete example and a number such as 17 percent."
+     },
+     {
+      "heading": "Mastery: part 2",
+      "body": "Paragraph 1 of section 2 in **Mastery** explains one idea with a concrete example and a number such as 3 percent.\n\nParagraph 2 of section 2 in **Mastery** explains one idea with a concrete example and a number such as 10 percent.\n\nParagraph 3 of section 2 in **Mastery** explains one idea with a concrete example and a number such as 17 percent."
+     }
+    ],
+    "keyPoints": [
+     "Mastery key point 1",
+     "Mastery key point 2",
+     "Mastery key point 3"
+    ]
+   },
+   "quiz": [
+    {
+     "q": "Mastery \u2014 quiz question 1?",
+     "options": [
+      "Option A1",
+      "Option B1",
+      "Option C1",
+      "Option D1"
+     ],
+     "answer": 1,
+     "explanation": "Because option b1 is right here.",
+     "difficulty": "m",
+     "topic": "Mastery"
+    },
+    {
+     "q": "Mastery \u2014 quiz question 2?",
+     "options": [
+      "Option A2",
+      "Option B2",
+      "Option C2",
+      "Option D2"
+     ],
+     "answer": 2,
+     "explanation": "Because option c2 is right here.",
+     "difficulty": "h",
+     "topic": "Mastery"
+    },
+    {
+     "q": "Mastery \u2014 quiz question 3?",
+     "options": [
+      "Option A3",
+      "Option B3",
+      "Option C3",
+      "Option D3"
+     ],
+     "answer": 3,
+     "explanation": "Because option d3 is right here.",
+     "difficulty": "e",
+     "topic": "Mastery"
+    }
+   ],
+   "recall": [
+    {
+     "q": "Recall Mastery 1?",
+     "options": [
+      "R1 one",
+      "R1 two",
+      "R1 three",
+      "R1 four"
+     ],
+     "answer": 2,
+     "explanation": "Because r1 three is right here.",
+     "difficulty": "m",
+     "topic": "Mastery"
+    },
+    {
+     "q": "Recall Mastery 2?",
+     "options": [
+      "R2 one",
+      "R2 two",
+      "R2 three",
+      "R2 four"
+     ],
+     "answer": 3,
+     "explanation": "Because r2 four is right here.",
+     "difficulty": "m",
+     "topic": "Mastery"
+    }
+   ],
+   "open": {
+    "q": "How would you apply Mastery at work?",
+    "rubric": [
+     "Names the goal",
+     "Gives an example",
+     "Says how to measure it"
+    ],
+    "modelAnswer": "I would apply Mastery by naming the goal, giving an example and measuring the result."
+   }
+  }
+ ]
+}

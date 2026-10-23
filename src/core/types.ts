@@ -3,6 +3,14 @@
 export type LearnerLevel = "beginner" | "intermediate" | "advanced";
 export type Difficulty = "e" | "m" | "h";
 export type LessonLanguage = "English" | "Russian" | "Source";
+/** Interface language. "system" follows the phone's language. */
+export type UiLanguage = "system" | "en" | "ru";
+/** How lessons are made: "auto" uses AI when it works and falls back to offline lessons; "offline" never calls AI. */
+export type AiMode = "auto" | "offline";
+/** Where a lesson came from. */
+export type LessonMode = "ai" | "offline" | "course";
+/** Error kinds that make AI unusable until the learner fixes something. */
+export type AiBlock = "no-key" | "auth" | "credits";
 
 export interface Skillset {
   id: string;
@@ -23,6 +31,12 @@ export interface Skillset {
   correct: number;
   total: number;
   minutesSpent: number;
+  /** Learner (or the app, when AI is unavailable) chose to start without a placement test. */
+  placementSkipped?: boolean;
+  /** Word offset inside the chunk at `cursor` reached by offline reading. */
+  cursorWord?: number;
+  /** Set when the skillset was created from an imported course. */
+  courseId?: string;
 }
 
 export interface PlacementResult {
@@ -73,6 +87,8 @@ export interface OpenQuestion {
   id: string;
   q: string;
   rubric: string[];
+  /** Ready-made answer for self-checking (courses and offline lessons). */
+  modelAnswer?: string;
 }
 
 export interface TheorySection {
@@ -87,6 +103,14 @@ export interface LessonContent {
   quiz: Mcq[];
   open: OpenQuestion;
   links?: { title: string; url: string }[];
+  /** Missing in lessons made before v0.2 — those were all AI lessons. */
+  mode?: LessonMode;
+  /** Id of the course lesson this session teaches. */
+  courseLessonId?: string;
+  /** Why an offline lesson was made instead of an AI one. */
+  fallback?: AiBlock | "offline-mode" | "network";
+  /** Offline reading: where the reading stops (cursor after the lesson). */
+  readTo?: { cursor: number; word: number };
 }
 
 export interface PlacementContent {
@@ -100,6 +124,8 @@ export interface OpenGrade {
   strengths: string[];
   gaps: string[];
   modelAnswer: string;
+  /** True when the learner graded themselves against the model answer. */
+  self?: boolean;
 }
 
 export interface SessionProgress {
@@ -160,6 +186,37 @@ export interface Profile {
   model: string;
   onboarded: boolean;
   createdAt: string;
+  uiLanguage?: UiLanguage;
+  aiMode?: AiMode;
+  /** Last persistent AI problem (cleared after the next successful AI call). */
+  aiBlock?: { kind: AiBlock; at: string };
+}
+
+// ---------- imported courses ----------
+
+export interface CourseLesson {
+  id: string;
+  module?: string;
+  title: string;
+  sources: string[];
+  theory: { sections: TheorySection[]; keyPoints: string[] };
+  quiz: Mcq[];
+  /** Asked in the review step of the following lesson. */
+  recall: Mcq[];
+  open: OpenQuestion;
+}
+
+export interface Course {
+  id: string;
+  version: number;
+  title: string;
+  description: string;
+  language: LessonLanguage;
+  goal: string;
+  minutes: number;
+  hue: number;
+  lessons: CourseLesson[];
+  importedAt: string;
 }
 
 export interface DayActivity {

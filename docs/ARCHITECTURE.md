@@ -117,3 +117,25 @@ pes-app/
 ### ADR-005 — Lesson engine: sources → chunks → time-sized sessions
 - **Decision:** imported text is split into ~1,500-word chunks following the source's structure; a session plan converts minutes into theory words, quiz size and how much source to feed; the cursor moves through chunks in order; review uses the last lesson's key points and recent mistakes.
 - **Consequences:** big books are never sent whole; coverage % is measurable; a 15-min portion teaches ≈ 5,000 source words.
+
+### ADR-006 — Lessons without AI (offline engine)
+- **Context:** AI may be unavailable: no key, no internet, or the account ran out of credits (Oleg, 2026-10-23). The app must stay useful.
+- **Decision:** `src/core/offline.ts` builds lessons on the device from the learner's sources: the next ~(minutes × 0.6 × 180) words are read (cursor = chunk + word offset, stops at paragraph ends), fill-in-the-gap questions are generated from that text (same-script distractors, grammatical endings matched), and the open question is self-checked against key sentences. `aiState()` decides per session: AI when it works; “credits/auth” errors are remembered in the profile (credits retried after 6 h) and the session falls back automatically; network errors let the learner choose. Settings → “Always without AI” never calls the API.
+- **Consequences:** quality without AI is lower than AI lessons but free and offline; offline sessions record `readTo` so AI and offline lessons share the same reading cursor.
+
+### ADR-007 — Course files with id-based progress
+- **Context:** ready-made lessons (first: Oleg's private CDO test course) must work without AI and be updatable without losing progress.
+- **Decision:** a course is a JSON file `format: "pes-course"` (`src/core/course.ts`) imported into table `courses` (Dexie v2). A skillset points to it via `courseId`. The next lesson is the first lesson whose id isn't in the skillset's finished sessions, so a newer version (same course id) can add, reorder or edit lessons and progress stays. Finished sessions keep a copy of the lesson they taught. Review = previous lesson's key points + its `recall` questions + recent mistakes.
+- **Consequences:** course content lives outside the public repo (only a tiny English fixture is in `tests/fixtures`). Authoring tools: `validate.py` / `build_course.py` kept with the course, not in the app.
+
+### ADR-008 — Interface language (i18n)
+- **Decision:** `src/i18n` — typed keys, English reference dictionary, Russian with all plural forms (Intl.PluralRules); `useT()` in React, `t()` in services. Language = profile preference or the phone's language; cached in localStorage to avoid a flash on start. Dates via Intl.
+- **Consequences:** every UI string goes through `t()`; adding a key to `en.ts` without `ru.ts` fails type-check and a unit test.
+
+### ADR-009 — Progress survives updates
+- **Context:** “updates must not reset progress of started skillsets”.
+- **Decision:** (1) same app id + release key + default WebView origin (guarded by `src/config.test.ts`); (2) schema changes only additive (`this.version(n)`), migration covered by a test with live v1 data; (3) automatic snapshot of the whole DB into the app's private files after each lesson, import and when the app goes to the background; restored automatically if the DB comes up empty; cleared by “Delete all data”; (4) before installing an update the app writes a backup to Documents/PES (survives uninstall) and onboarding offers “Restore from backup”.
+- **Consequences:** a few MB written per snapshot (sources included); acceptable on phones.
+
+### ADR-010 — Test strategy and compatibility
+- **Decision:** test pyramid in CI — Vitest unit/integration (fake IndexedDB) → Playwright E2E on Chromium (Android WebView engine) and WebKit (iOS engine) device profiles + desktop, with axe accessibility and layout checks → Android emulator smoke tests of the real APK (API 31/34/36, small phone, tablet). Chromium E2E gates the release; WebKit/Firefox and emulator jobs report until stable. Details: `docs/TESTING.md`.

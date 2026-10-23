@@ -5,6 +5,7 @@ export const XP = {
   reviewCorrect: 5,
   quizCorrect: { e: 8, m: 10, h: 14 } as Record<Difficulty, number>,
   openPerPoint: 3, // score 0..10 → 0..30 XP
+  openSelfPerPoint: 2, // self-checked answers earn a bit less
   completionBase: 20,
   perMinute: 1,
   placement: 50,

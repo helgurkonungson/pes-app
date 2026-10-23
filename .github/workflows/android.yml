@@ -1,5 +1,9 @@
-# Builds the Android APK on every push. When package.json has a new version,
-# publishes a GitHub Release "vX.Y.Z" with the APK — the app's updater picks it up.
+# Quality gates, then the Android APK.
+#   checks      — type-check, unit tests (Vitest), web build
+#   e2e         — Playwright end-to-end tests per browser engine and device profile
+#                 (Chromium = Android WebView: blocking; WebKit = iOS, Firefox: reported, not blocking yet)
+#   build       — APK; when package.json has a new version, publishes Release "vX.Y.Z"
+#   device-tests — smoke tests of the APK on Android emulators (API 31/34/36, small phone, tablet)
 name: Android
 
 on:
@@ -16,7 +20,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Type-check (app + e2e)
+        run: npm run typecheck
+      - name: Unit & integration tests
+        run: npm test
+      - name: Web build
+        run: npm run build
+
+  e2e:
+    name: E2E (${{ matrix.engine }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: ${{ matrix.engine != 'chromium' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - engine: chromium
+            projects: --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome
+          - engine: webkit
+            projects: --project=iphone-se --project=iphone-15-pro-max --project=ipad-mini --project=desktop-safari
+          - engine: firefox
+            projects: --project=desktop-firefox
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser
+        run: npx playwright install --with-deps ${{ matrix.engine }}
+      - name: Playwright
+        run: npx playwright test ${{ matrix.projects }}
+        env:
+          CI: "1"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.engine }}
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
   build:
+    needs: [checks, e2e]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -29,9 +89,6 @@ jobs:
 
       - name: Install
         run: npm ci
-
-      - name: Unit tests
-        run: npm test
 
       - name: Build web app
         run: npm run build
@@ -100,3 +157,98 @@ jobs:
             node tools/release-notes.mjs "${{ steps.v.outputs.name }}" > notes.md
             gh release create "$TAG" "PES-${{ steps.v.outputs.name }}.apk" --title "PES $TAG" --notes-file notes.md
           fi
+
+  device-tests:
+    name: Device smoke (API ${{ matrix.api-level }}, ${{ matrix.profile }})
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true   # non-blocking until the suite has proven stable
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { api-level: 31, profile: pixel_6, device: pixel6 }
+          - { api-level: 34, profile: pixel_6, device: pixel6 }
+          - { api-level: 36, profile: pixel_6, device: pixel6 }
+          - { api-level: 34, profile: "Nexus 5", device: nexus5 }     # small phone, 360x640 dp
+          - { api-level: 34, profile: "Nexus 10", device: nexus10 }   # tablet
+    env:
+      AVD_TARGET: google_apis
+      AVD_ARCH: x86_64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # The build job names its artifact PES-<version>-build<code>, so match it by pattern.
+      - name: Download APK from the build job
+        uses: actions/download-artifact@v4
+        with:
+          pattern: PES-*
+          merge-multiple: true
+
+      - name: Check APK
+        run: ls -l PES-*.apk
+
+      # AVD cache as in the android-emulator-runner README, split into restore/save so the
+      # snapshot is saved right after it is created (also when the smoke test later fails).
+      - name: Restore AVD cache
+        id: avd-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-api${{ matrix.api-level }}-${{ matrix.device }}-${{ env.AVD_TARGET }}-${{ env.AVD_ARCH }}
+
+      - name: Create AVD and snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ env.AVD_TARGET }}
+          arch: ${{ env.AVD_ARCH }}
+          profile: ${{ matrix.profile }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      - name: Save AVD cache
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: ${{ steps.avd-cache.outputs.cache-primary-key }}
+
+      - name: Smoke test on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ env.AVD_TARGET }}
+          arch: ${{ env.AVD_ARCH }}
+          profile: ${{ matrix.profile }}
+          force-avd-creation: false
+          # -no-snapshot-save: never write the app or its data back into the cached snapshot
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          # The runner executes `script` line by line with sh, so it must stay one line.
+          script: bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results
+
+      - name: Upload device results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: device-results-api${{ matrix.api-level }}-${{ matrix.device }}
+          path: device-results
+          if-no-files-found: warn
+          retention-days: 14

@@ -122,7 +122,7 @@ export function buildChunks(sections: TextSection[], sourceTitle: string, target
       .trim();
     const w = countWords(text);
     if (w > 0) {
-      drafts.push({ title: rangeTitle(group[0], group[group.length - 1], `${sourceTitle} · part ${drafts.length + 1}`), text, words: w });
+      drafts.push({ title: rangeTitle(group[0], group[group.length - 1], `${sourceTitle} · ${drafts.length + 1}`), text, words: w });
     }
     group = [];
     words = 0;
@@ -151,6 +151,6 @@ export function buildChunks(sections: TextSection[], sourceTitle: string, target
   }
   emit();
 
-  // Untitled chunks get "Source · part n"
-  return drafts.map((d, i) => ({ ...d, title: d.title || `${sourceTitle} · part ${i + 1}` }));
+  // Untitled chunks get "Source · n"
+  return drafts.map((d, i) => ({ ...d, title: d.title || `${sourceTitle} · ${i + 1}` }));
 }
