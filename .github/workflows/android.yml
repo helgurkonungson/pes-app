@@ -68,9 +68,14 @@ jobs:
   # WebKit (iOS engine) and Firefox: reported only, never delay an Android release.
   e2e-cross:
     name: E2E (${{ matrix.engine }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     continue-on-error: true
+    # the official image ships every browser with its system libraries — `playwright install
+    # --with-deps webkit` hung for 25 min on the runner in v0.3.0's CI run
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -86,8 +91,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Install browser
-        run: npx playwright install --with-deps ${{ matrix.engine }}
       - name: Playwright
         # no retries here: a failing engine should report quickly instead of retrying 60 s timeouts
         run: npx playwright test ${{ matrix.projects }} --retries=0 --max-failures=15

@@ -106,6 +106,10 @@ run_step() {
   snap "$id-end"
   record "$id" "$title" "$result" "$NOTE"
   log "=== [$id] $result: $title"
+  # GitHub annotations are readable without logging in, so failures are visible from the API
+  if [[ $result == FAIL && -n ${GITHUB_ACTIONS:-} ]]; then
+    printf '::error title=Smoke step %s failed::%s — %s\n' "$id" "$title" "$(printf '%s' "$NOTE" | tr '\n' ' ' | cut -c1-600)"
+  fi
 }
 
 snap() {  # snap <label>: screenshot + UI dump into $OUT; never fails
@@ -667,6 +671,11 @@ finish() {
     if [[ -z $DEV_MODEL || $DEV_MODEL == " " ]]; then collect_device_info; fi
   fi
   write_summary
+  if [[ -n ${GITHUB_ACTIONS:-} ]]; then
+    printf '::notice title=Smoke %s::%s · Android %s · WebView %s · cold start %s ms · %s\n' \
+      "$( (( FAILED )) && echo FAIL || echo PASS)" "${DEV_MODEL:-?}" "${DEV_ANDROID:-?}" "${DEV_WEBVIEW:-?}" "$COLD_START_MS" \
+      "$(for i in "${!STEP_IDS[@]}"; do printf '%s:%s ' "${STEP_IDS[i]}" "${STEP_RESULTS[i]}"; done)"
+  fi
   rm -rf "$WORK"
   log "Results in $OUT"
   if (( FAILED )); then log "RESULT: FAIL"; exit 1; fi
