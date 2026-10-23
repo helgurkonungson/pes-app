@@ -638,7 +638,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
           )}
           {grade.gaps.length > 0 && (
             <div className="card tight">
-              <p className="small bold" style={{ color: "var(--gold)", marginBottom: 6 }}>
+              <p className="small bold" style={{ color: "var(--warn)", marginBottom: 6 }}>
                 {grade.self ? t("open.missed") : t("open.improve")}
               </p>
               <ul className="prose" style={{ margin: 0, paddingLeft: 20, fontSize: 14.5 }}>

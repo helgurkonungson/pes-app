@@ -14,9 +14,9 @@ export function Rings({ values, size = 128, stroke = 13 }: { values: number[]; s
     <svg className="rings" width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
       <defs>
         <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#c8f1ec" />
-          <stop offset="55%" stopColor="#81d8d0" />
-          <stop offset="100%" stopColor="#3fc1b6" />
+          <stop offset="0%" style={{ stopColor: "var(--accent-light)" }} />
+          <stop offset="55%" style={{ stopColor: "var(--accent)" }} />
+          <stop offset="100%" style={{ stopColor: "var(--accent-strong)" }} />
         </linearGradient>
       </defs>
       {values.map((v, i) => {
@@ -26,7 +26,7 @@ export function Rings({ values, size = 128, stroke = 13 }: { values: number[]; s
         const val = Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
         return (
           <g key={i} transform={`rotate(-90 ${c} ${c})`}>
-            <circle cx={c} cy={c} r={r} fill="none" stroke="#3a3b40" strokeWidth={stroke} />
+            <circle cx={c} cy={c} r={r} fill="none" style={{ stroke: "var(--track)" }} strokeWidth={stroke} />
             {val > 0 && (
               <circle
                 cx={c}
@@ -118,7 +118,7 @@ export function LineChart({ values, labels, height = 120 }: { values: number[]; 
       <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} aria-hidden>
         <line x1="8" x2={w - 8} y1={h - 14} y2={h - 14} stroke="#4a4b51" strokeDasharray="2 5" />
         <path d={d} fill="none" stroke="#f5f6f7" strokeWidth="2.5" strokeLinecap="round" />
-        {last && <circle cx={last[0]} cy={last[1]} r="5" fill="#81d8d0" stroke="#141517" strokeWidth="2" />}
+        {last && <circle cx={last[0]} cy={last[1]} r="5" style={{ fill: "var(--accent)", stroke: "var(--bg)" }} strokeWidth="2" />}
       </svg>
       {labels && (
         <div className="chart-axis">

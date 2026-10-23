@@ -8,6 +8,7 @@ All notable changes to Chompbook (formerly PES). Versions follow semver; every n
   - One check a day: later launches that day use the saved answer and need no internet. No internet or GitHub down → nothing is shown, and the next launch tries again.
   - The pop-up never opens over a lesson — it waits until you leave it.
   - Settings → Check for updates still checks right away.
+- **Yellow look.** The main colour is now the sunny yellow of the new icon (#FFC53A) instead of turquoise: buttons, tabs, rings, the countdown screen, toggles. Dark text sits on yellow (10.9:1 contrast), yellow on the dark background is 11.6:1. Warnings and “what to improve” turned orange and imported-course tags light blue, so they no longer look like the accent.
 
 ## 0.5.0 — 2026-10-23
 
