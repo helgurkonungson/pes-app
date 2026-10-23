@@ -7,7 +7,7 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
 import type { Profile, ProviderId } from "../core/types";
 import { AiError, type ModelInfo, type ToolDef } from "./client";
-import { baseUrl, isChatModel, PROVIDERS, wireModel } from "./providers";
+import { baseUrl, isChatModel, isNvidiaChatModel, PROVIDERS, wireModel } from "./providers";
 
 type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion">;
 
@@ -92,8 +92,9 @@ export async function compatStructured<T>(
   opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal },
 ): Promise<T> {
   if (id === "yandex" && !cfg.yandexFolder?.trim()) throw new AiError("Yandex folder id is missing.", "auth");
-  // Yandex accepts only tool_choice auto/none, so we also ask for the function in words
-  const forced = id !== "yandex";
+  // Yandex accepts only tool_choice auto/none, and not every NVIDIA model supports a forced
+  // function — for them we ask in words and accept JSON in the text as a fallback
+  const forced = id !== "yandex" && id !== "nvidia";
   const body: Record<string, unknown> = {
     model: wireModel(id, opts.model, cfg),
     messages: [
@@ -138,6 +139,6 @@ export async function compatListModels(id: ProviderId, key: string, cfg: Cfg): P
   const r = await http(`${baseUrl(id, cfg)}/models`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
   check(id, r);
   const list = ((r.data as { data?: { id: string }[] })?.data ?? []).map((m) => m.id);
-  const chat = id === "openai" ? list.filter(isChatModel) : list.filter((m) => /^qwen/i.test(m));
+  const chat = id === "openai" ? list.filter(isChatModel) : id === "nvidia" ? list.filter(isNvidiaChatModel) : list.filter((m) => /^qwen/i.test(m));
   return chat.sort().map((m) => ({ id: m, display_name: m }));
 }

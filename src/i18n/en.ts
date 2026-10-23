@@ -471,7 +471,7 @@ export const en = {
   "onb.goalHint": "You can choose a different portion every time.",
   "onb.keyTitle": "AI key (optional)",
   "onb.keyLead": "With your own Claude API key, PES writes lessons from your sources and grades open answers. The key stays in your phone's secure storage and is sent only to Anthropic.",
-  "onb.keyOptional": "No key? You can still study: imported courses and lessons built from your sources work without AI and offline. ChatGPT, Alice AI or Qwen keys can be added in Settings.",
+  "onb.keyOptional": "No key? You can still study: imported courses and lessons built from your sources work without AI and offline. ChatGPT, Alice AI, Qwen or NVIDIA keys can be added in Settings.",
   "onb.keyWhere": "Get a key at",
   "onb.saveStart": "Save and start",
   "onb.skip": "Continue without AI",

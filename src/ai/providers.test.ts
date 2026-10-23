@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { compatListModels, compatStructured, extractJson } from "./compat";
-import { activeProvider, baseUrl, isChatModel, modelOf, pickOpenAiModel, wireModel } from "./providers";
+import { activeProvider, baseUrl, isChatModel, isNvidiaChatModel, modelOf, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
-const call = (id: "openai" | "yandex" | "qwen", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
+const call = (id: "openai" | "yandex" | "qwen" | "nvidia", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
 
 function mockFetch(status: number, data: unknown) {
   const f = vi.fn(async () => new Response(JSON.stringify(data), { status }));
@@ -107,5 +107,39 @@ describe("compatListModels", () => {
     const list = await compatListModels("yandex", "K", { yandexFolder: "b1g" });
     expect(list[0]).toEqual({ id: "aliceai-llm", display_name: "Alice AI LLM" });
     expect(sent(f).body.max_tokens).toBe(1);
+  });
+});
+
+describe("NVIDIA", () => {
+  it("endpoint, default model and model filter", () => {
+    expect(baseUrl("nvidia", {})).toBe("https://integrate.api.nvidia.com/v1");
+    expect(modelOf({ provider: "nvidia", model: "c" })).toBe("meta/llama-3.3-70b-instruct");
+    expect(isNvidiaChatModel("meta/llama-3.3-70b-instruct")).toBe(true);
+    expect(isNvidiaChatModel("nvidia/llama-3.3-nemotron-super-49b-v1")).toBe(true);
+    expect(isNvidiaChatModel("deepseek-ai/deepseek-r1")).toBe(true);
+    expect(isNvidiaChatModel("nvidia/nv-embedqa-e5-v5")).toBe(false);
+    expect(isNvidiaChatModel("nvidia/llama-3.2-nv-rerankqa-1b-v2")).toBe(false);
+    expect(isNvidiaChatModel("meta/llama-guard-4-12b")).toBe(false);
+  });
+  it("asks for the function without forcing it and accepts a tool call", async () => {
+    const f = mockFetch(200, { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":3}' } }] } }] });
+    expect(await call("nvidia")).toEqual({ a: 3 });
+    const r = sent(f);
+    expect(r.url).toBe("https://integrate.api.nvidia.com/v1/chat/completions");
+    expect(r.headers.authorization).toBe("Bearer KEY");
+    expect(r.body.tool_choice).toBe("auto");
+    expect(r.body.max_tokens).toBe(900);
+  });
+  it("falls back to JSON in the text answer", async () => {
+    mockFetch(200, { choices: [{ message: { content: "```json\n{\"a\":4}\n```" } }] });
+    expect(await call("nvidia")).toEqual({ a: 4 });
+  });
+  it("lists only chat models", async () => {
+    mockFetch(200, { data: [{ id: "meta/llama-3.3-70b-instruct" }, { id: "nvidia/nv-embedqa-e5-v5" }, { id: "qwen/qwen3-235b-a22b" }] });
+    expect((await compatListModels("nvidia", "K", {})).map((m) => m.id)).toEqual(["meta/llama-3.3-70b-instruct", "qwen/qwen3-235b-a22b"]);
+  });
+  it("credits exhausted (402) → credits", async () => {
+    mockFetch(402, { detail: "Payment Required" });
+    await expect(call("nvidia")).rejects.toMatchObject({ kind: "credits" });
   });
 });

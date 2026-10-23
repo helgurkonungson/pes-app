@@ -81,3 +81,29 @@ test.describe("other AI providers", () => {
     await expect(page.getByRole("alert")).toContainText("Сначала укажите ID каталога");
   });
 });
+
+test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
+  await mockApis(page, "credits");
+  const calls: string[] = [];
+  await page.route("https://integrate.api.nvidia.com/**", async (route) => {
+    const url = route.request().url();
+    calls.push(url);
+    if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "meta/llama-3.3-70b-instruct" }, { id: "nvidia/nv-embedqa-e5-v5" }] }) });
+    const { AI_LESSON } = await import("./helpers");
+    return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ choices: [{ message: { content: "Вот урок:\n```json\n" + JSON.stringify(AI_LESSON) + "\n```" } }] }) });
+  });
+  await onboard(page);
+  await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+  await page.getByRole("radio", { name: "NVIDIA" }).click();
+  await btn(page, /Ключ API NVIDIA/).click();
+  await page.getByRole("dialog").getByRole("textbox").fill("nvapi-test-0123456789abcdef");
+  await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+  await expect(page.getByText("Ключ сохранён")).toBeVisible();
+  await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("meta/llama-3.3-70b-instruct");
+  await createSkillsetWithText(page);
+  await btn(page, "Пропустить").click();
+  await btn(page, /Начать · 15 мин/).click();
+  await skipCountdown(page);
+  await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+  expect(calls.some((c) => c.endsWith("/chat/completions"))).toBe(true);
+});

@@ -2,6 +2,10 @@
 
 All notable changes to PES. Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.3.1 — 2026-10-23
+
+- **NVIDIA as an AI provider:** Settings → AI → Provider → NVIDIA. Use an API key from build.nvidia.com (`nvapi-…`); default model Llama 3.3 70B Instruct, any chat model from NVIDIA's catalog can be picked. Lessons accept either a function call or JSON in the answer, because not every NVIDIA model supports forced function calls.
+
 ## 0.3.0 — 2026-10-23
 
 - **More AI providers:** Settings → AI → Provider: Claude, ChatGPT (OpenAI), Alice AI (Yandex AI Studio: Alice AI LLM, YandexGPT and others — needs the folder ID) and Qwen (Alibaba DashScope, international or China region). One key per provider in secure storage; model picker per provider; “credits ran out” is recognised for every provider and lessons continue without AI. Web research (“Use the internet”) stays Claude-only.

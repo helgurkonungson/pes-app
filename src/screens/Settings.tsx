@@ -172,7 +172,7 @@ export function Settings() {
           <Segmented<ProviderId>
             label={t("settings.provider")}
             value={provider}
-            cols={2}
+            cols={3}
             onChange={async (v) => {
               await updateProfile({ provider: v, aiBlock: undefined });
               setKeyVersion((x) => x + 1);
@@ -182,6 +182,7 @@ export function Settings() {
               { id: "openai", label: "ChatGPT" },
               { id: "yandex", label: "Алиса AI" },
               { id: "qwen", label: "Qwen" },
+              { id: "nvidia", label: "NVIDIA" },
             ]}
           />
           {!meta.webSearch && <p className="faint small">{t("settings.noWebSearch")}</p>}

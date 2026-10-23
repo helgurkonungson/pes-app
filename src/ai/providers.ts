@@ -1,6 +1,6 @@
 /**
  * AI providers the learner can bring a key for. Claude uses the Anthropic
- * Messages API; ChatGPT, Alice AI (Yandex AI Studio) and Qwen (Alibaba
+ * Messages API; ChatGPT, Alice AI (Yandex AI Studio), NVIDIA (build.nvidia.com) and Qwen (Alibaba
  * DashScope) use OpenAI-compatible Chat Completions.
  */
 import type { Profile, ProviderId } from "../core/types";
@@ -51,6 +51,14 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     ],
     webSearch: false,
   },
+  nvidia: {
+    id: "nvidia",
+    name: "NVIDIA",
+    keyUrl: "https://build.nvidia.com",
+    keyPlaceholder: "nvapi-…",
+    defaultModel: "meta/llama-3.3-70b-instruct",
+    webSearch: false,
+  },
   qwen: {
     id: "qwen",
     name: "Qwen",
@@ -61,7 +69,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   },
 };
 
-export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "yandex", "qwen"];
+export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "yandex", "qwen", "nvidia"];
 
 export function activeProvider(p: Pick<Profile, "provider"> | undefined): ProviderId {
   return p?.provider && PROVIDERS[p.provider] ? p.provider : "anthropic";
@@ -81,6 +89,8 @@ export function baseUrl(id: ProviderId, p: Pick<Profile, "qwenRegion">): string 
       return "https://api.openai.com/v1";
     case "yandex":
       return "https://llm.api.cloud.yandex.net/v1";
+    case "nvidia":
+      return "https://integrate.api.nvidia.com/v1";
     case "qwen":
       return p.qwenRegion === "cn" ? "https://dashscope.aliyuncs.com/compatible-mode/v1" : "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
     default:
@@ -97,6 +107,11 @@ export function wireModel(id: ProviderId, model: string, p: Pick<Profile, "yande
 /** OpenAI's list includes embeddings, audio, images… keep chat models only. */
 export function isChatModel(id: string): boolean {
   return /^(gpt-|o\d|chatgpt-)/i.test(id) && !/(embedding|audio|tts|transcribe|realtime|image|search|moderation|instruct|dall-e|whisper)/i.test(id);
+}
+
+/** NVIDIA's catalog mixes chat LLMs with embedding, reranking, speech and image models. */
+export function isNvidiaChatModel(id: string): boolean {
+  return /(instruct|chat|nemotron|llama|qwen|deepseek|mistral|mixtral|gemma|phi|kimi|glm|gpt-oss)/i.test(id) && !/(embed|rerank|retriever|guard|safety|reward|vision|vlm|clip|parse|ocr|tts|asr|whisper|riva|image|flux|sdxl|stable-diffusion|base$)/i.test(id);
 }
 
 /** Best default among listed OpenAI models: newest gpt "mini" class first (cheap, good enough for lessons). */

@@ -12,7 +12,7 @@ export type LessonMode = "ai" | "offline" | "course";
 /** Error kinds that make AI unusable until the learner fixes something. */
 export type AiBlock = "no-key" | "auth" | "credits";
 /** AI provider whose key the learner uses. */
-export type ProviderId = "anthropic" | "openai" | "yandex" | "qwen";
+export type ProviderId = "anthropic" | "openai" | "yandex" | "qwen" | "nvidia";
 
 export interface Skillset {
   id: string;
