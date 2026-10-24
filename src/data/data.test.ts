@@ -274,6 +274,41 @@ describe("AI lessons and fallback", () => {
     expect(await db.drafts.get(s.id)).toBeUndefined();
   });
 
+  it("the lesson can start once part 1 exists; later parts land in the saved session, then 'building' goes away", async () => {
+    const s = await newSkillset();
+    await db.skillsets.update(s.id, { placementSkipped: true });
+    let finish!: () => void;
+    const gate = new Promise<void>((r) => (finish = r));
+    tutor.generateLesson.mockImplementationOnce(async (o: { onPartial: (l: LessonContent) => Promise<void> }) => {
+      const partial = { ...aiLesson(), quiz: [], building: { done: 3, total: 5, sections: 2 } };
+      await o.onPartial(partial);
+      await gate;
+      return { lesson: aiLesson() };
+    });
+    const session = await prepareSession(s.id, 15);
+    expect(session.lesson?.building?.done).toBe(3);
+    expect((await db.sessions.get(session.id))?.lesson?.building).toBeDefined();
+    // the learner's progress is not overwritten by the writer
+    await db.sessions.update(session.id, { progress: { page: 2, mcq: {}, seconds: 40 }, status: "active" });
+    finish();
+    await vi.waitFor(async () => expect((await db.sessions.get(session.id))?.lesson?.building).toBeUndefined());
+    const saved = await db.sessions.get(session.id);
+    expect(saved?.progress.page).toBe(2);
+    expect(saved?.status).toBe("active");
+    expect(saved?.lesson?.quiz.length).toBeGreaterThan(0);
+  });
+
+  it("background writing that fails marks the lesson so it can be continued", async () => {
+    const s = await newSkillset();
+    await db.skillsets.update(s.id, { placementSkipped: true });
+    tutor.generateLesson.mockImplementationOnce(async (o: { onPartial: (l: LessonContent) => Promise<void> }) => {
+      await o.onPartial({ ...aiLesson(), quiz: [], building: { done: 3, total: 5, sections: 2 } });
+      throw new AiError("socket closed", "network");
+    });
+    const session = await prepareSession(s.id, 15);
+    await vi.waitFor(async () => expect((await db.sessions.get(session.id))?.lesson?.building?.error).toBe("network"));
+  });
+
   it("a draft is reused only for the same portion and material, and not when stale", () => {
     const d: LessonDraft = { id: "sk", skillsetId: "sk", minutes: 15, number: 3, chunkIds: ["a", "b"], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), sections: [] };
     expect(usableDraft(d, 15, ["a", "b"])).toBe(d);

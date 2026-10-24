@@ -113,6 +113,18 @@ export interface LessonContent {
   fallback?: AiBlock | "offline-mode" | "network";
   /** Offline reading: where the reading stops (cursor after the lesson). */
   readTo?: { cursor: number; word: number };
+  /** Set while the rest of an AI lesson is still being written in the background. */
+  building?: LessonBuilding;
+}
+
+export interface LessonBuilding {
+  /** Steps finished of all steps (plan, review, parts, quiz). */
+  done: number;
+  total: number;
+  /** Theory parts planned (some may not be written yet). */
+  sections: number;
+  /** Writing stopped with this error kind (network, rate…); resumes on retry or return. */
+  error?: string;
 }
 
 export interface PlacementContent {

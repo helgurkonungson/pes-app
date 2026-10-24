@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { FileText, Globe, Link as LinkIcon, Trash2, Type, Upload } from "lucide-react";
+import { ArrowRight, FileText, Globe, Link as LinkIcon, Trash2, Type, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { confirmDialog, Empty, Sheet, toast, TopBar } from "../components/ui";
 import type { Source } from "../core/types";
@@ -7,6 +7,7 @@ import { db } from "../data/db";
 import { addSource, deleteSource } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
 import { type Key, useT } from "../i18n";
+import { useNav } from "../nav/store";
 import { ACCEPT, importFile, importText, importUrl, type Imported } from "../sources/importers";
 
 const KIND_LABEL: Record<Source["kind"], Key> = { pdf: "sources.kind.pdf", epub: "sources.kind.epub", docx: "sources.kind.docx", text: "sources.kind.text", url: "sources.kind.url" };
@@ -102,6 +103,21 @@ export function Sources({ id }: { id: string }) {
         )}
 
         {sources && sources.length === 0 && !busy && <Empty icon={<FileText size={34} />} title={t("sources.empty.title")} text={t("sources.empty.text")} />}
+        {sources && sources.length === 0 && !busy && skillset && (
+          <div className="stack" style={{ gap: 8 }}>
+            <button
+              className="btn dark block"
+              onClick={() => {
+                const nav = useNav.getState();
+                nav.pop(); // back to the skillset, so closing the lesson lands there
+                nav.push({ name: "session", skillsetId: id, minutes: skillset.minutes });
+              }}
+            >
+              {t("sources.continueWithout")} <ArrowRight size={18} />
+            </button>
+            <p className="faint small center">{t("sources.continueWithoutHint")}</p>
+          </div>
+        )}
 
         <div className="stack">
           {sources?.map((s) => (

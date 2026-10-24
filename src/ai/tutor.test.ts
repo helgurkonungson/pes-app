@@ -54,10 +54,10 @@ describe("lesson written in steps", () => {
     ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) => reply(o.tool.name, o.prompt));
   });
 
-  it("plans, writes each section, then review and quiz — saving after every step", async () => {
+  it("plans, reviews, writes each section, then the quiz — saving after every step", async () => {
     const saved: LessonDraft[] = [];
     const { lesson } = await run(undefined, saved);
-    expect(tools()).toEqual(["emit_plan", "emit_section", "emit_section", "emit_review", "emit_quiz"]);
+    expect(tools()).toEqual(["emit_plan", "emit_review", "emit_section", "emit_section", "emit_quiz"]);
     expect(saved).toHaveLength(5);
     expect(lesson.title).toBe("Decision rights");
     expect(lesson.theory.sections.map((s) => s.heading)).toEqual(["Who decides", "How to start"]);
@@ -66,7 +66,7 @@ describe("lesson written in steps", () => {
     expect(lesson.review.questions).toHaveLength(1);
     expect(lesson.open.q).toBe("How would you assign rights?");
     // each section only gets the excerpts the plan assigned to it
-    const sec2 = ai.structured.mock.calls[2][0] as { prompt: string };
+    const sec2 = ai.structured.mock.calls[3][0] as { prompt: string };
     expect(sec2.prompt).toContain('n="2"');
     expect(sec2.prompt).not.toContain('n="1"');
     // the quiz is written from the theory that was actually written
@@ -88,7 +88,7 @@ describe("lesson written in steps", () => {
     ai.structured.mockClear();
     ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) => reply(o.tool.name, o.prompt));
     const { lesson } = await run(draft);
-    expect(tools()).toEqual(["emit_section", "emit_review", "emit_quiz"]);
+    expect(tools()).toEqual(["emit_section", "emit_quiz"]);
     expect(lesson.theory.sections).toHaveLength(2);
   });
 
@@ -111,7 +111,23 @@ describe("lesson written in steps", () => {
       model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
       onProgress: (_s, detail, st) => seen.push(`${detail} ${st?.done}/${st?.total}`),
     });
-    expect(seen).toEqual(["plan 0/5", "section 1/2 1/5", "section 2/2 2/5", "review 3/5", "quiz 4/5"]);
+    expect(seen).toEqual(["plan 0/5", "review 1/5", "section 1/2 2/5", "section 2/2 3/5", "quiz 4/5"]);
     expect(lessonStepCount(3, true)).toBe(7);
+  });
+
+  it("hands out partial lessons once the review and part 1 exist; questions keep their option order", async () => {
+    const partials: import("../core/types").LessonContent[] = [];
+    const { lesson } = await generateLesson({
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+      onPartial: async (l) => {
+        partials.push(structuredClone(l));
+      },
+    });
+    expect(partials.map((p) => p.theory.sections.length)).toEqual([1, 2]);
+    expect(partials[0].building).toEqual({ done: 3, total: 5, sections: 2 });
+    expect(partials[0].quiz).toEqual([]);
+    expect(partials[0].review.questions[0]).toEqual(lesson.review.questions[0]);
+    expect(lesson.building).toBeUndefined();
+    expect(lesson.quiz).toHaveLength(2);
   });
 });

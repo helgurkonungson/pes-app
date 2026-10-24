@@ -1,3 +1,4 @@
+import { BuildProgress } from "../components/BuildProgress";
 import { BookOpen, Check, ChevronLeft, CircleDot, Clock, CloudOff, Globe, History as HistoryIcon, Lock, Pencil, Play, RotateCcw, Target } from "lucide-react";
 import { useState } from "react";
 import { useAiState } from "../ai/status";
@@ -70,6 +71,11 @@ export function SkillsetDetail({ id }: { id: string }) {
 
       <div className="stack-lg" style={{ marginTop: 12 }}>
         {s.goal && <p className="muted small selectable">{s.goal}</p>}
+        {open?.lesson?.building && (
+          <div className="card flat tight">
+            <BuildProgress building={open.lesson.building} />
+          </div>
+        )}
 
         <div className="stat-cards">
           <div>

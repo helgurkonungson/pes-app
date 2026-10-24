@@ -1,5 +1,5 @@
 /** Prompts, tool schemas and the three AI jobs: placement test, lesson, grading. */
-import { normalizeGrade, normalizeLesson, normalizeMcqs, normalizePlacement } from "../core/normalize";
+import { normalizeGrade, normalizeMcqs, normalizePlacement, rng } from "../core/normalize";
 import { type SessionPlan, truncateWords } from "../core/planner";
 import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset } from "../core/types";
 import { AiError, research, type ResearchNotes, structured, type ToolDef } from "./client";
@@ -217,6 +217,35 @@ async function step<T>(run: () => Promise<unknown>, check: (raw: unknown) => T |
   }
 }
 
+/**
+ * Builds the lesson from a draft. Questions get fixed shuffles (seeded), so a question
+ * keeps its option order between the partial lessons and the final one.
+ * Partial: only the parts written so far, in order, plus `building` progress.
+ */
+export function assembleLesson(draft: LessonDraft, total: number, done: number, final: boolean): LessonContent {
+  const plan = draft.plan!;
+  const sections: { heading: string; body: string }[] = [];
+  for (let i = 0; i < plan.sections.length; i++) {
+    const body = draft.sections[i];
+    if (!isStr(body)) break;
+    sections.push({ heading: plan.sections[i].heading, body });
+  }
+  const quiz = draft.quiz ? normalizeMcqs(draft.quiz, "q", rng(2)) : [];
+  const lesson: LessonContent = {
+    title: plan.title,
+    review: { recap: (draft.review?.recap ?? []).slice(0, 6), questions: normalizeMcqs(draft.review?.questions ?? [], "r", rng(1)) },
+    theory: { sections, keyPoints: plan.keyPoints.slice(0, 8) },
+    quiz,
+    open: { id: "open", q: plan.open.q, rubric: plan.open.rubric.slice(0, 6) },
+  };
+  if (final) {
+    if (!sections.length || sections.length < plan.sections.length || !quiz.length) throw new AiError("The lesson came back incomplete.", "bad-response");
+  } else {
+    lesson.building = { done, total, sections: plan.sections.length };
+  }
+  return lesson;
+}
+
 export async function generateLesson(opts: {
   model: string;
   skillset: Skillset;
@@ -234,6 +263,8 @@ export async function generateLesson(opts: {
   /** Steps finished earlier; filled in and passed to `saveDraft` after every step. */
   draft?: LessonDraft;
   saveDraft?: (d: LessonDraft) => Promise<void>;
+  /** Called with the lesson so far (review + the parts already written) while the rest is being written. */
+  onPartial?: (lesson: LessonContent) => Promise<void>;
 }): Promise<{ lesson: LessonContent; notes?: ResearchNotes }> {
   const { skillset: s, plan } = opts;
   const now = new Date().toISOString();
@@ -330,8 +361,43 @@ export async function generateLesson(opts: {
   }
   const lessonPlan = draft.plan;
   const outline = lessonPlan.sections.map((x, i) => `${i + 1}. ${x.heading} — ${x.focus}`).join("\n");
+  // once the review and part 1 exist the learner can start; later steps are added as they finish
+  const partial = async () => {
+    if (!opts.onPartial || !draft.review || !isStr(draft.sections[0]) || draft.quiz) return;
+    await opts.onPartial(assembleLesson(draft, total(), doneCount(), false));
+  };
 
-  // 3. theory, one section per request
+  // 3. review of the last lesson (first, so the lesson can start once part 1 is written)
+  if (!draft.review) {
+    report("writing", "review");
+    const last = opts.lastLesson
+      ? `LAST LESSON\nTitle: ${opts.lastLesson.title}\nKey points:\n${opts.lastLesson.theory.keyPoints.map((k) => `- ${k}`).join("\n")}`
+      : `LAST LESSON: none — this is the first lesson. Recap 2–3 prerequisites the learner needs for today's plan:\n${outline}`;
+    const mistakes = opts.mistakes.length ? `RECENT MISTAKES (the learner answered these wrong):\n${opts.mistakes.map((m) => `- ${m.q} (correct: ${m.options[m.answer]})`).join("\n")}` : "";
+    const prompt = [
+      header,
+      "",
+      last,
+      mistakes,
+      "",
+      "Write the review step with the emit_review tool:",
+      opts.lastLesson ? "- recap: 3–5 bullets with the key points of the last lesson." : "- recap: 2–3 bullets with today's prerequisites.",
+      `- questions: exactly ${plan.reviewQuestions} recall question(s) on ${opts.lastLesson ? "the last lesson" : "those prerequisites"}${opts.mistakes.length ? " and the recent mistakes" : ""}. 4 options, one correct, plausible distractors.`,
+    ].join("\n");
+    draft.review = await step(
+      () => structured<unknown>({ model: opts.model, system, prompt, tool: REVIEW_TOOL, maxTokens: plan.reviewQuestions * 320 + 700, signal: opts.signal }),
+      (raw) => {
+        const o = (raw ?? {}) as { recap?: unknown; questions?: unknown };
+        const questions = Array.isArray(o.questions) ? o.questions : [];
+        if (!strList(o.recap).length && !questions.length) return null;
+        return { recap: strList(o.recap), questions };
+      },
+    );
+    await save();
+  }
+  await partial();
+
+  // 4. theory, one section per request
   const words = Math.max(120, Math.round(plan.theoryWords / lessonPlan.sections.length));
   for (let i = 0; i < lessonPlan.sections.length; i++) {
     if (isStr(draft.sections[i])) continue;
@@ -360,37 +426,10 @@ export async function generateLesson(opts: {
       },
     );
     await save();
+    await partial();
   }
-  const theory = lessonPlan.sections.map((x, i) => `## ${x.heading}\n${draft.sections[i]}`).join("\n\n");
 
-  // 4. review of the last lesson
-  if (!draft.review) {
-    report("writing", "review");
-    const last = opts.lastLesson
-      ? `LAST LESSON\nTitle: ${opts.lastLesson.title}\nKey points:\n${opts.lastLesson.theory.keyPoints.map((k) => `- ${k}`).join("\n")}`
-      : `LAST LESSON: none — this is the first lesson. Recap 2–3 prerequisites the learner needs for today's plan:\n${outline}`;
-    const mistakes = opts.mistakes.length ? `RECENT MISTAKES (the learner answered these wrong):\n${opts.mistakes.map((m) => `- ${m.q} (correct: ${m.options[m.answer]})`).join("\n")}` : "";
-    const prompt = [
-      header,
-      "",
-      last,
-      mistakes,
-      "",
-      "Write the review step with the emit_review tool:",
-      opts.lastLesson ? "- recap: 3–5 bullets with the key points of the last lesson." : "- recap: 2–3 bullets with today's prerequisites.",
-      `- questions: exactly ${plan.reviewQuestions} recall question(s) on ${opts.lastLesson ? "the last lesson" : "those prerequisites"}${opts.mistakes.length ? " and the recent mistakes" : ""}. 4 options, one correct, plausible distractors.`,
-    ].join("\n");
-    draft.review = await step(
-      () => structured<unknown>({ model: opts.model, system, prompt, tool: REVIEW_TOOL, maxTokens: plan.reviewQuestions * 320 + 700, signal: opts.signal }),
-      (raw) => {
-        const o = (raw ?? {}) as { recap?: unknown; questions?: unknown };
-        const questions = Array.isArray(o.questions) ? o.questions : [];
-        if (!strList(o.recap).length && !questions.length) return null;
-        return { recap: strList(o.recap), questions };
-      },
-    );
-    await save();
-  }
+  const theory = lessonPlan.sections.map((x, i) => `## ${x.heading}\n${draft.sections[i]}`).join("\n\n");
 
   // 5. quiz on what was actually written today
   if (!draft.quiz) {
@@ -413,13 +452,7 @@ export async function generateLesson(opts: {
     await save();
   }
 
-  const lesson = normalizeLesson({
-    title: lessonPlan.title,
-    review: draft.review,
-    theory: { sections: lessonPlan.sections.map((x, i) => ({ heading: x.heading, body: draft.sections[i] })), keyPoints: lessonPlan.keyPoints },
-    quiz: draft.quiz,
-    open: lessonPlan.open,
-  });
+  const lesson = assembleLesson(draft, total(), doneCount(), true);
   const notes = draft.research ?? undefined;
   if (notes?.links.length) lesson.links = notes.links;
   return { lesson, notes };

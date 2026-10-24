@@ -16,7 +16,7 @@ import { buildCourseLesson, nextCourseLesson } from "../core/course";
 import { nowIso, uid } from "../core/ids";
 import { buildOfflineLesson, type OfflineLabels } from "../core/offline";
 import { clampMinutes, pickChunks, placementSize, planSession, sampleChunks } from "../core/planner";
-import type { LessonContent, LessonDraft, Session, Skillset } from "../core/types";
+import type { Chunk, LessonContent, LessonDraft, Mcq, Session, Skillset } from "../core/types";
 import { t } from "../i18n";
 import { db, getProfile } from "./db";
 import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetChunks } from "./repo";
@@ -132,6 +132,127 @@ export function usableDraft(d: LessonDraft | undefined, minutes: number, chunkId
   return d;
 }
 
+interface WriterInputs {
+  skillset: Skillset;
+  minutes: number;
+  picked: Chunk[];
+  titles: Map<string, string>;
+  last?: LessonContent;
+  mistakes: Mcq[];
+  previousTitles: string[];
+  draft?: LessonDraft;
+}
+
+/** Background writers of lessons the learner has already started, by session id. */
+const writers = new Map<string, Promise<void>>();
+
+export function isWriting(sessionId: string): boolean {
+  return writers.has(sessionId);
+}
+
+/**
+ * Writes an AI lesson step by step. As soon as the review and part 1 exist the session is
+ * saved and returned ("saved") so the learner can begin; the remaining parts are written in
+ * the background and stored into the session as they finish. A lesson that finishes before
+ * that point is returned whole ("done") for the caller to save.
+ */
+async function writeAiLesson(
+  base: Session,
+  inp: WriterInputs,
+  opts: PrepareOptions,
+  /** The session is already saved (continuing): only its lesson is updated. */
+  existing = false,
+): Promise<{ status: "saved"; session: Session } | { status: "done"; lesson: LessonContent }> {
+  const profile = await getProfile();
+  // the screen's cancel button stops writing only until the lesson can start
+  const inner = new AbortController();
+  let started = existing;
+  opts.signal?.addEventListener("abort", () => {
+    if (!started) inner.abort();
+  });
+  return new Promise((resolve, reject) => {
+    if (existing) resolve({ status: "saved", session: base });
+    const run = generateLesson({
+      model: modelOf(profile),
+      webSearch: PROVIDERS[activeProvider(profile)].webSearch,
+      skillset: inp.skillset,
+      plan: planSession(inp.minutes),
+      number: base.number,
+      chunks: inp.picked,
+      sourceTitles: inp.titles,
+      lastLesson: inp.last,
+      mistakes: inp.mistakes,
+      previousTitles: inp.previousTitles,
+      onProgress: (stage, detail, steps) => {
+        if (!started) opts.onProgress?.(stage, detail, steps);
+      },
+      signal: inner.signal,
+      draft: inp.draft,
+      saveDraft: async (d) => {
+        await db.drafts.put(d);
+      },
+      onPartial: async (partial) => {
+        partial.mode = "ai";
+        if (started) {
+          await db.sessions.update(base.id, { lesson: partial });
+          return;
+        }
+        if (!(await db.skillsets.get(base.skillsetId))) throw new Error("Skillset was deleted");
+        started = true;
+        const session: Session = { ...base, lesson: partial };
+        await saveSession(session);
+        resolve({ status: "saved", session });
+      },
+    });
+    const done = run.then(async ({ lesson }) => {
+      lesson.mode = "ai";
+      await db.drafts.delete(base.skillsetId);
+      if (!started) return resolve({ status: "done", lesson });
+      await db.sessions.update(base.id, { lesson });
+    });
+    const tracked = done.catch(async (e) => {
+      if (!started) return reject(e);
+      await markWritingFailed(base.id, e);
+    });
+    writers.set(base.id, tracked.then(() => undefined));
+    void tracked.finally(() => writers.delete(base.id));
+  });
+}
+
+async function markWritingFailed(sessionId: string, e: unknown): Promise<void> {
+  const kind = e instanceof AiError ? e.kind : "api";
+  if (e instanceof AiError && isBlocking(e.kind)) await reportAiError(e);
+  const s = await db.sessions.get(sessionId);
+  if (s?.lesson?.building) await db.sessions.update(sessionId, { lesson: { ...s.lesson, building: { ...s.lesson.building, error: kind } } });
+}
+
+/**
+ * Continues writing a started lesson whose background writing stopped (app closed,
+ * phone asleep, network error). Safe to call any time — does nothing when it is
+ * already being written or complete.
+ */
+export async function continueWriting(sessionId: string): Promise<void> {
+  if (writers.has(sessionId)) return writers.get(sessionId);
+  const s = await db.sessions.get(sessionId);
+  if (!s?.lesson?.building || s.status === "done") return;
+  const skillset = await db.skillsets.get(s.skillsetId);
+  if (!skillset) return;
+  const draft = await db.drafts.get(s.skillsetId);
+  if (!draft || draft.minutes !== s.minutes || draft.chunkIds.join() !== s.chunkIds.join()) {
+    // the saved steps are gone: this lesson can't be finished — drop it, a fresh one will be made
+    if (s.status === "ready" || !s.progress.page) await db.sessions.delete(s.id);
+    else await markWritingFailed(s.id, new AiError("Lesson draft missing.", "bad-response"));
+    return;
+  }
+  await db.sessions.update(s.id, { lesson: { ...s.lesson, building: { ...s.lesson.building, error: undefined } } });
+  const all = lessonChunks(await skillsetChunks(s.skillsetId));
+  const byId = new Map(all.map((c) => [c.id, c]));
+  const picked = s.chunkIds.map((id) => byId.get(id)).filter((c): c is Chunk => !!c);
+  const last = await lastDoneLesson(s.skillsetId);
+  await writeAiLesson(s, { skillset, minutes: s.minutes, picked, titles: await sourceTitles(s.skillsetId), last: last?.lesson, mistakes: await recentMistakes(s.skillsetId), previousTitles: [], draft }, {}, true);
+  await writers.get(s.id);
+}
+
 async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOptions): Promise<Session> {
   let skillset = await db.skillsets.get(skillsetId);
   if (!skillset) throw new Error("Skillset not found");
@@ -158,7 +279,10 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
   const existing = await findReadySession(skillsetId, minutes, kind);
   if (existing) {
     const staleOffline = existing.status === "ready" && existing.lesson?.mode === "offline" && useAi;
-    if (!staleOffline) return existing;
+    if (!staleOffline) {
+      if (existing.lesson?.building && !writers.has(existing.id)) void continueWriting(existing.id).catch(() => undefined);
+      return existing;
+    }
     await db.sessions.delete(existing.id);
   }
 
@@ -188,28 +312,13 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
         // continue a lesson that was interrupted half-written (same portion, same material)
         const draft = usableDraft(await db.drafts.get(skillsetId), minutes, picked.map((c) => c.id));
         if (draft) base.number = draft.number;
-        const { lesson } = await generateLesson({
-          model: modelOf(profile),
-          webSearch: PROVIDERS[activeProvider(profile)].webSearch,
-          skillset,
-          plan,
-          number: base.number,
-          chunks: picked,
-          sourceTitles: titles,
-          lastLesson: last?.lesson,
-          mistakes,
-          previousTitles,
-          onProgress: opts.onProgress,
-          signal: opts.signal,
-          draft,
-          saveDraft: async (d) => {
-            await db.drafts.put(d);
-          },
-        });
-        await db.drafts.delete(skillsetId);
-        lesson.mode = "ai";
-        base.lesson = lesson;
         base.chunkIds = picked.map((c) => c.id);
+        const started = await writeAiLesson(base, { skillset, minutes, picked, titles, last: last?.lesson, mistakes, previousTitles, draft }, opts);
+        if (started.status === "saved") {
+          await reportAiOk();
+          return started.session; // the rest is being written in the background
+        }
+        base.lesson = started.lesson;
       }
       await reportAiOk();
     } catch (e) {

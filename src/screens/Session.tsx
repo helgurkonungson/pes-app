@@ -1,13 +1,16 @@
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
 import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb, Sparkles, X } from "lucide-react";
+import { liveQuery } from "dexie";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
 import { reportAiError, reportAiOk, useAiState } from "../ai/status";
 import { modelOf } from "../ai/providers";
 import { gradeAnswer } from "../ai/tutor";
 import { confirmDialog, ExtLink } from "../components/ui";
-import { BadgeIcon, Markdown, Rings, ScoreRing } from "../components/visuals";
+import { BookBite } from "../components/BookBite";
+import { BuildProgress } from "../components/BuildProgress";
+import { BadgeIcon, Markdown, ScoreRing } from "../components/visuals";
 import type { AiErrorKind } from "../core/aiStatus";
 import { badgeById } from "../core/badges";
 import { canAdvance, lessonPages, type Page, placementPages, type StepKey, stepsOf } from "../core/flow";
@@ -16,9 +19,9 @@ import { OfflineError } from "../core/offline";
 import { rankFor } from "../core/scoring";
 import type { OpenGrade, Session, SessionProgress, SessionResult } from "../core/types";
 import { db, getProfile } from "../data/db";
-import { completeSession, saveSession } from "../data/repo";
+import { completeSession } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
-import { CourseFinishedError, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
+import { continueWriting, CourseFinishedError, isWriting, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
 import { type Key, type T, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { keepScreenOn } from "../native/awake";
@@ -157,7 +160,8 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
       if (session) {
         const s = { ...session, status: "active" as const, startedAt: session.startedAt ?? nowIso() };
         setSession(s);
-        saveSession(s);
+        // only these fields: the lesson itself may be updated by its background writer meanwhile
+        db.sessions.update(s.id, { status: s.status, startedAt: s.startedAt }).catch(() => undefined);
       }
       setPhase("run");
       return;
@@ -165,6 +169,28 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     const tm = setTimeout(() => setCount((c) => c - 1), 700);
     return () => clearTimeout(tm);
   }, [phase, count, session]);
+
+  // ---- a lesson still being written: take each new part as it is saved; resume stalled writing ----
+  const sessionId = session?.id;
+  const building = !!session?.lesson?.building;
+  useEffect(() => {
+    if (!sessionId || !building) return;
+    const sub = liveQuery(() => db.sessions.get(sessionId)).subscribe({
+      next: (rec) => {
+        if (rec?.lesson) setSession((prev) => (prev && prev.id === rec.id ? { ...prev, lesson: rec.lesson } : prev));
+      },
+      error: () => undefined,
+    });
+    const resume = () => {
+      if (document.visibilityState === "visible" && !isWriting(sessionId)) void continueWriting(sessionId).catch(() => undefined);
+    };
+    resume();
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      sub.unsubscribe();
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [sessionId, building]);
 
   // ---- persist progress ----
   const persist = useCallback(
@@ -250,9 +276,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
         <div className="preparing">
           {phase === "loading" ? (
             <>
-              <div className="spin">
-                <Rings values={[0.72, 0.5, 0.3]} size={150} stroke={14} />
-              </div>
+              <BookBite size={220} />
               <h2 className="section-title" role="status">
                 {stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)}
               </h2>
@@ -379,6 +403,11 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             {Math.floor(progress.seconds / 60)}:{String(progress.seconds % 60).padStart(2, "0")}
           </span>
         </div>
+        {session.lesson?.building && page.kind !== "pending" && (
+          <div className="build-strip">
+            <BuildProgress building={session.lesson.building} compact />
+          </div>
+        )}
         <div className="steps" aria-hidden>
           {steps.map((s, i) => {
             const end = i === steps.length - 1 ? pages.length : steps[i + 1].first;
@@ -443,6 +472,25 @@ function PageView({ page, session, progress, update }: { page: Page; session: Se
           </div>
         </div>
       );
+    case "pending": {
+      const b = session.lesson?.building;
+      const failed = !!b?.error;
+      return (
+        <div className="stack-lg pending-page">
+          <BookBite size={170} />
+          <h2 className="q-title" role="status">
+            {failed ? t("session.buildStopped") : t(page.step === "quiz" ? "session.buildingQuiz" : "session.buildingPart")}
+          </h2>
+          {b && <BuildProgress building={b} />}
+          <p className="muted small">{failed ? t("session.buildStoppedText") : t("session.buildingText")}</p>
+          {failed && (
+            <button className="btn primary block" onClick={() => void continueWriting(session.id).catch(() => undefined)}>
+              {t("common.retry")}
+            </button>
+          )}
+        </div>
+      );
+    }
     case "recap":
       return (
         <div className="stack-lg">
@@ -726,9 +774,7 @@ function Congrats({ session, result, onClose }: { session: Session; result: Sess
   if (!result) {
     return (
       <div className="preparing">
-        <div className="spin">
-          <Rings values={[0.7]} size={90} stroke={10} />
-        </div>
+        <BookBite size={150} />
       </div>
     );
   }

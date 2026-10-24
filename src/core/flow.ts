@@ -12,23 +12,29 @@ export type Page =
   | { kind: "mcq"; step: "review" | "quiz" | "placement"; mcq: Mcq; index: number; of: number }
   | { kind: "theory"; step: "theory"; section: TheorySection; index: number; of: number; keyPoints?: string[] }
   | { kind: "open"; step: "open"; q: string; rubric: string[] }
-  | { kind: "intro"; step: "placement"; text: string; count: number };
+  | { kind: "intro"; step: "placement"; text: string; count: number }
+  /** The rest of the lesson is still being written. */
+  | { kind: "pending"; step: "theory" | "quiz" };
 
 export function lessonPages(l: LessonContent): Page[] {
   const pages: Page[] = [];
   if (l.review.recap.length) pages.push({ kind: "recap", step: "review", recap: l.review.recap });
   l.review.questions.forEach((mcq, i) => pages.push({ kind: "mcq", step: "review", mcq, index: i, of: l.review.questions.length }));
+  const parts = Math.max(l.theory.sections.length, l.building?.sections ?? 0);
+  const allParts = l.theory.sections.length >= parts;
   l.theory.sections.forEach((section, i) =>
     pages.push({
       kind: "theory",
       step: "theory",
       section,
       index: i,
-      of: l.theory.sections.length,
-      keyPoints: i === l.theory.sections.length - 1 ? l.theory.keyPoints : undefined,
+      of: parts,
+      keyPoints: allParts && i === l.theory.sections.length - 1 ? l.theory.keyPoints : undefined,
     }),
   );
-  l.quiz.forEach((mcq, i) => pages.push({ kind: "mcq", step: "quiz", mcq, index: i, of: l.quiz.length }));
+  // a lesson still being written ends, for now, at a page that waits for the next part
+  if (l.building) pages.push({ kind: "pending", step: allParts ? "quiz" : "theory" });
+  else l.quiz.forEach((mcq, i) => pages.push({ kind: "mcq", step: "quiz", mcq, index: i, of: l.quiz.length }));
   pages.push({ kind: "open", step: "open", q: l.open.q, rubric: l.open.rubric });
   return pages;
 }
@@ -53,6 +59,7 @@ export function stepsOf(pages: Page[]): { step: StepKey; first: number }[] {
 export function canAdvance(page: Page, progress: SessionProgress): boolean {
   if (page.kind === "mcq") return progress.mcq[page.mcq.id] !== undefined;
   if (page.kind === "open") return !!progress.grade || progress.openAnswer === "__skipped__";
+  if (page.kind === "pending") return false;
   return true;
 }
 

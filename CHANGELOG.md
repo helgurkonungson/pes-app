@@ -2,6 +2,13 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.7.0 — 2026-10-24
+
+- **Start an AI lesson right away.** As soon as the review and the first part of the theory are written, the lesson opens; the remaining parts and the quiz are written in the background and appear by themselves. If you get ahead of the writer, a page shows "Writing the next part…" and the next page appears there as soon as it's ready.
+- **Progress on the lesson card.** While a lesson is still being written, the lesson screen, the Home card and the skillset page show "Lesson still being written · step i of n". If writing stops (no connection, phone asleep), it shows "paused" and continues automatically when you open the lesson again — from the saved step, nothing is rewritten.
+- **New loading animation:** the book from the icon gets eaten bite by bite, crumbs flying, until it's finished — then a new book.
+- **"Continue without sources"** on the sources screen of a new skillset (with the note that sources can be added later): goes straight to the first session (with AI: placement test / lesson from a curriculum).
+
 ## 0.6.1 — 2026-10-24
 
 - **Lessons from books start with the actual content.** Title page, copyright/ISBN page, table of contents, preface, introduction, acknowledgements are skipped — the lesson begins at "Глава 1" / "Chapter 1" (or, in books without chapter headings, after the recognisable front matter). Index, bibliography and notes at the end are skipped too. A source is never skipped entirely.

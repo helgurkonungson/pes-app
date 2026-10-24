@@ -1,4 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
+import { BuildProgress } from "../components/BuildProgress";
 import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, Sparkles } from "lucide-react";
 import { useUpdate } from "../app/App";
 import { useAiState } from "../ai/status";
@@ -69,6 +70,7 @@ function NextUp({ x, ai }: { x: SkillsetSummary; ai: AiState | undefined }) {
           {x.s.name} <Chevron />
         </button>
         <h2 className="next-title">{nextTitle(x, ai, t)}</h2>
+        {x.open?.lesson?.building && <BuildProgress building={x.open.lesson.building} compact />}
         <div className="next-progress">
           <Bar value={x.coverage} thin label={progressLabel(x, t)} />
           <span>{progressLabel(x, t)}</span>

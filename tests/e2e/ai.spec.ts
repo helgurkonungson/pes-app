@@ -26,6 +26,23 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await finishLesson(page, { aiGrade: true });
   });
 
+  test("new skillset: “Continue without sources” goes straight to the first (AI) session", async ({ page }) => {
+    await mockApis(page, "ok");
+    await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
+    await page.getByRole("navigation").getByRole("button", { name: "Навыки" }).click();
+    await btn(page, /Новый навык/).click();
+    await page.locator("#sk-name").fill("Переговоры");
+    await btn(page, /Создать и добавить источники/).click();
+    await expect(page.getByText("Источники можно будет добавить позднее.")).toBeVisible();
+    await btn(page, /Продолжить без источников/).click();
+    await skipCountdown(page);
+    await expect(page.getByRole("heading", { name: "Определим ваш стартовый уровень" })).toBeVisible();
+    // closing the session lands on the skillset, not back on the sources screen
+    await page.getByRole("button", { name: "Выйти из урока" }).click();
+    await page.getByRole("button", { name: "Выйти", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Переговоры" })).toBeVisible();
+  });
+
   test("model list loads in Settings", async ({ page }) => {
     await mockApis(page, "ok");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
@@ -201,9 +218,54 @@ test.describe("Gemini, Groq and a custom server", () => {
     await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
   });
 
-  test("phone asleep mid-lesson: written parts are kept and the lesson continues by itself", async ({ page }) => {
+  async function geminiReady(page: import("@playwright/test").Page) {
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await createSkillsetWithText(page);
+    await btn(page, "Пропустить").click();
+  }
+
+  test("the lesson opens as soon as part 1 is written; the rest arrives in the background", async ({ page }) => {
     test.setTimeout(90_000);
-    // let the test switch the page to "hidden" (phone asleep / app in background) and back
+    await mockApis(page, "credits");
+    let releaseQuiz!: () => void;
+    const quizGate = new Promise<void>((r) => (releaseQuiz = r));
+    const tools: string[] = [];
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+      const { compatRequest } = await import("./helpers");
+      const { tool } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+      tools.push(tool);
+      if (tool === "emit_quiz") await quizGate; // the quiz takes "a long time"
+      return lessonReply(route);
+    });
+    await geminiReady(page);
+    await btn(page, /Начать · 15 мин/).click();
+    await skipCountdown(page); // started before the quiz exists
+    await expect(page.locator(".build-strip")).toContainText("Урок дописывается");
+    // walk to the end of what is written: a page that waits for the quiz
+    for (let i = 0; i < 10 && !(await page.getByText("Составляю тест…").isVisible()); i++) {
+      const option = page.locator(".option:not([disabled])").first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      await page.getByRole("button", { name: /^Далее/ }).click();
+    }
+    await expect(page.locator(".pending-page")).toContainText("Составляю тест…");
+    await expect(page.getByRole("button", { name: /^Далее/ })).toBeDisabled();
+    releaseQuiz();
+    // the quiz appears on the same page by itself
+    await expect(page.locator(".option").first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator(".build-strip")).toHaveCount(0);
+    await finishLesson(page);
+  });
+
+  test("background writing that stopped (phone asleep) continues from the saved steps when you come back", async ({ page }) => {
+    test.setTimeout(90_000);
     await page.addInitScript(() => {
       Object.defineProperty(document, "visibilityState", { configurable: true, get: () => (window as unknown as { __vis?: string }).__vis ?? "visible" });
     });
@@ -228,56 +290,40 @@ test.describe("Gemini, Groq and a custom server", () => {
       }
       return lessonReply(route);
     });
-    await onboard(page);
-    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await chooseProvider(page, "Gemini");
-    await btn(page, /Ключ API Gemini/).click();
-    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
-    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
-    await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
+    await geminiReady(page);
     await btn(page, /Начать · 15 мин/).click();
-    await expect(page.locator(".preparing [role=status]")).toContainText("свёрнуто");
-    await expect(page.getByRole("alert")).toHaveCount(0); // no error screen while asleep
-    await setVis("visible"); // the learner comes back
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
-    // the plan and part 1 were not written twice
-    expect(tools.filter((t) => t === "emit_plan")).toHaveLength(1);
-    expect(tools).toEqual(["emit_plan", "emit_section", "emit_section", "emit_section", "emit_review", "emit_quiz"]);
+    await expect(page.locator(".build-strip")).toContainText("на паузе");
+    await setVis("visible"); // the learner comes back
+    await expect(page.locator(".build-strip")).toHaveCount(0, { timeout: 15_000 });
+    // nothing was written twice
+    expect(tools).toEqual(["emit_plan", "emit_review", "emit_section", "emit_section", "emit_section", "emit_quiz"]);
+    await finishLesson(page);
   });
 
-  test("a failed step keeps the finished ones: Retry continues instead of starting over", async ({ page }) => {
+  test("a step that failed before the lesson could open keeps the finished ones: Retry continues", async ({ page }) => {
     await mockApis(page, "credits");
     const tools: string[] = [];
-    let failQuiz = true;
+    let failSection = true;
     await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");
       const { tool } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
       tools.push(tool);
-      if (tool === "emit_quiz" && failQuiz) return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify([{ error: { code: 400, message: "Request contains an invalid argument.", status: "INVALID_ARGUMENT" } }]) });
+      if (tool === "emit_section" && failSection) return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify([{ error: { code: 400, message: "Request contains an invalid argument.", status: "INVALID_ARGUMENT" } }]) });
       return lessonReply(route);
     });
-    await onboard(page);
-    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await chooseProvider(page, "Gemini");
-    await btn(page, /Ключ API Gemini/).click();
-    await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
-    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
-    await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
+    await geminiReady(page);
     await btn(page, /Начать · 15 мин/).click();
     await expect(page.getByRole("alert")).toBeVisible();
     const before = tools.length;
-    failQuiz = false;
+    failSection = false;
     await btn(page, "Повторить").click();
     await skipCountdown(page);
     await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
-    expect(tools.slice(before)).toEqual(["emit_quiz"]);
+    await expect(page.locator(".build-strip")).toHaveCount(0, { timeout: 15_000 });
+    expect(tools.slice(before)).toEqual(["emit_section", "emit_section", "emit_quiz"]);
   });
 
   test("Groq: forced function call → lesson", async ({ page }) => {

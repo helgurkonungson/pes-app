@@ -14,6 +14,14 @@
 
   /* brand yellow: 11.6:1 on --bg; dark text on it 10.9:1 */
   --accent: #ffc53a;
+  /* the book from the app icon (loading animation) */
+  --book: #2f5bd3;
+  --book-dark: #1f43a6;
+  --paper: #ffffff;
+  --paper-shade: #ece4d4;
+  --paper-line: #c8bea9;
+  --ribbon: #ff5a4f;
+  --leaf: #1fae74;
   --accent-light: #ffe39b;
   --accent-strong: #f5a623;
   --accent-deep: #d98a00;
@@ -516,6 +524,47 @@ button.menu-row:active { opacity: .7; }
   .today-grid { grid-template-columns: 1fr 1fr 1fr; }
   .grid-3 .action-tile { padding: 12px 6px; }
   .page-count { font-size: 48px; }
+}
+
+.build-progress { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.build-progress.compact { gap: 4px; }
+.build-progress.compact .gen-bar { height: 4px; }
+.build-progress.stopped .gen-bar span { background: var(--warn); }
+.build-strip { margin: 8px 0 2px; }
+.pending-page { align-items: center; text-align: center; padding-top: 12px; }
+.pending-page .build-progress { max-width: 300px; }
+
+/* ---------- loading: the book eaten bite by bite ---------- */
+.book-bite { overflow: visible; display: block; }
+.book-bite .bb-cover { fill: var(--book); }
+.book-bite .bb-cover-dark { fill: var(--book-dark); }
+.book-bite .bb-ribbon { fill: var(--ribbon); }
+.book-bite .bb-edge { fill: var(--paper-line); }
+.book-bite .bb-paper-shade, .book-bite .bb-gutter { fill: var(--paper-shade); }
+.book-bite .bb-paper { fill: var(--paper); }
+.book-bite .bb-pic { fill: var(--leaf); }
+.book-bite .bb-hill { fill: var(--book); }
+.book-bite .bb-sun { fill: var(--ribbon); }
+.book-bite .bb-line, .book-bite .bb-heading { fill: none; stroke: var(--paper-line); stroke-width: 6; stroke-linecap: round; }
+.book-bite .bb-heading { stroke: var(--book); stroke-width: 9; }
+.book-bite .bb-rim { fill: none; stroke: var(--paper-shade); stroke-width: 10; }
+.book-bite .bb-rim-line { fill: none; stroke: var(--paper-line); stroke-width: 2; }
+.book-bite .bb-shadow { fill: rgba(0, 0, 0, 0.35); transition: rx .5s ease; }
+.book-bite .bb-book { transform-box: view-box; transform-origin: 160px 130px; }
+.book-bite .bb-chomp { animation: bb-chomp .28s ease-out; }
+.book-bite .bb-fresh { animation: bb-fresh .45s ease-out; }
+.book-bite .bb-gone { animation: bb-gone .6s ease-in forwards; }
+.book-bite .bb-new { transform-box: fill-box; transform-origin: center; animation: bb-bite .16s ease-out; }
+.book-bite .bb-crumb { fill: var(--paper); transform-box: fill-box; transform-origin: center; animation: bb-crumb .7s cubic-bezier(.2, .6, .4, 1) both; }
+.book-bite .bb-crumb.shade { fill: var(--paper-shade); }
+@keyframes bb-chomp { 0% { transform: scale(1); } 35% { transform: scale(.965, 1.03); } 100% { transform: scale(1); } }
+@keyframes bb-fresh { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: none; } }
+@keyframes bb-gone { to { opacity: 0; transform: scale(.9); } }
+@keyframes bb-bite { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes bb-crumb {
+  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
 }
 
 /* respect reduced-motion preferences */
