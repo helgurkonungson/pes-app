@@ -5,7 +5,7 @@ import { localDay } from "../core/dates";
 import { mistakesOf, tallyLesson } from "../core/flow";
 import { nowIso, uid } from "../core/ids";
 import { advanceCursor, clampMinutes, coverage } from "../core/planner";
-import { levelFromXp, scorePlacement, XP } from "../core/scoring";
+import { levelFromXp, scorePlacement, skippedPlacement, XP } from "../core/scoring";
 import { registerDay } from "../core/streak";
 import type { Chunk, DayActivity, LessonLanguage, Mcq, Session, SessionResult, Skillset, Source, SourceKind } from "../core/types";
 import { db, getProfile } from "./db";
@@ -66,6 +66,18 @@ export async function deleteSkillset(id: string): Promise<void> {
 }
 
 /** Ids of course lessons already completed in a skillset. */
+/**
+ * Skips the placement test: the learner starts from zero (beginner, nothing known),
+ * and an unfinished test session is removed.
+ */
+export async function skipPlacement(skillsetId: string): Promise<void> {
+  await db.transaction("rw", [db.skillsets, db.sessions], async () => {
+    await db.skillsets.update(skillsetId, { placement: skippedPlacement(nowIso()), placementSkipped: true });
+    const open = await db.sessions.where("skillsetId").equals(skillsetId).toArray();
+    for (const s of open) if (s.kind === "placement" && s.status !== "done") await db.sessions.delete(s.id);
+  });
+}
+
 export async function doneCourseLessonIds(skillsetId: string): Promise<Set<string>> {
   const done = await db.sessions.where("[skillsetId+status]").equals([skillsetId, "done"]).toArray();
   return new Set(done.map((s) => s.lesson?.courseLessonId).filter((x): x is string => !!x));

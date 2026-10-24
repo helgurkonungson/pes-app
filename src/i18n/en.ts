@@ -265,8 +265,16 @@ export const en = {
   "step.placement": "Placement test",
 
   // placement
+  "placement.offlineIntro": "A short test on your own material: fill in the missing word. If you don't know, tap “I don't know”.",
+  "placement.courseIntro": "A few questions from different lessons of the course. Lessons you already know will be skipped.",
+  "placement.skipNote": "You can skip the test — then we assume you're starting from zero and the course covers every topic.",
+  "placement.skip": "Skip the test",
+  "placement.skipConfirm": "Skip the placement test?",
+  "placement.skipConfirmText": "We'll assume you're starting from zero: lessons will cover every topic from the basics.",
+  "done.known": { one: "{n} topic you already know will be skipped — lessons focus on the rest.", other: "{n} topics you already know will be skipped — lessons focus on the rest." },
+  "skillset.placementSkippedHint": "Test skipped · starting from zero",
   "placement.title": "Let's find your starting point",
-  "placement.howto": "{n} questions · from easy to hard · tap “I don't know” instead of guessing — it makes the result more accurate.",
+  "placement.howto": { one: "{n} question · tap “I don't know” instead of guessing — it makes the result more accurate.", other: "{n} questions · tap “I don't know” instead of guessing — it makes the result more accurate." },
 
   // mcq
   "mcq.recall": "Recall",

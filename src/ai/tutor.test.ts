@@ -7,7 +7,7 @@ vi.mock("./client", async (orig) => ({ ...(await orig<typeof import("./client")>
 import { planSession } from "../core/planner";
 import type { Chunk, LessonDraft, Skillset } from "../core/types";
 import { AiError } from "./client";
-import { generateLesson, lessonStepCount } from "./tutor";
+import { generateLesson, generatePlacement, lessonStepCount } from "./tutor";
 
 const mcq = (i: number) => ({ q: `Question ${i}?`, options: ["Right", "Wrong 1", "Wrong 2", "Wrong 3"], answer: 0, explanation: "Because.", difficulty: "m", topic: "Basics" });
 
@@ -24,6 +24,8 @@ function reply(tool: string, prompt: string): unknown {
 }
 
 const skillset = { id: "sk1", name: "Data governance", goal: "", language: "English", cursor: 0, lessonsDone: 0, createdAt: "x", minutes: 15 } as unknown as Skillset;
+const lastLesson = { title: "DAMA wheel", review: { recap: [], questions: [] }, theory: { sections: [{ heading: "h", body: "b" }], keyPoints: ["Eleven knowledge areas"] }, quiz: [], open: { id: "open", q: "?", rubric: [] } } as import("../core/types").LessonContent;
+
 const chunks = [
   { id: "c1", skillsetId: "sk1", sourceId: "s1", order: 0, title: "Rights", text: "Decision rights define who approves data definitions.", words: 7 },
   { id: "c2", skillsetId: "sk1", sourceId: "s1", order: 1, title: "Start", text: "Start with one domain and a measurable goal.", words: 8 },
@@ -37,6 +39,7 @@ function run(draft?: LessonDraft, saved: LessonDraft[] = []) {
     number: 4,
     chunks,
     sourceTitles: new Map([["s1", "Handbook"]]),
+    lastLesson,
     mistakes: [],
     previousTitles: [],
     draft,
@@ -108,7 +111,7 @@ describe("lesson written in steps", () => {
   it("reports progress as steps done of total", async () => {
     const seen: string[] = [];
     await generateLesson({
-      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), lastLesson, mistakes: [], previousTitles: [],
       onProgress: (_s, detail, st) => seen.push(`${detail} ${st?.done}/${st?.total}`),
     });
     expect(seen).toEqual(["plan 0/5", "review 1/5", "section 1/2 2/5", "section 2/2 3/5", "quiz 4/5"]);
@@ -118,7 +121,7 @@ describe("lesson written in steps", () => {
   it("hands out partial lessons once the review and part 1 exist; questions keep their option order", async () => {
     const partials: import("../core/types").LessonContent[] = [];
     const { lesson } = await generateLesson({
-      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), lastLesson, mistakes: [], previousTitles: [],
       onPartial: async (l) => {
         partials.push(structuredClone(l));
       },
@@ -129,5 +132,34 @@ describe("lesson written in steps", () => {
     expect(partials[0].review.questions[0]).toEqual(lesson.review.questions[0]);
     expect(lesson.building).toBeUndefined();
     expect(lesson.quiz).toHaveLength(2);
+  });
+
+  it("the first lesson of a skillset (nothing learned yet) has no review step", async () => {
+    const { lesson } = await generateLesson({
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+    });
+    expect(tools()).toEqual(["emit_plan", "emit_section", "emit_section", "emit_quiz"]);
+    expect(lesson.review).toEqual({ recap: [], questions: [] });
+  });
+
+  it("a skipped placement test means: assume no prior knowledge", async () => {
+    await generateLesson({
+      model: "m", skillset: { ...skillset, placement: { score: 0, total: 0, level: "beginner", strengths: [], gaps: [], at: "x", skipped: true } }, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+    });
+    expect((ai.structured.mock.calls[0][0] as { prompt: string }).prompt).toContain("assume no prior knowledge");
+  });
+
+  it("topics the placement test showed as known are not re-taught", async () => {
+    await generateLesson({
+      model: "m", skillset: { ...skillset, placement: { score: 7, total: 10, level: "intermediate", strengths: ["Metadata"], gaps: ["Quality"], at: "x" } }, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+    });
+    expect((ai.structured.mock.calls[0][0] as { prompt: string }).prompt).toContain("ALREADY KNOWN (placement test): Metadata");
+  });
+
+  it("placement questions remember which excerpt (chunk) they check", async () => {
+    ai.structured.mockResolvedValueOnce({ intro: "Hi", questions: [{ ...mcq(1), excerpt: 2 }, { ...mcq(2), excerpt: 1 }, { ...mcq(3), excerpt: 9 }, mcq(4)] });
+    const p = await generatePlacement({ model: "m", skillset, samples: chunks, sourceTitles: new Map(), count: 4 });
+    expect(p.questions.map((q) => q.ref)).toEqual(["c2", "c1", undefined, undefined]);
+    expect((ai.structured.mock.calls.at(-1)![0] as { prompt: string }).prompt).toContain('<excerpt n="2"');
   });
 });

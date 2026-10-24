@@ -8,7 +8,7 @@
  */
 import { rng } from "./normalize";
 import { planSession } from "./planner";
-import type { Chunk, LessonContent, Mcq, TheorySection } from "./types";
+import type { Chunk, LessonContent, Mcq, PlacementContent, TheorySection } from "./types";
 
 // ---------- text helpers ----------
 
@@ -401,4 +401,25 @@ export function buildOfflineLesson(input: OfflineInput): LessonContent {
     mode: "offline",
     readTo: reading.readTo,
   };
+}
+
+// ---------- placement test without AI ----------
+
+/**
+ * A placement test built from the learner's own sources, no AI: one fill-in-the-gap
+ * question per sampled part of the material, spread over the whole source. Each question
+ * remembers its chunk (`ref`), so parts the learner already knows can be skipped later.
+ * Returns null when the material is too thin for a meaningful test (< 3 questions).
+ */
+export function buildOfflinePlacement(chunks: Chunk[], count: number, labels: OfflineLabels & { placementIntro: string }, seed: number): PlacementContent | null {
+  const ordered = [...chunks].sort((a, b) => a.order - b.order);
+  if (!ordered.length) return null;
+  const rand = rng(seed);
+  const picks = ordered.length <= count ? ordered : Array.from({ length: count }, (_, i) => ordered[Math.floor((i + 0.5) * (ordered.length / count))]);
+  const questions: Mcq[] = [];
+  for (const c of picks) {
+    const [q] = makeGapQuestions(toUnits(c.text), 1, labels, `p${questions.length + 1}-`, rand);
+    if (q) questions.push({ ...q, id: `p${questions.length + 1}`, topic: c.title, ref: c.id });
+  }
+  return questions.length >= 3 ? { intro: labels.placementIntro, questions } : null;
 }

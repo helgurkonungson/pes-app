@@ -2,6 +2,13 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.8.0 — 2026-10-24
+
+- **Every skillset starts with a short placement test** — whatever the material: with AI (from your sources or, without sources, from the skillset's topic), without AI (fill-in-the-gap questions from your own sources), and for imported courses (one question from each of up to 10–14 lessons). Older skillsets that skipped the test automatically get it while no lesson is done yet.
+- **Skipping = starting from zero.** The test's first page says so; skipping (there or on the skillset page) asks for confirmation, sets the level to beginner and lessons then cover every topic from the basics.
+- **Only the weak spots remain.** Parts of your material (or course lessons) you answered right are skipped by the lessons; with AI the lessons also don't re-teach the topics you already know.
+- **The first lesson after the test has no review step** — there is nothing to review yet.
+
 ## 0.7.0 — 2026-10-24
 
 - **Start an AI lesson right away.** As soon as the review and the first part of the theory are written, the lesson opens; the remaining parts and the quiz are written in the background and appear by themselves. If you get ahead of the writer, a page shows "Writing the next part…" and the next page appears there as soon as it's ready.

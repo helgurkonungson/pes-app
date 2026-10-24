@@ -1,5 +1,5 @@
 /** XP, levels, ranks and placement scoring. Pure functions. */
-import type { Difficulty, LearnerLevel, Mcq, PlacementResult } from "./types";
+import type { Difficulty, LearnerLevel, Mcq, PlacementResult, Skillset } from "./types";
 
 export const XP = {
   reviewCorrect: 5,
@@ -94,7 +94,16 @@ export function scorePlacement(questions: Mcq[], answers: Record<string, number>
     else gaps.push(topic);
   }
   const total = questions.length;
-  return { score, total, level: levelFromScore(total ? score / total : 0), strengths, gaps, at };
+  // material is "known" when every question about it was answered right
+  const byRef = new Map<string, boolean>();
+  for (const q of questions) if (q.ref) byRef.set(q.ref, (byRef.get(q.ref) ?? true) && answers[q.id] === q.answer);
+  const known = [...byRef].filter(([, ok]) => ok).map(([ref]) => ref);
+  return { score, total, level: levelFromScore(total ? score / total : 0), strengths, gaps, at, known };
+}
+
+/** A skipped placement test: the learner starts from zero, nothing is skipped in lessons. */
+export function skippedPlacement(at: string): PlacementResult {
+  return { score: 0, total: 0, level: "beginner", strengths: [], gaps: [], at, known: [], skipped: true };
 }
 
 /** Accuracy 0..1, or null when nothing was answered. */
@@ -105,4 +114,13 @@ export function accuracy(correct: number, total: number): number | null {
 export function pct(ratio: number | null | undefined): string {
   if (ratio == null || !Number.isFinite(ratio)) return "—";
   return `${Math.round(ratio * 100)}%`;
+}
+
+/**
+ * The first session of every skillset is a placement test. Older versions skipped it
+ * automatically (no AI, imported courses) — such skillsets still get it while no lesson is done.
+ */
+export function needsPlacement(s: Pick<Skillset, "placement" | "placementSkipped" | "lessonsDone">): boolean {
+  if (s.placement) return false;
+  return !s.placementSkipped || s.lessonsDone === 0;
 }

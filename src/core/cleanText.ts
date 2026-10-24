@@ -173,11 +173,14 @@ export function analyzeChunks(chunks: Chunk[]): ChunkAnalysis {
   return { skip, startLine };
 }
 
-/** Chunks as lessons should see them: front/back matter skipped, text cleaned. */
-export function lessonChunks(chunks: Chunk[]): Chunk[] {
+/** Chunks as lessons should see them: front/back matter (and material the learner already knows) skipped, text cleaned. */
+export function lessonChunks(chunks: Chunk[], known?: readonly string[]): Chunk[] {
   const { skip, startLine } = analyzeChunks(chunks);
-  return chunks
-    .filter((c) => !skip.has(c.id))
+  // parts the placement test showed the learner already knows — unless that would leave nothing
+  const knownSet = new Set(known ?? []);
+  const left = chunks.filter((c) => !skip.has(c.id) && !knownSet.has(c.id));
+  const keep = left.length ? left : chunks.filter((c) => !skip.has(c.id));
+  return keep
     .map((c) => {
       let text = cleanSourceText(c.text);
       const from = startLine.get(c.id);

@@ -19,7 +19,7 @@ import { OfflineError } from "../core/offline";
 import { rankFor } from "../core/scoring";
 import type { OpenGrade, Session, SessionProgress, SessionResult } from "../core/types";
 import { db, getProfile } from "../data/db";
-import { completeSession } from "../data/repo";
+import { completeSession, skipPlacement } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
 import { continueWriting, CourseFinishedError, isWriting, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
 import { type Key, type T, useT } from "../i18n";
@@ -436,7 +436,19 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             <CloudOff size={18} /> <span className="grow">{t(session.lesson.fallback === "credits" ? "session.fallback.credits" : session.lesson.fallback === "auth" ? "session.fallback.auth" : "session.fallback.noKey")}</span>
           </div>
         )}
-        <PageView page={page} session={session} progress={progress} update={updateProgress} />
+        <PageView
+          page={page}
+          session={session}
+          progress={progress}
+          update={updateProgress}
+          onSkipPlacement={async () => {
+            if (!(await confirmDialog(t("placement.skipConfirm"), { text: t("placement.skipConfirmText"), ok: t("placement.skip") }))) return;
+            await skipPlacement(session.skillsetId);
+            setSession(null);
+            setPhase("loading");
+            setAttempt((a) => a + 1); // prepare the first lesson instead
+          }}
+        />
       </div>
 
       <div className="cta-bar">
@@ -459,7 +471,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
 
 // ---------- page renderers ----------
 
-function PageView({ page, session, progress, update }: { page: Page; session: Session; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void }) {
+function PageView({ page, session, progress, update, onSkipPlacement }: { page: Page; session: Session; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; onSkipPlacement?: () => void }) {
   const t = useT();
   switch (page.kind) {
     case "intro":
@@ -470,6 +482,12 @@ function PageView({ page, session, progress, update }: { page: Page; session: Se
           <div className="card flat tight">
             <p className="small">{t("placement.howto", { n: page.count })}</p>
           </div>
+          <p className="muted small">{t("placement.skipNote")}</p>
+          {onSkipPlacement && (
+            <button className="btn dark block" onClick={onSkipPlacement}>
+              {t("placement.skip")}
+            </button>
+          )}
         </div>
       );
     case "pending": {
@@ -767,7 +785,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
 
 function Congrats({ session, result, onClose }: { session: Session; result: SessionResult | null; onClose: () => void }) {
   const t = useT();
-  const [placement, setPlacement] = useState<{ level: string; strengths: string[]; gaps: string[] } | null>(null);
+  const [placement, setPlacement] = useState<{ level: string; strengths: string[]; gaps: string[]; known?: string[] } | null>(null);
   useEffect(() => {
     if (session.kind === "placement" && result) db.skillsets.get(session.skillsetId).then((s) => s?.placement && setPlacement(s.placement));
   }, [session, result]);
@@ -812,6 +830,7 @@ function Congrats({ session, result, onClose }: { session: Session; result: Sess
             <p className="bold">{t("done.level", { level: t(`level.${placement.level}` as Key) })}</p>
             {placement.strengths.length > 0 && <p className="small">{t("done.strong", { list: placement.strengths.join(", ") })}</p>}
             {placement.gaps.length > 0 && <p className="small">{t("done.gaps", { list: placement.gaps.join(", ") })}</p>}
+            {!!placement.known?.length && <p className="small">{t("done.known", { n: placement.known.length })}</p>}
           </div>
         )}
         {result.levelUp && <p className="bold">{t("done.levelUp", { n: result.levelUp, rank: t(`rank.${rankFor(result.levelUp)}` as Key) })}</p>}

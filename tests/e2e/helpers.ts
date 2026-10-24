@@ -113,8 +113,8 @@ export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: stri
   await expect(page.getByRole("navigation")).toBeVisible();
 }
 
-/** Creates a skillset from pasted text (RU UI). Leaves you on the skillset page. */
-export async function createSkillsetWithText(page: Page, name = "Управление данными"): Promise<void> {
+/** Creates a skillset from pasted text (RU UI). Leaves you on the skillset page — with the placement test skipped unless `keepTest`. */
+export async function createSkillsetWithText(page: Page, name = "Управление данными", opts: { keepTest?: boolean } = {}): Promise<void> {
   await page.getByRole("navigation").getByRole("button", { name: "Навыки" }).click();
   await btn(page, /Новый навык/).click();
   await page.locator("#sk-name").fill(name);
@@ -125,6 +125,7 @@ export async function createSkillsetWithText(page: Page, name = "Управле�
   await expect(page.getByText(/Текст · .* слов/)).toBeVisible();
   await btn(page, "Назад").click();
   await expect(page.getByRole("heading", { name })).toBeVisible();
+  if (!opts.keepTest) await skipPlacementUI(page);
 }
 
 /** Skips the 3-2-1 countdown if it is shown. */
@@ -132,8 +133,8 @@ export async function skipCountdown(page: Page): Promise<void> {
   const c = page.getByRole("button", { name: /Нажмите, чтобы пропустить|Tap to skip/ });
   await c
     .waitFor({ state: "visible", timeout: 6000 })
-    .then(() => c.click())
-    .catch(() => undefined); // already running (resumed lesson)
+    .then(() => c.click({ timeout: 4000 }))
+    .catch(() => undefined); // already running (resumed lesson), or the 3-2-1 ended by itself meanwhile
   await page.locator(".session-body").waitFor({ timeout: 10000 });
 }
 
@@ -190,4 +191,11 @@ export async function chooseProvider(page: Page, name: string): Promise<void> {
   await page.getByRole("button", { name: /Провайдер AI|AI provider/ }).click();
   await page.getByRole("dialog").getByRole("radio", { name: new RegExp(`^${name}`) }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+}
+
+/** Skips the placement test from the skillset page (confirming that we start from zero). */
+export async function skipPlacementUI(page: Page): Promise<void> {
+  await btn(page, "Пропустить").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Пропустить тест" }).click();
+  await expect(page.getByText("Тест пропущен · начинаем с нуля")).toBeVisible();
 }

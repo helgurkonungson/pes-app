@@ -9,7 +9,13 @@ test.describe("imported courses", () => {
     await expect(page.getByRole("heading", { name: "Demo course" })).toBeVisible();
     await expect(page.getByText("Программа курса")).toBeVisible();
     await expect(page.locator(".syllabus-row")).toHaveCount(3);
-    await btn(page, /Начать · 10 мин/).click();
+    // the first session is a placement test from the course; skipping it = start from zero
+    await btn(page, /Пройти входной тест/).click();
+    await skipCountdown(page);
+    await expect(page.getByText(/Несколько вопросов из разных уроков курса/)).toBeVisible();
+    await expect(page.getByText(/считаем, что вы начинаете с нуля/)).toBeVisible();
+    await btn(page, "Пропустить тест").click();
+    await page.getByRole("dialog").getByRole("button", { name: "Пропустить тест" }).click();
     await skipCountdown(page);
     await expect(page.locator(".mode-tag.course")).toBeVisible();
     await finishLesson(page);

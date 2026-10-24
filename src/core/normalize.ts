@@ -42,6 +42,7 @@ export function normalizeMcqs(raw: unknown, prefix: string, rand: () => number =
       explanation: str(o.explanation),
       difficulty: d === "e" || d === "m" || d === "h" ? d : "m",
       topic: str(o.topic) || undefined,
+      ...(str(o.ref) ? { ref: str(o.ref) } : {}),
     });
   });
   return out;

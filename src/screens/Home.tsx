@@ -1,3 +1,4 @@
+import { needsPlacement } from "../core/scoring";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BuildProgress } from "../components/BuildProgress";
 import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, Sparkles } from "lucide-react";
@@ -23,11 +24,11 @@ export function modeOf(x: SkillsetSummary, ai: AiState | undefined): "course" | 
   return ai === "ok" ? "ai" : "offline";
 }
 
-export function nextTitle(x: SkillsetSummary, ai: AiState | undefined, t: T): string {
-  if (x.course) return x.course.finished ? t("next.courseDone") : (x.course.nextTitle ?? "");
+export function nextTitle(x: SkillsetSummary, _ai: AiState | undefined, t: T): string {
   if (x.open?.placement) return t("next.placement");
+  if (x.course) return x.course.finished ? t("next.courseDone") : needsPlacement(x.s) ? t("next.placement") : (x.course.nextTitle ?? "");
   if (x.open?.lesson) return x.open.lesson.title;
-  if (!x.s.placement && !x.s.placementSkipped && ai === "ok") return t("next.placement");
+  if (needsPlacement(x.s)) return t("next.placement");
   return t("next.lessonN", { n: x.s.lessonsDone + 1 });
 }
 

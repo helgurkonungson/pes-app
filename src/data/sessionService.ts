@@ -12,14 +12,15 @@ import { providerReady } from "../ai/key";
 import { activeProvider, modelOf, PROVIDERS } from "../ai/providers";
 import { aiState, isBlocking } from "../core/aiStatus";
 import { lessonChunks } from "../core/cleanText";
-import { buildCourseLesson, nextCourseLesson } from "../core/course";
+import { buildCourseLesson, buildCoursePlacement, coveredLessonIds, nextCourseLesson } from "../core/course";
 import { nowIso, uid } from "../core/ids";
-import { buildOfflineLesson, type OfflineLabels } from "../core/offline";
+import { buildOfflineLesson, buildOfflinePlacement, type OfflineLabels } from "../core/offline";
 import { clampMinutes, pickChunks, placementSize, planSession, sampleChunks } from "../core/planner";
+import { needsPlacement } from "../core/scoring";
 import type { Chunk, LessonContent, LessonDraft, Mcq, Session, Skillset } from "../core/types";
 import { t } from "../i18n";
 import { db, getProfile } from "./db";
-import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetChunks } from "./repo";
+import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetChunks, skipPlacement } from "./repo";
 
 export class CourseFinishedError extends Error {
   constructor() {
@@ -83,14 +84,28 @@ async function prepareCourseSession(skillset: Skillset): Promise<Session> {
   const course = await db.courses.get(skillset.courseId!);
   if (!course) throw new Error("Course not found");
   const doneIds = await doneCourseLessonIds(skillset.id);
-  const next = nextCourseLesson(course, doneIds);
+  // first a short placement test (one question per lesson spread over the course)
+  if (needsPlacement(skillset)) {
+    const ready = await findReadySession(skillset.id, course.minutes, "placement");
+    if (ready) return ready;
+    const placement = buildCoursePlacement(course, placementSize(course.minutes), t("placement.courseIntro"));
+    if (placement) {
+      const s = baseSession(skillset.id, "placement", await nextSessionNumber(skillset.id), course.minutes);
+      s.placement = placement;
+      await saveSession(s);
+      return s;
+    }
+    await skipPlacement(skillset.id);
+  }
+  // lessons the placement test showed as known are skipped
+  const next = nextCourseLesson(course, coveredLessonIds(doneIds, skillset.placement?.known));
   // a started lesson always wins; a ready one only if it is still the next lesson
   const open = await db.sessions.where("[skillsetId+status]").anyOf([skillset.id, "ready"], [skillset.id, "active"]).toArray();
   const active = open.find((s) => s.status === "active" && s.lesson);
   if (active) return active;
   const ready = open.find((s) => s.lesson?.courseLessonId === next?.id);
   if (ready) return ready;
-  for (const s of open) await db.sessions.delete(s.id);
+  for (const s of open) if (s.kind === "lesson") await db.sessions.delete(s.id);
   if (!next) throw new CourseFinishedError();
   const mistakes = await recentMistakes(skillset.id, 2);
   const lesson = buildCourseLesson(course, next, { doneIds, mistakes });
@@ -100,9 +115,19 @@ async function prepareCourseSession(skillset: Skillset): Promise<Session> {
   return s;
 }
 
+/** Offline placement test from the learner's sources; null when the material is too thin. */
+async function offlinePlacement(skillset: Skillset, minutes: number): Promise<Session | null> {
+  const chunks = lessonChunks(await skillsetChunks(skillset.id));
+  const placement = buildOfflinePlacement(chunks, placementSize(minutes), { ...offlineLabels(), placementIntro: t("placement.offlineIntro") }, chunks.length * 7 + minutes);
+  if (!placement) return null;
+  const s = baseSession(skillset.id, "placement", await nextSessionNumber(skillset.id), minutes);
+  s.placement = placement;
+  return s;
+}
+
 async function buildOffline(skillset: Skillset, minutes: number, fallback: LessonContent["fallback"]): Promise<{ lesson: LessonContent; chunkIds: string[] }> {
   // no title pages, contents, prefaces or index; no PDF debris
-  const chunks = lessonChunks(await skillsetChunks(skillset.id));
+  const chunks = lessonChunks(await skillsetChunks(skillset.id), skillset.placement?.known);
   const last = await lastDoneLesson(skillset.id);
   const mistakes = await recentMistakes(skillset.id);
   const lesson = buildOfflineLesson({
@@ -245,7 +270,7 @@ export async function continueWriting(sessionId: string): Promise<void> {
     return;
   }
   await db.sessions.update(s.id, { lesson: { ...s.lesson, building: { ...s.lesson.building, error: undefined } } });
-  const all = lessonChunks(await skillsetChunks(s.skillsetId));
+  const all = lessonChunks(await skillsetChunks(s.skillsetId), skillset.placement?.known);
   const byId = new Map(all.map((c) => [c.id, c]));
   const picked = s.chunkIds.map((id) => byId.get(id)).filter((c): c is Chunk => !!c);
   const last = await lastDoneLesson(s.skillsetId);
@@ -263,16 +288,22 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
   const state = aiState(profile, await providerReady());
   const useAi = !opts.offline && state === "ok";
 
-  let kind: Session["kind"] = skillset.placement || skillset.placementSkipped ? "lesson" : "placement";
+  let kind: Session["kind"] = needsPlacement(skillset) ? "placement" : "lesson";
   if (kind === "placement") {
     // an already written placement test needs no AI to take
     const readyTest = await findReadySession(skillsetId, minutes, "placement");
     if (readyTest) return readyTest;
   }
   if (kind === "placement" && !useAi) {
-    // a placement test needs AI — start with lessons instead
-    await db.skillsets.update(skillsetId, { placementSkipped: true });
-    skillset = { ...skillset, placementSkipped: true };
+    // no AI: the placement test is built from the learner's own sources
+    const test = await offlinePlacement(skillset, minutes);
+    if (test) {
+      await saveSession(test);
+      return test;
+    }
+    // nothing to build a test from: start from zero
+    await skipPlacement(skillsetId);
+    skillset = (await db.skillsets.get(skillsetId))!;
     kind = "lesson";
   }
 
@@ -292,7 +323,8 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
 
   if (useAi) {
     try {
-      const chunks = lessonChunks(await skillsetChunks(skillsetId));
+      // the placement test samples all material; lessons skip what the learner already knows
+      const chunks = lessonChunks(await skillsetChunks(skillsetId), kind === "placement" ? undefined : skillset.placement?.known);
       const titles = await sourceTitles(skillsetId);
       if (kind === "placement") {
         opts.onProgress?.("writing");
@@ -327,8 +359,14 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
       await reportAiError(e);
       fallback = e.kind;
       if (kind === "placement") {
-        await db.skillsets.update(skillsetId, { placementSkipped: true });
-        skillset = { ...skillset, placementSkipped: true };
+        // the AI can't write the test: build it from the sources instead
+        const test = await offlinePlacement(skillset, minutes);
+        if (test) {
+          await saveSession(test);
+          return test;
+        }
+        await skipPlacement(skillsetId);
+        skillset = (await db.skillsets.get(skillsetId))!;
         base.kind = "lesson";
       }
       base.placement = undefined;

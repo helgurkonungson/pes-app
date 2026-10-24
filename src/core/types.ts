@@ -48,6 +48,10 @@ export interface PlacementResult {
   strengths: string[];
   gaps: string[];
   at: string;
+  /** Material (chunk or course lesson ids) the learner already knows — lessons skip it. */
+  known?: string[];
+  /** The learner skipped the test: we assume they start from zero. */
+  skipped?: boolean;
 }
 
 export type SourceKind = "pdf" | "epub" | "docx" | "text" | "url";
@@ -83,6 +87,8 @@ export interface Mcq {
   explanation: string;
   difficulty?: Difficulty;
   topic?: string;
+  /** Placement tests: the material the question checks (chunk id or course lesson id). */
+  ref?: string;
 }
 
 export interface OpenQuestion {

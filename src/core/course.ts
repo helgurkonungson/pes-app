@@ -4,7 +4,7 @@
  * version of the same course (same `id`) can be imported over the old one
  * without losing what the learner has already done.
  */
-import type { Course, CourseLesson, Difficulty, LessonContent, LessonLanguage, Mcq, OpenQuestion, TheorySection } from "./types";
+import type { Course, CourseLesson, Difficulty, LessonContent, LessonLanguage, Mcq, OpenQuestion, PlacementContent, TheorySection } from "./types";
 
 export const COURSE_FORMAT = "pes-course";
 export const COURSE_FORMAT_VERSION = 1;
@@ -163,4 +163,27 @@ export function courseModules(course: Course): { module: string; lessons: Course
     out[out.length - 1].lessons.push(l);
   }
   return out;
+}
+
+/**
+ * Placement test for a course: one question from each of up to `count` lessons spread
+ * over the course. Each question remembers its lesson (`ref`): lessons answered right
+ * are treated as known and skipped. Null when the course has too few questions.
+ */
+export function buildCoursePlacement(course: Course, count: number, intro: string): PlacementContent | null {
+  const withQ = course.lessons.filter((l) => l.quiz.length > 0);
+  const picks = withQ.length <= count ? withQ : Array.from({ length: count }, (_, i) => withQ[Math.floor((i + 0.5) * (withQ.length / count))]);
+  const questions: Mcq[] = picks.map((l, i) => {
+    // prefer a harder question: knowing the easy one does not mean knowing the lesson
+    const q = [...l.quiz].sort((a, b) => rank(b.difficulty) - rank(a.difficulty))[0];
+    return { ...q, id: `p${i + 1}`, topic: l.title, ref: l.id };
+  });
+  return questions.length >= 3 ? { intro, questions } : null;
+}
+
+const rank = (d?: string) => (d === "h" ? 3 : d === "m" ? 2 : 1);
+
+/** Lessons to treat as covered when choosing what comes next: finished ones plus those the placement test showed as known. */
+export function coveredLessonIds(doneIds: ReadonlySet<string>, known?: string[]): Set<string> {
+  return new Set([...doneIds, ...(known ?? [])]);
 }

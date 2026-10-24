@@ -5,7 +5,7 @@ test.describe("AI lessons (mocked Claude API)", () => {
   test("placement test → AI lesson → AI-graded open answer", async ({ page }) => {
     await mockApis(page, "ok");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
-    await createSkillsetWithText(page);
+    await createSkillsetWithText(page, undefined, { keepTest: true });
     await expect(page.locator(".hero .pill").first()).toHaveText("Уроки с AI");
     await btn(page, "Пройти входной тест").click();
     await skipCountdown(page);
@@ -22,7 +22,7 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await btn(page, "Закрыть").click();
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
     await finishLesson(page, { aiGrade: true });
   });
 
@@ -79,10 +79,9 @@ test.describe("other AI providers", () => {
     await expect(page.getByText("Ключ сохранён")).toBeVisible();
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gpt-5-mini");
     await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible(); // AI_LESSON has a review step
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible(); // first lesson: no review, straight to theory
     expect(calls.some((c) => c.endsWith("/chat/completions"))).toBe(true);
   });
 
@@ -119,10 +118,9 @@ test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
   await expect(page.getByText("Ключ сохранён")).toBeVisible();
   await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("meta/llama-3.3-70b-instruct");
   await createSkillsetWithText(page);
-  await btn(page, "Пропустить").click();
   await btn(page, /Начать · 15 мин/).click();
   await skipCountdown(page);
-  await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
   expect(calls.some((c) => c.endsWith("/chat/completions"))).toBe(true);
 });
 
@@ -155,10 +153,9 @@ test.describe("Gemini, Groq and a custom server", () => {
 
   async function lessonWorks(page: import("@playwright/test").Page) {
     await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
   }
 
   test("Gemini: key → newest Flash model picked → lesson", async ({ page }) => {
@@ -205,7 +202,6 @@ test.describe("Gemini, Groq and a custom server", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
     await expect(page.getByText("Ключ сохранён")).toBeVisible();
     await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
     await btn(page, /Начать · 15 мин/).click();
     await expect(page.getByRole("alert")).toContainText("перегружен", { timeout: 40_000 });
     await expect(page.getByRole("alert")).toContainText("(503)");
@@ -215,7 +211,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     expect(effort).toBe("low");
     await btn(page, "Повторить").click();
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
   });
 
   async function geminiReady(page: import("@playwright/test").Page) {
@@ -227,7 +223,6 @@ test.describe("Gemini, Groq and a custom server", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
     await expect(page.getByText("Ключ сохранён")).toBeVisible();
     await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click();
   }
 
   test("the lesson opens as soon as part 1 is written; the rest arrives in the background", async ({ page }) => {
@@ -297,7 +292,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await setVis("visible"); // the learner comes back
     await expect(page.locator(".build-strip")).toHaveCount(0, { timeout: 15_000 });
     // nothing was written twice
-    expect(tools).toEqual(["emit_plan", "emit_review", "emit_section", "emit_section", "emit_section", "emit_quiz"]);
+    expect(tools).toEqual(["emit_plan", "emit_section", "emit_section", "emit_section", "emit_quiz"]); // first lesson: no review step
     await finishLesson(page);
   });
 
@@ -321,7 +316,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     failSection = false;
     await btn(page, "Повторить").click();
     await skipCountdown(page);
-    await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
     await expect(page.locator(".build-strip")).toHaveCount(0, { timeout: 15_000 });
     expect(tools.slice(before)).toEqual(["emit_section", "emit_section", "emit_quiz"]);
   });

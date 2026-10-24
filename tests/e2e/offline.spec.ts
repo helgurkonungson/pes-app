@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown } from "./helpers";
+import { btn, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown, skipPlacementUI } from "./helpers";
 
 const para = (topic: string) =>
   Array.from({ length: 8 }, (_, i) => `${topic} помогает команде принимать решения на основе фактов, и это правило номер ${i + 1} для любого руководителя данных в компании.`).join(" ");
@@ -27,6 +27,7 @@ test.describe("lessons without AI", () => {
     await page.getByRole("dialog").getByRole("button", { name: "Добавить текст" }).click();
     await expect(page.getByText(/Текст · .* слов/)).toBeVisible();
     await btn(page, "Назад").click();
+    await skipPlacementUI(page);
     await btn(page, /Начать · 5 мин|Начать/).click();
     await skipCountdown(page);
     await expect(page.locator(".session-body")).toContainText("Понимание данных");
@@ -56,9 +57,22 @@ test.describe("lessons without AI", () => {
   test("credits ran out: lessons continue offline and the app explains why", async ({ page }) => {
     const api = await mockApis(page, "credits");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
-    await createSkillsetWithText(page);
-    // the placement test needs AI → credits error → skipped, lesson built offline
-    await btn(page, /Пройти входной тест|Начать/).click();
+    await createSkillsetWithText(page, undefined, { keepTest: true });
+    // the AI can't write the placement test (no credits) → it is built from the sources instead
+    await btn(page, /Пройти входной тест/).click();
+    await skipCountdown(page);
+    await expect(page.getByText(/Короткий тест по вашим материалам/)).toBeVisible();
+    for (let i = 0; i < 12 && !(await page.getByRole("button", { name: "Завершить" }).isVisible()); i++) {
+      const option = page.locator(".option:not([disabled])").first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      await btn(page, /^Далее/).click();
+    }
+    const last = page.locator(".option:not([disabled])").first();
+    if (await last.isVisible().catch(() => false)) await last.click();
+    await btn(page, "Завершить").click();
+    await expect(page.getByText(/Уровень: /)).toBeVisible();
+    await btn(page, "Закрыть").click();
+    await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
     await expect(page.getByText("Кредиты AI закончились, поэтому этот урок собран из вашего источника без AI.")).toBeVisible();
     expect(api.calls.some((c) => c.includes("/v1/messages"))).toBe(true);
@@ -85,7 +99,6 @@ test.describe("lessons without AI", () => {
     await page.unroute("https://api.anthropic.com/**");
     await page.route("https://api.anthropic.com/**", (r) => r.abort("internetdisconnected"));
     await createSkillsetWithText(page);
-    await btn(page, "Пропустить").click(); // skip the placement test
     await btn(page, /Начать · 15 мин/).click();
     await expect(page.getByRole("alert")).toContainText("Нет связи с сервисом AI");
     await btn(page, "Заниматься без AI").click();

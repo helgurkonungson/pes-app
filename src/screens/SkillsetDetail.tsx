@@ -2,12 +2,12 @@ import { BuildProgress } from "../components/BuildProgress";
 import { BookOpen, Check, ChevronLeft, CircleDot, Clock, CloudOff, Globe, History as HistoryIcon, Lock, Pencil, Play, RotateCcw, Target } from "lucide-react";
 import { useState } from "react";
 import { useAiState } from "../ai/status";
-import { Group, MenuRow, MinutesPicker, SectionLabel, Sheet, toast, Toggle } from "../components/ui";
+import { confirmDialog, Group, MenuRow, MinutesPicker, SectionLabel, Sheet, toast, Toggle } from "../components/ui";
 import { HeroBg } from "../components/visuals";
 import { courseModules } from "../core/course";
-import { pct } from "../core/scoring";
+import { needsPlacement, pct } from "../core/scoring";
 import { useSkillset } from "../data/hooks";
-import { updateSkillset } from "../data/repo";
+import { skipPlacement, updateSkillset } from "../data/repo";
 import { restartReading } from "../data/sessionService";
 import { useT } from "../i18n";
 import { useNav } from "../nav/store";
@@ -33,13 +33,13 @@ export function SkillsetDetail({ id }: { id: string }) {
   const courseDone = course ? course.lessons.every((l) => doneIds.has(l.id)) : false;
   const readAll = !isCourse && data.chunks > 0 && s.cursor >= data.chunks;
   const mode = isCourse ? "course" : ai === "ok" ? "ai" : "offline";
-  const needsPlacement = !isCourse && !s.placement && !s.placementSkipped;
+  const placementNext = needsPlacement(s);
   const minutes = isCourse ? (course?.minutes ?? s.minutes) : s.minutes;
   const nextLesson = course?.lessons.find((l) => !doneIds.has(l.id));
 
   const start = (offline?: boolean) => push({ name: "session", skillsetId: s.id, minutes, offline });
 
-  const ctaLabel = open?.status === "active" ? t("skillset.resume") : needsPlacement && ai === "ok" ? t("skillset.startPlacement") : t("skillset.start", { n: minutes });
+  const ctaLabel = open?.status === "active" ? t("skillset.resume") : placementNext ? t("skillset.startPlacement") : t("skillset.start", { n: minutes });
 
   return (
     <div className="screen with-cta">
@@ -143,16 +143,17 @@ export function SkillsetDetail({ id }: { id: string }) {
           </Group>
         )}
 
-        {!isCourse && (
+        {(placementNext || s.placement) && (
           <Group>
-            {needsPlacement && (
+            {placementNext && (
               <MenuRow
                 icon={<Target size={20} />}
                 label={t("skillset.placement")}
-                hint={ai === "ok" ? t("skillset.placementHint") : t("skillset.placementNeedsAi")}
+                hint={t("skillset.placementHint")}
                 value={t("skillset.skip")}
                 onClick={async () => {
-                  await updateSkillset(s.id, { placementSkipped: true });
+                  if (!(await confirmDialog(t("placement.skipConfirm"), { text: t("placement.skipConfirmText"), ok: t("placement.skip") }))) return;
+                  await skipPlacement(s.id);
                   toast(t("skillset.placementSkipped"));
                 }}
               />
@@ -161,14 +162,23 @@ export function SkillsetDetail({ id }: { id: string }) {
               <MenuRow
                 icon={<Target size={20} />}
                 label={t("skillset.startingPoint")}
-                hint={[
-                  `${s.placement.score}/${s.placement.total} · ${t(`level.${s.placement.level}` as "level.beginner")}`,
-                  s.placement.gaps.length ? t("skillset.toWorkOn", { list: s.placement.gaps.join(", ") }) : "",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
+                hint={
+                  s.placement.skipped
+                    ? t("skillset.placementSkippedHint")
+                    : [
+                        `${s.placement.score}/${s.placement.total} · ${t(`level.${s.placement.level}` as "level.beginner")}`,
+                        s.placement.gaps.length ? t("skillset.toWorkOn", { list: s.placement.gaps.join(", ") }) : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                }
               />
             )}
+          </Group>
+        )}
+
+        {!isCourse && ((ai === "ok" && !readAll && sources.length > 0) || readAll) && (
+          <Group>
             {ai === "ok" && !readAll && sources.length > 0 && <MenuRow icon={<CloudOff size={20} />} label={t("skillset.offlineLesson")} hint={t("skillset.offlineLessonHint")} onClick={() => start(true)} />}
             {readAll && (
               <MenuRow

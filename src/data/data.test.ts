@@ -31,7 +31,7 @@ import { OfflineError } from "../core/offline";
 import type { LessonContent, LessonDraft, Session } from "../core/types";
 import { importCourse } from "./courses";
 import { db, DB_VERSION, getProfile, PesDb, updateProfile } from "./db";
-import { addSource, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, wipeAll } from "./repo";
+import { addSource, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, skipPlacement, wipeAll } from "./repo";
 import { clearSnapshots, readSnapshot, restoreIfEmpty, setSnapshotStore, SNAPSHOT, SNAPSHOT_PREV, type SnapshotStore, writeSnapshot } from "./safety";
 import { CourseFinishedError, prepareSession, restartReading, usableDraft } from "./sessionService";
 
@@ -189,7 +189,7 @@ describe("offline lessons (no key)", () => {
   it("the learner can ask for an offline lesson while AI works", async () => {
     keyState.key = "sk-ant-test-key-123456789";
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     const session = await prepareSession(s.id, 15, { offline: true });
     expect(session.lesson?.mode).toBe("offline");
     expect(tutor.generateLesson).not.toHaveBeenCalled();
@@ -205,7 +205,7 @@ describe("AI lessons and fallback", () => {
     await updateProfile({ aiBlock: { kind: "credits", at: "2000-01-01T00:00:00.000Z" } }); // expired block
     tutor.generateLesson.mockResolvedValue({ lesson: aiLesson() });
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     const session = await prepareSession(s.id, 15);
     expect(session.lesson?.mode).toBe("ai");
     expect(tutor.generateLesson).toHaveBeenCalledOnce();
@@ -222,7 +222,7 @@ describe("AI lessons and fallback", () => {
   it("out of credits → remembers it and continues offline without asking AI again", async () => {
     tutor.generateLesson.mockRejectedValue(new AiError("credit balance is too low", "credits", 400));
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     const session = await prepareSession(s.id, 15);
     expect(session.lesson?.mode).toBe("offline");
     expect(session.lesson?.fallback).toBe("credits");
@@ -234,7 +234,54 @@ describe("AI lessons and fallback", () => {
     expect(tutor.generateLesson).not.toHaveBeenCalled();
   });
 
-  it("placement test also falls back when credits ran out", async () => {
+  it("no AI: the first session is a placement test built from the sources; known parts are skipped afterwards", async () => {
+    keyState.key = null;
+    const s = await createSkillset({ name: "Data", goal: "", minutes: 15, useInternet: false, language: "English", hue: 1 });
+    const words = TEXT.split(/\s+/).length;
+    const parts = ["asset", "item", "record", "table", "file"].map((w, i) => ({ title: `Part ${i + 1}`, text: TEXT.replace(/asset/g, w), words }));
+    await addSource(s.id, "text", "Notes", "pasted", parts);
+    const test = await prepareSession(s.id, 15);
+    expect(test.kind).toBe("placement");
+    const qs = test.placement!.questions;
+    expect(qs.length).toBeGreaterThanOrEqual(3);
+    expect(qs.every((q) => q.ref)).toBe(true);
+    // the first question's part is known, the rest are not
+    const mcq = Object.fromEntries(qs.map((q, i) => [q.id, i === 0 ? q.answer : (q.answer + 1) % q.options.length]));
+    await db.sessions.update(test.id, { status: "active", progress: { page: 0, seconds: 60, mcq } });
+    await completeSession(test.id);
+    const known = (await db.skillsets.get(s.id))?.placement?.known ?? [];
+    expect(known).toEqual([qs[0].ref]);
+    const lesson = await prepareSession(s.id, 15);
+    expect(lesson.kind).toBe("lesson");
+    expect(lesson.chunkIds).not.toContain(qs[0].ref);
+    expect(lesson.lesson?.review.questions).toEqual([]); // first lesson: no review
+  });
+
+  it("skipping the placement test = starting from zero; the first lesson follows", async () => {
+    tutor.generatePlacement.mockResolvedValue({ intro: "Hi", questions: aiLesson().quiz });
+    tutor.generateLesson.mockResolvedValue({ lesson: aiLesson() });
+    const s = await newSkillset();
+    const test = await prepareSession(s.id, 15);
+    expect(test.kind).toBe("placement");
+    await skipPlacement(s.id);
+    expect(await db.sessions.get(test.id)).toBeUndefined();
+    const p = (await db.skillsets.get(s.id))?.placement;
+    expect(p).toMatchObject({ skipped: true, level: "beginner", known: [] });
+    const next = await prepareSession(s.id, 15);
+    expect(next.kind).toBe("lesson");
+    expect((tutor.generateLesson.mock.calls.at(-1)?.[0] as { lastLesson?: unknown }).lastLesson).toBeUndefined();
+  });
+
+  it("older skillsets that skipped the test automatically get it while no lesson is done", async () => {
+    keyState.key = null;
+    const s = await createSkillset({ name: "Old", goal: "", minutes: 15, useInternet: false, language: "English", hue: 1 });
+    const words = TEXT.split(/\s+/).length;
+    await addSource(s.id, "text", "Notes", "pasted", ["asset", "item", "record", "table"].map((w, i) => ({ title: `P${i}`, text: TEXT.replace(/asset/g, w), words })));
+    await db.skillsets.update(s.id, { placementSkipped: true }); // what 0.7 and earlier did without AI
+    expect((await prepareSession(s.id, 15)).kind).toBe("placement");
+  });
+
+  it("credits ran out for the placement test: built from the sources instead, or (too little material) start from zero", async () => {
     tutor.generatePlacement.mockRejectedValue(new AiError("no credits", "credits", 402));
     const s = await newSkillset();
     const session = await prepareSession(s.id, 15);
@@ -246,7 +293,7 @@ describe("AI lessons and fallback", () => {
   it("network errors are shown to the learner (they can retry or go offline)", async () => {
     tutor.generateLesson.mockRejectedValue(new AiError("offline", "network"));
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     await expect(prepareSession(s.id, 15)).rejects.toMatchObject({ kind: "network" });
     expect((await getProfile()).aiBlock).toBeUndefined();
     expect((await prepareSession(s.id, 15, { offline: true })).lesson?.mode).toBe("offline");
@@ -254,7 +301,7 @@ describe("AI lessons and fallback", () => {
 
   it("an interrupted AI lesson continues from its saved steps, then the draft is removed", async () => {
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     let saved: LessonDraft | undefined;
     tutor.generateLesson.mockImplementationOnce(async (o: { draft?: LessonDraft; saveDraft: (d: LessonDraft) => Promise<void>; chunks: { id: string }[]; number: number }) => {
       expect(o.draft).toBeUndefined();
@@ -276,7 +323,7 @@ describe("AI lessons and fallback", () => {
 
   it("the lesson can start once part 1 exists; later parts land in the saved session, then 'building' goes away", async () => {
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     let finish!: () => void;
     const gate = new Promise<void>((r) => (finish = r));
     tutor.generateLesson.mockImplementationOnce(async (o: { onPartial: (l: LessonContent) => Promise<void> }) => {
@@ -300,7 +347,7 @@ describe("AI lessons and fallback", () => {
 
   it("background writing that fails marks the lesson so it can be continued", async () => {
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     tutor.generateLesson.mockImplementationOnce(async (o: { onPartial: (l: LessonContent) => Promise<void> }) => {
       await o.onPartial({ ...aiLesson(), quiz: [], building: { done: 3, total: 5, sections: 2 } });
       throw new AiError("socket closed", "network");
@@ -327,7 +374,7 @@ describe("AI lessons and fallback", () => {
 
   it("a ready offline lesson is replaced by an AI lesson once AI works again", async () => {
     const s = await newSkillset();
-    await db.skillsets.update(s.id, { placementSkipped: true });
+    await skipPlacement(s.id);
     keyState.key = null;
     const offline = await prepareSession(s.id, 15);
     expect(offline.lesson?.mode).toBe("offline");
@@ -340,21 +387,33 @@ describe("AI lessons and fallback", () => {
 });
 
 describe("courses", () => {
-  it("import creates a skillset that needs no AI and no placement", async () => {
+  it("import: a placement test from the course comes first (no AI); known lessons are then skipped", async () => {
     const r = await importCourse(fixture("sample-course.pes.json"));
     expect(r.updated).toBe(false);
     expect(r.newLessons).toBe(3);
     expect(r.skillset.courseId).toBe("demo-course");
-    expect(r.skillset.placementSkipped).toBe(true);
     keyState.key = "sk-ant-test-key-123456789"; // even with AI available, courses don't call it
+    const test = await prepareSession(r.skillset.id, 15);
+    expect(test.kind).toBe("placement");
+    expect(test.placement?.questions.map((q) => q.ref)).toEqual(["demo-01", "demo-02", "demo-03"]);
+    expect(tutor.generatePlacement).not.toHaveBeenCalled();
+    // right about lesson 1, wrong about 2 and 3 → the course starts at lesson 2
+    const qs = test.placement!.questions;
+    await db.sessions.update(test.id, { status: "active", progress: { page: 0, seconds: 60, mcq: { [qs[0].id]: qs[0].answer, [qs[1].id]: (qs[1].answer + 1) % 4, [qs[2].id]: (qs[2].answer + 1) % 4 } } });
+    await completeSession(test.id);
+    expect((await db.skillsets.get(r.skillset.id))?.placement?.known).toEqual(["demo-01"]);
     const s1 = await prepareSession(r.skillset.id, 15);
-    expect(s1.lesson?.courseLessonId).toBe("demo-01");
+    expect(s1.lesson?.courseLessonId).toBe("demo-02");
     expect(s1.minutes).toBe(10);
+    // first lesson after the test: nothing to review yet
+    expect(s1.lesson?.review.recap).toEqual([]);
+    expect(s1.lesson?.review.questions).toEqual([]);
     expect(tutor.generateLesson).not.toHaveBeenCalled();
   });
 
   it("goes through lessons in order with review of the previous one", async () => {
     const { skillset } = await importCourse(fixture("sample-course.pes.json"));
+    await skipPlacement(skillset.id);
     const s1 = await prepareSession(skillset.id, 15);
     await passSession(s1, true);
     const s2 = await prepareSession(skillset.id, 15);
@@ -371,6 +430,7 @@ describe("courses", () => {
 
   it("re-importing a newer version keeps progress and history", async () => {
     const { skillset } = await importCourse(fixture("sample-course.pes.json"));
+    await skipPlacement(skillset.id);
     const s1 = await prepareSession(skillset.id, 15);
     await passSession(s1);
     const s2 = await prepareSession(skillset.id, 15); // ready, not started — will be rebuilt

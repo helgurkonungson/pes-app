@@ -88,7 +88,13 @@ const PLACEMENT_TOOL: ToolDef = {
   description: "Return the placement test.",
   input_schema: {
     type: "object",
-    properties: { intro: { type: "string" }, questions: { type: "array", items: MCQ_SCHEMA } },
+    properties: {
+      intro: { type: "string" },
+      questions: {
+        type: "array",
+        items: { ...MCQ_SCHEMA, properties: { ...MCQ_SCHEMA.properties, excerpt: { type: "integer", description: "Number of the source excerpt the question checks (0 if none)" } } },
+      },
+    },
     required: ["intro", "questions"],
   },
 };
@@ -126,14 +132,8 @@ function tutorSystem(lang: LessonLanguage): string {
   ].join("\n");
 }
 
-function excerpts(chunks: Chunk[], sourceTitles: Map<string, string>, maxWordsEach: number): string {
-  return chunks
-    .map((c) => `<excerpt title="${c.title.replace(/"/g, "'")}" source="${(sourceTitles.get(c.sourceId) ?? "").replace(/"/g, "'")}">\n${truncateWords(c.text, maxWordsEach)}\n</excerpt>`)
-    .join("\n\n");
-}
-
 function learnerLine(s: Skillset): string {
-  if (!s.placement) return "unknown (no placement test yet)";
+  if (!s.placement || s.placement.skipped) return "beginner — assume no prior knowledge of this skillset (start from the basics)";
   const p = s.placement;
   const gaps = p.gaps.length ? `; weaker topics: ${p.gaps.join(", ")}` : "";
   return `${p.level} (placement ${p.score}/${p.total}${gaps})`;
@@ -155,7 +155,7 @@ export async function generatePlacement(opts: {
 }): Promise<PlacementContent> {
   const { skillset: s } = opts;
   const material = opts.samples.length
-    ? `SOURCE SAMPLES (spread across the learner's material):\n${excerpts(opts.samples, opts.sourceTitles, 700)}`
+    ? `SOURCE SAMPLES (spread across the learner's material):\n${numberedExcerpts(opts.samples, opts.sourceTitles, 700)}`
     : "The learner has not added sources yet. Base the test on the core knowledge of this skillset and the learner's goal.";
   const prompt = [
     `SKILLSET: ${s.name}`,
@@ -167,6 +167,7 @@ export async function generatePlacement(opts: {
     "- Measure where the learner stands on this material: about one third easy (e), one third medium (m), one third hard (h), ordered from easy to hard.",
     "- Cover 3–6 distinct topics; tag each question with a short topic name and reuse the exact same name for the same topic.",
     "- Test understanding and application, not recall of page details. 4 options, exactly one correct, plausible distractors.",
+    opts.samples.length ? "- Spread the questions over the excerpts (about one per excerpt) and set excerpt to the number of the excerpt each question checks." : "",
     "- intro: 1–2 sentences telling the learner what the test covers and that guessing or tapping “I don't know” is fine.",
   ].join("\n");
   const raw = await structured<unknown>({
@@ -177,6 +178,13 @@ export async function generatePlacement(opts: {
     maxTokens: Math.min(12000, opts.count * 260 + 800),
     signal: opts.signal,
   });
+  // remember which part of the material each question checks, so known parts can be skipped
+  const o = (raw ?? {}) as { questions?: { excerpt?: unknown; ref?: unknown }[] };
+  if (Array.isArray(o.questions))
+    for (const q of o.questions) {
+      const n = Number(q?.excerpt);
+      if (q && Number.isInteger(n) && n >= 1 && n <= opts.samples.length) q.ref = opts.samples[n - 1].id;
+    }
   return normalizePlacement(raw);
 }
 
@@ -321,7 +329,8 @@ export async function generateLesson(opts: {
       ? `NEW MATERIAL — SOURCE EXCERPTS (teach these, in order):\n${numberedExcerpts(opts.chunks, opts.sourceTitles, perChunk, only)}`
       : `NEW MATERIAL: there are no unread source excerpts. Teach the next logical topic of a solid curriculum for this skillset and goal.${opts.previousTitles.length ? ` Lessons already done: ${opts.previousTitles.slice(-12).join("; ")}.` : ""}`;
   const web = draft.research?.text ? `WEB NOTES (fresh information found online — use where helpful):\n${draft.research.text}` : "";
-  const header = [`SKILLSET: ${s.name}`, `LEARNER GOAL: ${s.goal || "—"}`, `LEARNER LEVEL: ${learnerLine(s)}`, `SESSION: #${draft.number}, portion of ${plan.minutes} minutes.`].join("\n");
+  const known = s.placement && !s.placement.skipped && s.placement.strengths.length ? `ALREADY KNOWN (placement test): ${s.placement.strengths.join(", ")} — don't re-teach these; focus on the weaker topics.` : "";
+  const header = [`SKILLSET: ${s.name}`, `LEARNER GOAL: ${s.goal || "—"}`, `LEARNER LEVEL: ${learnerLine(s)}`, known, `SESSION: #${draft.number}, portion of ${plan.minutes} minutes.`].filter(Boolean).join("\n");
 
   // 2. plan
   if (!draft.plan) {
@@ -367,7 +376,12 @@ export async function generateLesson(opts: {
     await opts.onPartial(assembleLesson(draft, total(), doneCount(), false));
   };
 
-  // 3. review of the last lesson (first, so the lesson can start once part 1 is written)
+  // 3. review of the last lesson (first, so the lesson can start once part 1 is written);
+  //    the first lesson of a skillset has nothing to review yet
+  if (!draft.review && !opts.lastLesson) {
+    draft.review = { recap: [], questions: [] };
+    await save();
+  }
   if (!draft.review) {
     report("writing", "review");
     const last = opts.lastLesson

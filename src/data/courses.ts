@@ -40,7 +40,6 @@ export async function importCourse(text: string): Promise<CourseImportResult> {
       correct: 0,
       total: 0,
       minutesSpent: 0,
-      placementSkipped: true,
       courseId: course.id,
     };
     await db.skillsets.put(skillset);
