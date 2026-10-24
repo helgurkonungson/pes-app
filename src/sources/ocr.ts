@@ -16,6 +16,26 @@ export interface Ocr {
   close(): Promise<void>;
 }
 
+/** Rejects when `p` takes longer than `ms` — a stuck engine must never freeze the import. */
+export function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const tm = setTimeout(() => reject(new Error(`${what} timed out after ${Math.round(ms / 1000)} s`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(tm);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(tm);
+        reject(e);
+      },
+    );
+  });
+}
+
+export const OCR_START_MS = 60_000;
+export const OCR_PAGE_MS = 90_000;
+
 export async function startOcr(): Promise<Ocr> {
   const [{ createWorker }, { simd }] = await Promise.all([import("tesseract.js"), import("wasm-feature-detect")]);
   const base = new URL("ocr/", document.baseURI).href;

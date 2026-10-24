@@ -10,7 +10,7 @@ All notable changes to Chompbook (formerly PES). Versions follow semver; every n
 - **No open question in lessons without AI.** Nothing could check the answer, so the step is gone.
 - **Reminders** (Settings → Daily reminder): a daily reminder at the time you choose, with the number of due cards, and an evening nudge when your streak would break. Offered once after your first lesson.
 - **Listen to lessons:** a "Listen" button on theory pages reads the text aloud with the phone's own voice. It works offline.
-- **Scanned PDFs are recognised automatically:** pages without text are read with text recognition (Russian and English) right on the phone. No photos, no internet.
+- **Scanned PDFs are recognised automatically:** pages without text are read with text recognition (Russian and English) right on the phone. No photos, no internet. If recognition gets stuck, the import still finishes with the pages that have text (the reason goes to the error log).
 - **Error log** (Settings → Error log), with a "Send to developer" button. API keys are never written to it.
 - **Token usage:** AI tokens and requests for each lesson on the results screen, and this month's total in Settings.
 - Fixed: a lesson written in the background could get stuck on "Writing the quiz…" if it was opened at the moment it finished.

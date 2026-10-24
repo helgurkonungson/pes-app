@@ -145,14 +145,16 @@ async function pdfSections(file: File, onProgress?: ImportProgress): Promise<{ s
   }
 
   // Scanned pages (no text layer) are recognised automatically, on the device.
-  const { looksScanned, startOcr } = await import("./ocr");
+  const { looksScanned, startOcr, withTimeout, OCR_START_MS, OCR_PAGE_MS } = await import("./ocr");
   const scans = pages.map((p, i) => (looksScanned(p) ? i : -1)).filter((i) => i >= 0);
   let ocrPages = 0;
   if (scans.length) {
     onProgress?.(t("import.ocrPrep"), 0);
-    const ocr = await startOcr();
+    let ocr: Awaited<ReturnType<typeof startOcr>> | null = null;
     const canvas = document.createElement("canvas");
+    const starting = startOcr();
     try {
+      ocr = await withTimeout(starting, OCR_START_MS, "Text recognition start");
       for (let k = 0; k < scans.length; k++) {
         const i = scans[k];
         onProgress?.(t("import.ocr", { i: k + 1, n: scans.length }), k / scans.length);
@@ -169,15 +171,21 @@ async function pdfSections(file: File, onProgress?: ImportProgress): Promise<{ s
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvas, canvasContext: ctx, viewport }).promise;
         page.cleanup();
-        const text = (await ocr.recognize(canvas)).trim();
+        const text = (await withTimeout(ocr.recognize(canvas), OCR_PAGE_MS, `Text recognition of page ${i + 1}`)).trim();
         if (!looksScanned(text)) {
           pages[i] = text;
           ocrPages++;
         }
       }
+    } catch (e) {
+      // an engine that starts after the timeout is shut down at once
+      if (!ocr) void starting.then((late) => late.close()).catch(() => undefined);
+      // recognition is a bonus: keep the pages that have text (and those already recognised)
+      const { logEvent } = await import("../data/logs");
+      void logEvent("error", `OCR: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       canvas.width = canvas.height = 0;
-      await ocr.close().catch(() => undefined);
+      await ocr?.close().catch(() => undefined);
     }
   }
   await task.destroy();
