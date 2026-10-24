@@ -1,8 +1,12 @@
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { readFileSync } from "node:fs";
+// @ts-expect-error plain .mjs helper without types
+import { copyOcrAssets } from "./tools/ocr-assets.mjs";
 
 const pkg = JSON.parse(readFileSync(new URL("./package.json", import.meta.url), "utf8"));
+
+copyOcrAssets(); // offline OCR engine → public/ocr (ADR-019)
 
 export default defineConfig({
   plugins: [react()],

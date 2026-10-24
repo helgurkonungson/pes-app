@@ -21,3 +21,4 @@ ios/App/build/
 playwright-report/
 test-results/
 blob-report/
+public/ocr/

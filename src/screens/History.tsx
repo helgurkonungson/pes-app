@@ -29,9 +29,9 @@ export function History({ id }: { id: string }) {
       <div className="stack">
         {sessions?.map((s) => (
           <button key={s.id} className="list-card" onClick={() => s.lesson && push({ name: "lesson", sessionId: s.id })} disabled={!s.lesson}>
-            <span className="icon-dot">{s.kind === "placement" ? <Target size={20} /> : s.lesson?.mode === "offline" ? <CloudOff size={20} /> : <BookOpen size={20} />}</span>
+            <span className="icon-dot">{s.kind !== "lesson" ? <Target size={20} /> : s.lesson?.mode === "offline" ? <CloudOff size={20} /> : <BookOpen size={20} />}</span>
             <span className="grow">
-              <span className="bold ellipsis block">{s.kind === "placement" ? t("step.placement") : s.lesson?.title}</span>
+              <span className="bold ellipsis block">{s.kind === "placement" ? t("step.placement") : s.kind === "final" ? t("step.final") : s.lesson?.title}</span>
               <span className="small muted block">
                 {[
                   s.finishedAt ? relativeDay(localDay(new Date(s.finishedAt)), t) : "",

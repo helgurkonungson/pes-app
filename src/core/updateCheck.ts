@@ -17,6 +17,19 @@ export function pendingUpdate(last: UpdateCheck | undefined, appVersion: string)
 }
 
 /** Release notes for the pop-up: without the leading version heading, cut to a readable length. */
+/**
+ * Release notes may hold one section per language (written by tools/release-notes.mjs):
+ * `<!--lang:ru-->…<!--lang:en-->…`. Returns the section for `lang`, else English, else
+ * the first one; notes without markers are returned as they are.
+ */
+export function notesForLang(notes: string, lang: string): string {
+  const parts = notes.replace(/\r/g, "").split(/<!--\s*lang:([a-z-]+)\s*-->/i);
+  if (parts.length < 3) return notes;
+  const map = new Map<string, string>();
+  for (let i = 1; i < parts.length; i += 2) map.set(parts[i].toLowerCase(), parts[i + 1].replace(/\n-{3,}\s*$/, "").trim());
+  return map.get(lang) || map.get("en") || [...map.values()][0] || "";
+}
+
 export function notesPreview(notes: string, max = 1200): string {
   const text = notes.replace(/\r/g, "").replace(/^#+ .*\n+/, "").trim();
   if (text.length <= max) return text;

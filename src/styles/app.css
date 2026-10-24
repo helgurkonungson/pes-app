@@ -526,6 +526,10 @@ button.menu-row:active { opacity: .7; }
   .page-count { font-size: 48px; }
 }
 
+.listen-btn { align-self: flex-start; min-height: 44px; padding: 0 14px; gap: 6px; background: var(--surface-2); color: var(--ink); }
+.listen-btn.on { background: var(--accent-soft); color: var(--accent); }
+.log-msg { overflow-wrap: anywhere; white-space: pre-wrap; }
+.next-due { margin: 0; opacity: .92; }
 .build-progress { display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .build-progress.compact { gap: 4px; }
 .build-progress.compact .gen-bar { height: 4px; }

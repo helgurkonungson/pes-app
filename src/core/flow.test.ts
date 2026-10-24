@@ -24,6 +24,16 @@ describe("flow", () => {
     expect(theory[0].kind === "theory" && theory[0].keyPoints).toBeFalsy();
     expect(theory[1].kind === "theory" && theory[1].keyPoints).toEqual(["k"]);
   });
+  it("no open question without AI (open: false)", () => {
+    const pages = lessonPages(lesson, { open: false });
+    expect(pages.some((p) => p.kind === "open")).toBe(false);
+    expect(stepsOf(pages).map((s) => s.step)).toEqual(["review", "theory", "quiz"]);
+  });
+  it("a checkpoint lesson opens the review step with the test intro instead of a recap", () => {
+    const pages = lessonPages({ ...lesson, checkpoint: true, review: { recap: [], questions: lesson.quiz } });
+    expect(pages.slice(0, 3).map((p) => p.kind)).toEqual(["checkpoint", "mcq", "mcq"]);
+    expect(pages[0].kind === "checkpoint" && pages[0].count).toBe(2);
+  });
   it("lessons without review start with theory", () => {
     const pages = lessonPages({ ...lesson, review: { recap: [], questions: [] } });
     expect(pages[0].kind).toBe("theory");

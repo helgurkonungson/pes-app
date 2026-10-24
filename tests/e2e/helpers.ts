@@ -88,7 +88,7 @@ export async function mockApis(page: Page, mode: AiMode = "credits"): Promise<{ 
     return route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ id: "msg_1", model: "claude-sonnet-5-5", stop_reason: "tool_use", content: [{ type: "tool_use", id: "tu_1", name: tool, input }] }),
+      body: JSON.stringify({ id: "msg_1", model: "claude-sonnet-5-5", stop_reason: "tool_use", usage: { input_tokens: 1000, output_tokens: 250 }, content: [{ type: "tool_use", id: "tu_1", name: tool, input }] }),
     });
   });
   return { calls };

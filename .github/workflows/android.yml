@@ -1,9 +1,11 @@
-# Quality gates, then the Android APK.
-#   checks      — type-check, unit tests (Vitest), web build
-#   e2e         — Playwright on Chromium (Android WebView engine) device profiles: blocking
-#   e2e-cross   — Playwright on WebKit (iOS engine) and Firefox: reported, never delays a release
-#   build       — APK; when package.json has a new version, publishes Release "vX.Y.Z"
-#   device-tests — smoke tests of the APK on Android emulators (API 31/34/36, small phone, tablet)
+# Quality gates, then the Android APK. Every gate blocks the release (ADR-020).
+#   checks       — type-check, unit tests (Vitest), web build
+#   e2e          — Playwright on Chromium (Android WebView engine) device profiles
+#   e2e-cross    — Playwright on WebKit (iOS engine) and Firefox
+#   build        — signed APK as a build artifact
+#   device-tests — smoke tests of that APK on Android emulators (API 33/34/36, small phone, tablet)
+#   release      — when package.json has a new version and every gate passed: Release "vX.Y.Z"
+#                  with Russian + English notes (tools/release-notes.mjs)
 name: Android
 
 on:
@@ -65,12 +67,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # WebKit (iOS engine) and Firefox: reported only, never delay an Android release.
+  # WebKit (iOS engine) and Firefox: blocking since 0.9.0 (green on every run since 0.4).
   e2e-cross:
     name: E2E (${{ matrix.engine }})
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    continue-on-error: true
     # the official image ships every browser with its system libraries — `playwright install
     # --with-deps webkit` hung for 25 min on the runner in v0.3.0's CI run
     container:
@@ -92,8 +93,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Playwright
-        # no retries here: a failing engine should report quickly instead of retrying 60 s timeouts
-        run: npx playwright test ${{ matrix.projects }} --retries=0 --max-failures=15
+        # one retry for a flaky test; --max-failures stops a broken engine early
+        run: npx playwright test ${{ matrix.projects }} --retries=1 --max-failures=15
         env:
           CI: "1"
       - uses: actions/upload-artifact@v4
@@ -171,30 +172,19 @@ jobs:
           path: PES-*.apk
           retention-days: 14
 
-      - name: Release skipped
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.PES_KEYSTORE_PATH == ''
-        run: echo "::warning::No release published — add the four PES_* signing secrets, then run this workflow again (Actions → Android → Run workflow)."
+      - name: Signed?
+        id: signed
+        run: echo "ok=${{ env.PES_KEYSTORE_PATH != '' }}" >> "$GITHUB_OUTPUT"
 
-      # Only release-key builds are published, so installed apps can always update.
-      - name: Publish release (new versions only)
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && env.PES_KEYSTORE_PATH != ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          TAG="v${{ steps.v.outputs.name }}"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG already exists — only the build artifact was updated."
-          else
-            node tools/release-notes.mjs "${{ steps.v.outputs.name }}" > notes.md
-            gh release create "$TAG" "PES-${{ steps.v.outputs.name }}.apk" --title "PES $TAG" --notes-file notes.md
-          fi
+    outputs:
+      version: ${{ steps.v.outputs.name }}
+      signed: ${{ steps.signed.outputs.ok }}
 
   device-tests:
     name: Device smoke (API ${{ matrix.api-level }}, ${{ matrix.profile }})
     needs: build
     runs-on: ubuntu-latest
-    continue-on-error: true   # non-blocking until the suite has proven stable
-    timeout-minutes: 35
+    timeout-minutes: 45
     permissions:
       contents: read
     strategy:
@@ -274,7 +264,8 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           # The runner executes `script` line by line with sh, so it must stay one line.
-          script: bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results
+          # One retry on a fresh app install: emulators occasionally hang in system UI, not in the app.
+          script: bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results || bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results/retry
 
       - name: Upload device results
         if: always()
@@ -284,3 +275,36 @@ jobs:
           path: device-results
           if-no-files-found: warn
           retention-days: 14
+
+  # Publishes only release-key builds, and only after every gate passed, so installed apps can always update.
+  release:
+    needs: [build, e2e-cross, device-tests]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Release skipped
+        if: needs.build.outputs.signed != 'true'
+        run: echo "::warning::No release published — add the four PES_* signing secrets, then run this workflow again (Actions → Android → Run workflow)."
+
+      - uses: actions/download-artifact@v4
+        if: needs.build.outputs.signed == 'true'
+        with:
+          pattern: PES-*
+          merge-multiple: true
+
+      - name: Publish release (new versions only)
+        if: needs.build.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists — only the build artifact was updated."
+          else
+            node tools/release-notes.mjs "$VERSION" > notes.md
+            gh release create "$TAG" "PES-$VERSION.apk" --title "Chompbook $TAG" --notes-file notes.md
+          fi

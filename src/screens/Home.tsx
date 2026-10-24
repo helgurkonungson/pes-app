@@ -25,6 +25,7 @@ export function modeOf(x: SkillsetSummary, ai: AiState | undefined): "course" | 
 }
 
 export function nextTitle(x: SkillsetSummary, _ai: AiState | undefined, t: T): string {
+  if (x.open?.kind === "final") return t("next.final");
   if (x.open?.placement) return t("next.placement");
   if (x.course) return x.course.finished ? t("next.courseDone") : needsPlacement(x.s) ? t("next.placement") : (x.course.nextTitle ?? "");
   if (x.open?.lesson) return x.open.lesson.title;
@@ -72,6 +73,7 @@ function NextUp({ x, ai }: { x: SkillsetSummary; ai: AiState | undefined }) {
         </button>
         <h2 className="next-title">{nextTitle(x, ai, t)}</h2>
         {x.open?.lesson?.building && <BuildProgress building={x.open.lesson.building} compact />}
+        {x.due > 0 && <p className="small next-due">{t("skillset.reviewDue", { n: x.due })}</p>}
         <div className="next-progress">
           <Bar value={x.coverage} thin label={progressLabel(x, t)} />
           <span>{progressLabel(x, t)}</span>

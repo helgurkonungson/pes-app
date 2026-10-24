@@ -94,10 +94,15 @@ export function scorePlacement(questions: Mcq[], answers: Record<string, number>
     else gaps.push(topic);
   }
   const total = questions.length;
-  // material is "known" when every question about it was answered right
-  const byRef = new Map<string, boolean>();
-  for (const q of questions) if (q.ref) byRef.set(q.ref, (byRef.get(q.ref) ?? true) && answers[q.id] === q.answer);
-  const known = [...byRef].filter(([, ok]) => ok).map(([ref]) => ref);
+  // material is "known" when at least two questions about it were asked and all answered right
+  // ("I don't know" or a skipped question counts as not known)
+  const byRef = new Map<string, { ok: boolean; n: number }>();
+  for (const q of questions) {
+    if (!q.ref) continue;
+    const r = byRef.get(q.ref) ?? { ok: true, n: 0 };
+    byRef.set(q.ref, { ok: r.ok && answers[q.id] === q.answer, n: r.n + 1 });
+  }
+  const known = [...byRef].filter(([, r]) => r.ok && r.n >= 2).map(([ref]) => ref);
   return { score, total, level: levelFromScore(total ? score / total : 0), strengths, gaps, at, known };
 }
 

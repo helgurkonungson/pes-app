@@ -12,6 +12,8 @@ export interface Imported {
   title: string;
   origin: string;
   drafts: ChunkDraft[];
+  /** Scanned PDF pages whose text was recognised on the device. */
+  ocrPages?: number;
 }
 
 export type ImportProgress = (message: string, ratio?: number) => void;
@@ -26,10 +28,13 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
   const title = stripExt(name);
   let sections: TextSection[];
   let kind: SourceKind = "text";
+  let ocrPages = 0;
 
   if (ext === "pdf" || file.type === "application/pdf") {
     kind = "pdf";
-    sections = await pdfSections(file, onProgress);
+    const pdf = await pdfSections(file, onProgress);
+    sections = pdf.sections;
+    ocrPages = pdf.ocrPages;
   } else if (ext === "epub" || file.type === "application/epub+zip") {
     kind = "epub";
     sections = await epubSections(file, onProgress);
@@ -44,7 +49,7 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
   onProgress?.(t("import.splitting"), 1);
   const drafts = buildChunks(sections, title);
   if (!drafts.length) throw new Error(kind === "pdf" ? t("import.err.pdfEmpty") : t("import.err.empty"));
-  return { kind, title, origin: name, drafts };
+  return { kind, title, origin: name, drafts, ...(ocrPages ? { ocrPages } : {}) };
 }
 
 export function importText(title: string, text: string): Imported {
@@ -113,14 +118,14 @@ export function htmlSections(html: string): TextSection[] {
 
 // ---------- PDF ----------
 
-async function pdfSections(file: File, onProgress?: ImportProgress): Promise<TextSection[]> {
+async function pdfSections(file: File, onProgress?: ImportProgress): Promise<{ sections: TextSection[]; ocrPages: number }> {
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const worker = await import("pdfjs-dist/legacy/build/pdf.worker.min.mjs?url");
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   const data = new Uint8Array(await file.arrayBuffer());
   const task = pdfjs.getDocument({ data });
   const doc = await task.promise;
-  const sections: TextSection[] = [];
+  const pages: string[] = [];
   for (let i = 1; i <= doc.numPages; i++) {
     if (i === 1 || i % 10 === 0) onProgress?.(t("import.page", { i, n: doc.numPages }), i / doc.numPages);
     const page = await doc.getPage(i);
@@ -136,10 +141,47 @@ async function pdfSections(file: File, onProgress?: ImportProgress): Promise<Tex
       lastY = y;
     }
     page.cleanup();
-    sections.push({ label: `p. ${i}`, text: reflowPdfText(text) });
+    pages.push(text);
+  }
+
+  // Scanned pages (no text layer) are recognised automatically, on the device.
+  const { looksScanned, startOcr } = await import("./ocr");
+  const scans = pages.map((p, i) => (looksScanned(p) ? i : -1)).filter((i) => i >= 0);
+  let ocrPages = 0;
+  if (scans.length) {
+    onProgress?.(t("import.ocrPrep"), 0);
+    const ocr = await startOcr();
+    const canvas = document.createElement("canvas");
+    try {
+      for (let k = 0; k < scans.length; k++) {
+        const i = scans[k];
+        onProgress?.(t("import.ocr", { i: k + 1, n: scans.length }), k / scans.length);
+        const page = await doc.getPage(i + 1);
+        const base = page.getViewport({ scale: 1 });
+        // ~2000 px on the long side: sharp enough for small print, light enough for phones
+        const scale = Math.min(3, Math.max(1, 2000 / Math.max(base.width, base.height)));
+        const viewport = page.getViewport({ scale });
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) break;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+        page.cleanup();
+        const text = (await ocr.recognize(canvas)).trim();
+        if (!looksScanned(text)) {
+          pages[i] = text;
+          ocrPages++;
+        }
+      }
+    } finally {
+      canvas.width = canvas.height = 0;
+      await ocr.close().catch(() => undefined);
+    }
   }
   await task.destroy();
-  return sections;
+  return { sections: pages.map((text, i) => ({ label: `p. ${i + 1}`, text: reflowPdfText(text) })), ocrPages };
 }
 
 /** PDF lines → paragraphs: keep breaks after sentence ends, join the rest. */

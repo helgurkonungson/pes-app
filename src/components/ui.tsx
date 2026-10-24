@@ -243,11 +243,11 @@ export function Toaster() {
 // ---------- confirm ----------
 
 const useConfirmStore = create<{
-  q: { title: string; text?: string; ok: string; danger?: boolean; resolve: (v: boolean) => void } | null;
+  q: { title: string; text?: string; ok: string; cancel?: string; danger?: boolean; resolve: (v: boolean) => void } | null;
 }>(() => ({ q: null }));
 
-export function confirmDialog(title: string, opts: { text?: string; ok?: string; danger?: boolean } = {}): Promise<boolean> {
-  return new Promise((resolve) => useConfirmStore.setState({ q: { title, text: opts.text, ok: opts.ok ?? "OK", danger: opts.danger, resolve } }));
+export function confirmDialog(title: string, opts: { text?: string; ok?: string; cancel?: string; danger?: boolean } = {}): Promise<boolean> {
+  return new Promise((resolve) => useConfirmStore.setState({ q: { title, text: opts.text, ok: opts.ok ?? "OK", cancel: opts.cancel, danger: opts.danger, resolve } }));
 }
 
 export function ConfirmHost() {
@@ -263,7 +263,7 @@ export function ConfirmHost() {
       {q.text && <p className="muted" style={{ marginBottom: 18 }}>{q.text}</p>}
       <div className="row">
         <button className="btn dark grow" onClick={() => done(false)}>
-          {t("common.cancel")}
+          {q.cancel ?? t("common.cancel")}
         </button>
         <button className={`btn grow ${q.danger ? "danger" : "primary"}`} onClick={() => done(true)}>
           {q.ok}

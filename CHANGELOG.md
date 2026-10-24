@@ -2,6 +2,20 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.9.0 — 2026-10-25
+
+- **Spaced repetition.** Every question you answer becomes a review card. Cards you got wrong come back the next day, right ones after 3, 7, 14, 30 and 60 days. The review at the start of a lesson is made of the cards due today plus the last lesson's key points. Home shows how many cards are due.
+- **Intermediate and final tests instead of the AI review.** Every 5th lesson starts with a short test over everything learned so far (weakest topics first). When the material is finished, a final test of 15 questions comes before "course finished"; the score is on the skillset page.
+- **Fairer placement test:** two questions per part of your material. A part counts as known only if both are right; "I don't know" counts as not known.
+- **No open question in lessons without AI.** Nothing could check the answer, so the step is gone.
+- **Reminders** (Settings → Daily reminder): a daily reminder at the time you choose, with the number of due cards, and an evening nudge when your streak would break. Offered once after your first lesson.
+- **Listen to lessons:** a "Listen" button on theory pages reads the text aloud with the phone's own voice. It works offline.
+- **Scanned PDFs are recognised automatically:** pages without text are read with text recognition (Russian and English) right on the phone. No photos, no internet.
+- **Error log** (Settings → Error log), with a "Send to developer" button. API keys are never written to it.
+- **Token usage:** AI tokens and requests for each lesson on the results screen, and this month's total in Settings.
+- Fixed: a lesson written in the background could get stuck on "Writing the quiz…" if it was opened at the moment it finished.
+- Release notes in the update pop-up are now shown in the app's language. All CI checks, including WebKit and the Android emulators, now have to pass before a release.
+
 ## 0.8.0 — 2026-10-24
 
 - **Every skillset starts with a short placement test** — whatever the material: with AI (from your sources or, without sources, from the skillset's topic), without AI (fill-in-the-gap questions from your own sources), and for imported courses (one question from each of up to 10–14 lessons). Older skillsets that skipped the test automatically get it while no lesson is done yet.

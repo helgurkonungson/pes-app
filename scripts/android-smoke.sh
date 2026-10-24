@@ -437,6 +437,16 @@ step_boot() {  # a
   ash settings put global verifier_verify_adb_installs 0 >/dev/null 2>&1 || true   # no install-scan dialogs
   ash settings put global package_verifier_enable 0 >/dev/null 2>&1 || true
   ash svc power stayon true >/dev/null || true
+  # API 34 emulator images keep raising "Pixel Launcher isn't responding" over the app (v0.6–0.8
+  # CI runs). The app is started directly with am start, so the launcher is not needed: switch it
+  # off and hide system error dialogs for the run.
+  ash settings put global hide_error_dialogs 1 >/dev/null 2>&1 || true
+  local launcher
+  for launcher in com.google.android.apps.nexuslauncher com.android.launcher3; do
+    if ash pm path "$launcher" 2>/dev/null | grep -q package:; then
+      ash pm disable-user --user 0 "$launcher" >/dev/null 2>&1 && note "launcher $launcher disabled for the run" || true
+    fi
+  done
   ash input keyevent 224 >/dev/null || true   # WAKEUP
   ash input keyevent 82 >/dev/null || true    # MENU: dismisses the emulator's swipe lock screen
   ash wm dismiss-keyguard >/dev/null 2>&1 || true
@@ -473,6 +483,16 @@ step_render() {  # d
   if wait_for text "$TXT_ONB_START" "$RENDER_TIMEOUT" 1; then
     RENDER_MS=$(( $(now_ms) - LAUNCH_T0 ))
     note "web UI visible ~${RENDER_MS} ms after launch ('${N_TEXT[FOUND]:-${N_DESC[FOUND]}}')"
+    return 0
+  fi
+  # a system dialog may have pushed the app back: bring it to the front and look once more
+  note "WARN: '$TXT_ONB_START' not visible after ${RENDER_TIMEOUT}s; bringing the app back and retrying once"
+  refresh_ui || true
+  dismiss_system_dialog
+  ensure_foreground
+  if wait_for text "$TXT_ONB_START" "$RENDER_TIMEOUT" 1; then
+    RENDER_MS=$(( $(now_ms) - LAUNCH_T0 ))
+    note "web UI visible after retry ~${RENDER_MS} ms after launch"
     return 0
   fi
   local why js

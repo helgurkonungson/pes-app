@@ -14,11 +14,18 @@ export type Page =
   | { kind: "open"; step: "open"; q: string; rubric: string[] }
   | { kind: "intro"; step: "placement"; text: string; count: number }
   /** The rest of the lesson is still being written. */
-  | { kind: "pending"; step: "theory" | "quiz" };
+  | { kind: "pending"; step: "theory" | "quiz" }
+  /** First page of an intermediate test (in place of the usual review). */
+  | { kind: "checkpoint"; step: "review"; count: number };
 
-export function lessonPages(l: LessonContent): Page[] {
+/**
+ * `open`: include the open question — only when an AI can grade the answer
+ * (a self-check without AI teaches little, so the step is left out then).
+ */
+export function lessonPages(l: LessonContent, opts: { open?: boolean } = {}): Page[] {
   const pages: Page[] = [];
-  if (l.review.recap.length) pages.push({ kind: "recap", step: "review", recap: l.review.recap });
+  if (l.checkpoint && l.review.questions.length) pages.push({ kind: "checkpoint", step: "review", count: l.review.questions.length });
+  else if (l.review.recap.length) pages.push({ kind: "recap", step: "review", recap: l.review.recap });
   l.review.questions.forEach((mcq, i) => pages.push({ kind: "mcq", step: "review", mcq, index: i, of: l.review.questions.length }));
   const parts = Math.max(l.theory.sections.length, l.building?.sections ?? 0);
   const allParts = l.theory.sections.length >= parts;
@@ -35,7 +42,7 @@ export function lessonPages(l: LessonContent): Page[] {
   // a lesson still being written ends, for now, at a page that waits for the next part
   if (l.building) pages.push({ kind: "pending", step: allParts ? "quiz" : "theory" });
   else l.quiz.forEach((mcq, i) => pages.push({ kind: "mcq", step: "quiz", mcq, index: i, of: l.quiz.length }));
-  pages.push({ kind: "open", step: "open", q: l.open.q, rubric: l.open.rubric });
+  if (opts.open !== false) pages.push({ kind: "open", step: "open", q: l.open.q, rubric: l.open.rubric });
   return pages;
 }
 

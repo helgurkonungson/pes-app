@@ -7,7 +7,8 @@ import { nowIso, uid } from "../core/ids";
 import { advanceCursor, clampMinutes, coverage } from "../core/planner";
 import { levelFromXp, scorePlacement, skippedPlacement, XP } from "../core/scoring";
 import { registerDay } from "../core/streak";
-import type { Chunk, DayActivity, LessonLanguage, Mcq, Session, SessionResult, Skillset, Source, SourceKind } from "../core/types";
+import { cardId, review } from "../core/srs";
+import type { Card, Chunk, DayActivity, LessonLanguage, Mcq, Session, SessionResult, Skillset, Source, SourceKind } from "../core/types";
 import { db, getProfile } from "./db";
 
 // ---------- skillsets ----------
@@ -51,12 +52,13 @@ export async function updateSkillset(id: string, patch: Partial<Skillset>): Prom
 }
 
 export async function deleteSkillset(id: string): Promise<void> {
-  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions, db.courses, db.drafts], async () => {
+  await db.transaction("rw", [db.skillsets, db.sources, db.chunks, db.sessions, db.courses, db.drafts, db.cards], async () => {
     const sk = await db.skillsets.get(id);
     await db.chunks.where("skillsetId").equals(id).delete();
     await db.sources.where("skillsetId").equals(id).delete();
     await db.sessions.where("skillsetId").equals(id).delete();
     await db.drafts.where("skillsetId").equals(id).delete();
+    await db.cards.where("skillsetId").equals(id).delete();
     await db.skillsets.delete(id);
     if (sk?.courseId) {
       const others = (await db.skillsets.toArray()).some((x) => x.courseId === sk.courseId);
@@ -180,8 +182,24 @@ async function bumpActivity(day: string, patch: Omit<DayActivity, "day">): Promi
 }
 
 /** Closes a session: XP, streak, cursor, activity and badges. Returns the result shown to the learner. */
+/** Applies answers to spaced-repetition cards (creating cards for new questions). Unanswered questions are left alone. */
+async function updateCards(skillsetId: string, questions: Mcq[], answers: Record<string, number>, day: string): Promise<void> {
+  const now = nowIso();
+  for (const q of questions) {
+    if (answers[q.id] === undefined) continue;
+    const id = q.cardId ?? cardId(skillsetId, q);
+    const card = await db.cards.get(id);
+    await db.cards.put(review(card, q, skillsetId, answers[q.id] === q.answer, day, now));
+  }
+}
+
+/** Cards of a skillset (all, or only those due on `day`). */
+export async function skillsetCards(skillsetId: string): Promise<Card[]> {
+  return db.cards.where("skillsetId").equals(skillsetId).toArray();
+}
+
 export async function completeSession(sessionId: string): Promise<SessionResult> {
-  return db.transaction("rw", [db.sessions, db.skillsets, db.profile, db.activity, db.chunks, db.courses], async () => {
+  return db.transaction("rw", [db.sessions, db.skillsets, db.profile, db.activity, db.chunks, db.courses, db.cards], async () => {
     const session = await db.sessions.get(sessionId);
     if (!session) throw new Error("Session not found");
     if (session.status === "done" && session.result) return session.result;
@@ -198,12 +216,26 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
     let openScore: number | undefined;
     const skillsetPatch: Partial<Skillset> = {};
 
+    let checkpoint: SessionResult["checkpoint"];
     if (session.kind === "placement" && session.placement) {
       const r = scorePlacement(session.placement.questions, session.progress.mcq, nowIso());
       correct = r.score;
       total = r.total;
       xp = XP.placement + r.score * 5;
       skillsetPatch.placement = r;
+    } else if (session.kind === "final" && session.placement) {
+      // final test: every answer also updates its card (wrong ones go back to the start)
+      const qs = session.placement.questions;
+      const weak = new Set<string>();
+      for (const q of qs) {
+        const right = session.progress.mcq[q.id] === q.answer;
+        if (right) correct++;
+        else if (q.topic) weak.add(q.topic);
+      }
+      total = qs.length;
+      xp = XP.placement + correct * 5;
+      await updateCards(skillset.id, qs, session.progress.mcq, today);
+      skillsetPatch.final = { score: correct, total, at: nowIso(), weak: [...weak] };
     } else if (session.lesson) {
       const lesson = session.lesson;
       const t = tallyLesson(lesson, session.progress, session.minutes, streakState.current);
@@ -232,6 +264,12 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
         if (skillsetPatch.cursor !== skillset.cursor) skillsetPatch.cursorWord = 0;
       }
       skillsetPatch.lessonsDone = skillset.lessonsDone + 1;
+      // spaced repetition: review answers move their cards, today's questions become cards
+      await updateCards(skillset.id, [...lesson.review.questions, ...lesson.quiz], session.progress.mcq, today);
+      if (lesson.checkpoint && lesson.review.questions.length) {
+        const qs = lesson.review.questions;
+        checkpoint = { correct: qs.filter((q) => session.progress.mcq[q.id] === q.answer).length, total: qs.length };
+      }
     }
 
     const newXp = profile.xp + xp;
@@ -268,6 +306,7 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
       xp,
       correct,
       total,
+      ...(checkpoint ? { checkpoint } : {}),
       openScore,
       minutesSpent,
       badges: earned,

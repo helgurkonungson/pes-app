@@ -6,9 +6,11 @@ import type { Profile } from "../core/types";
 import { getProfile, updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
 import { AiError } from "./client";
+import { logEvent } from "../data/logs";
 import { providerReady } from "./key";
 
 export async function reportAiError(e: unknown): Promise<void> {
+  if (e instanceof AiError && e.kind !== "aborted") void logEvent("ai", `${e.provider ?? "ai"} ${e.kind}${e.status ? ` ${e.status}` : ""}: ${e.message}`, e.detail);
   if (e instanceof AiError && isBlocking(e.kind) && e.kind !== "no-key") {
     await updateProfile({ aiBlock: { kind: e.kind, at: nowIso() } });
   }

@@ -7,7 +7,7 @@ export interface BadgeContext {
   skillsets: number;
   /** Results of the session just finished, if any. */
   last?: {
-    kind: "placement" | "lesson";
+    kind: "placement" | "lesson" | "final";
     minutes: number;
     correct: number;
     total: number;

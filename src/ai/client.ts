@@ -4,7 +4,8 @@
  */
 import { type AiErrorKind, classifyApiError } from "../core/aiStatus";
 import { getProfile } from "../data/db";
-import type { ProviderId } from "../core/types";
+import type { ProviderId, TokenUsage } from "../core/types";
+import { recordMonthly } from "./usage";
 import { compatListModels, compatStructured } from "./compat";
 import { getApiKey } from "./key";
 import { activeProvider, PROVIDERS } from "./providers";
@@ -24,6 +25,12 @@ export class AiError extends Error {
   ) {
     super(message);
   }
+}
+
+/** Counts a request's tokens for the lesson (callback) and the month (profile). */
+export function noteUsage(u: TokenUsage, onUsage?: (u: TokenUsage) => void): void {
+  onUsage?.(u);
+  void recordMonthly(u);
 }
 
 export interface ToolDef {
@@ -102,7 +109,7 @@ export function createMessage(params: CreateParams, signal?: AbortSignal): Promi
 }
 
 /** Forces a single tool call and returns its input — our way of getting reliable JSON. */
-export async function structured<T>(opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal }): Promise<T> {
+export async function structured<T>(opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal; onUsage?: (u: TokenUsage) => void }): Promise<T> {
   const profile = await getProfile();
   const provider = activeProvider(profile);
   if (provider !== "anthropic") {
@@ -121,6 +128,7 @@ export async function structured<T>(opts: { model: string; system: string; promp
     },
     opts.signal,
   );
+  noteUsage({ input: res.usage?.input_tokens ?? 0, output: res.usage?.output_tokens ?? 0, requests: 1 }, opts.onUsage);
   const block = res.content.find((b): b is { type: "tool_use"; id: string; name: string; input: unknown } => b.type === "tool_use" && (b as { name?: string }).name === opts.tool.name);
   if (!block) {
     if (res.stop_reason === "max_tokens") throw new AiError("The lesson was too long for one answer. Try a shorter portion.", "bad-response");
@@ -135,7 +143,7 @@ export interface ResearchNotes {
 }
 
 /** Web research with the server-side web search tool. Returns plain notes plus cited links. */
-export async function research(opts: { model: string; prompt: string; signal?: AbortSignal; maxSearches?: number }): Promise<ResearchNotes> {
+export async function research(opts: { model: string; prompt: string; signal?: AbortSignal; maxSearches?: number; onUsage?: (u: TokenUsage) => void }): Promise<ResearchNotes> {
   const messages: CreateParams["messages"] = [{ role: "user", content: opts.prompt }];
   let text = "";
   const links = new Map<string, string>();
@@ -150,6 +158,7 @@ export async function research(opts: { model: string; prompt: string; signal?: A
       },
       opts.signal,
     );
+    noteUsage({ input: res.usage?.input_tokens ?? 0, output: res.usage?.output_tokens ?? 0, requests: 1 }, opts.onUsage);
     for (const b of res.content) {
       if (b.type === "text") {
         const tb = b as { text: string; citations?: { url?: string; title?: string }[] };

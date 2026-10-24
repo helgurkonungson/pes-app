@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, Bot, Check, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Bug, Check, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
@@ -9,7 +9,10 @@ import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
 import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
 import { useBackupRestore } from "../components/FilePickers";
-import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, PageTitle, Segmented, SectionLabel, Sheet, toast } from "../components/ui";
+import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, PageTitle, Segmented, SectionLabel, Sheet, toast, Toggle } from "../components/ui";
+import { formatTokens, monthKey } from "../ai/usage";
+import { DEFAULT_REMINDER_TIME } from "../core/reminders";
+import { setReminder } from "../native/reminders";
 import type { AiMode, ProviderId, UiLanguage } from "../core/types";
 import type { T } from "../i18n";
 import { localDay } from "../core/dates";
@@ -30,7 +33,8 @@ export function Settings() {
   const [key, setKey] = useState<string | null>(null);
   const [keyVersion, setKeyVersion] = useState(0);
   const ai = useAiState(keyVersion);
-  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server">(null);
+  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server" | "reminder">(null);
+  const [notifBlocked, setNotifBlocked] = useState(false);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -160,6 +164,15 @@ export function Settings() {
           <Group>
             <MenuRow icon={<User size={20} />} label={t("settings.name")} value={profile.name} onClick={() => (setDraft(profile.name), setSheet("name"))} />
             <MenuRow icon={<Target size={20} />} label={t("settings.goal")} value={t("portion.min", { n: profile.dailyGoal })} onClick={() => setSheet("goal")} />
+            {Capacitor.isNativePlatform() && (
+              <MenuRow
+                icon={<Bell size={20} />}
+                label={t("settings.reminder")}
+                hint={t("settings.reminderHint")}
+                value={profile.reminder?.on ? profile.reminder.time : t("settings.reminderOff")}
+                onClick={() => setSheet("reminder")}
+              />
+            )}
           </Group>
         </section>
 
@@ -227,6 +240,14 @@ export function Settings() {
           {!meta.webSearch && <p className="faint small">{t("settings.noWebSearch")}</p>}
           <Group>
             <MenuRow
+              icon={<BarChart3 size={20} />}
+              label={t("usage.month")}
+              value={(() => {
+                const u = profile.usage?.[monthKey()];
+                return u ? `${formatTokens(u.input + u.output, locale())} · ${t("usage.requests", { n: u.requests })}` : "0";
+              })()}
+            />
+            <MenuRow
               icon={<Activity size={20} />}
               label={t("settings.aiStatus")}
               hint={aiStatusText}
@@ -259,6 +280,7 @@ export function Settings() {
           <Group>
             <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
             {update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
+            <MenuRow icon={<Bug size={20} />} label={t("settings.logs")} onClick={() => useNav.getState().push({ name: "logs" })} />
             <MenuRow icon={<Code size={20} />} label={t("settings.source")} value={APP_REPO.split("/")[1]} onClick={() => openExternal(`https://github.com/${APP_REPO}`)} />
           </Group>
         </section>
@@ -287,6 +309,38 @@ export function Settings() {
         <Sheet title={t("settings.goal")} onClose={() => setSheet(null)}>
           <div className="stack-lg">
             <MinutesPicker value={profile.dailyGoal} onChange={(m) => updateProfile({ dailyGoal: m })} label={t("settings.goal")} />
+            <button className="btn primary block" onClick={() => setSheet(null)}>
+              {t("common.done")}
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "reminder" && (
+        <Sheet title={t("settings.reminder")} onClose={() => setSheet(null)}>
+          <div className="stack-lg">
+            <div className="row-between">
+              <span className="bold">{t("settings.reminder")}</span>
+              <Toggle
+                on={!!profile.reminder?.on}
+                label={t("settings.reminder")}
+                onChange={async (on) => {
+                  const ok = await setReminder(on);
+                  setNotifBlocked(on && !ok);
+                }}
+              />
+            </div>
+            <label className="stack" style={{ gap: 6 }}>
+              <span className="small muted">{t("settings.reminderTime")}</span>
+              <input
+                className="input"
+                type="time"
+                value={profile.reminder?.time ?? DEFAULT_REMINDER_TIME}
+                onChange={(e) => e.target.value && setReminder(profile.reminder?.on ?? true, e.target.value).then((ok) => setNotifBlocked(!ok))}
+              />
+            </label>
+            <p className="faint small">{t("settings.reminderHint")}</p>
+            {notifBlocked && <p className="small" role="alert">{t("settings.reminderDenied")}</p>}
             <button className="btn primary block" onClick={() => setSheet(null)}>
               {t("common.done")}
             </button>

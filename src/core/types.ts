@@ -26,6 +26,8 @@ export interface Skillset {
   language: LessonLanguage;
   createdAt: string;
   placement?: PlacementResult;
+  /** Final test result, once the material is covered. */
+  final?: FinalResult;
   /** Order index of the next chunk to teach. */
   cursor: number;
   lessonsDone: number;
@@ -89,6 +91,8 @@ export interface Mcq {
   topic?: string;
   /** Placement tests: the material the question checks (chunk id or course lesson id). */
   ref?: string;
+  /** Spaced repetition: the card this question was taken from. */
+  cardId?: string;
 }
 
 export interface OpenQuestion {
@@ -121,6 +125,10 @@ export interface LessonContent {
   readTo?: { cursor: number; word: number };
   /** Set while the rest of an AI lesson is still being written in the background. */
   building?: LessonBuilding;
+  /** The review step is an intermediate test this time (every few lessons). */
+  checkpoint?: boolean;
+  /** AI tokens used to write this lesson. */
+  usage?: TokenUsage;
 }
 
 export interface LessonBuilding {
@@ -162,6 +170,8 @@ export interface SessionResult {
   xp: number;
   correct: number;
   total: number;
+  /** Intermediate test inside this lesson: right answers of its questions. */
+  checkpoint?: { correct: number; total: number };
   openScore?: number;
   minutesSpent: number;
   badges: string[];
@@ -169,7 +179,8 @@ export interface SessionResult {
   streak: number;
 }
 
-export type SessionKind = "placement" | "lesson";
+/** placement = entry test; final = the final test once the material is covered (both use `placement` content). */
+export type SessionKind = "placement" | "lesson" | "final";
 export type SessionStatus = "ready" | "active" | "done";
 
 export interface Session {
@@ -222,6 +233,44 @@ export interface Profile {
   customBaseUrl?: string;
   /** Last automatic update check (the first launch of each day). */
   updateCheck?: UpdateCheck;
+  /** Daily reminder (local notification). Unset = on at 19:00 once the learner allows notifications. */
+  reminder?: { on: boolean; time: string };
+  /** AI tokens used, per calendar month ("2026-10"). */
+  usage?: Record<string, TokenUsage>;
+}
+
+export interface TokenUsage {
+  input: number;
+  output: number;
+  requests: number;
+}
+
+/**
+ * Spaced repetition card: a question the learner met in a lesson, shown again in the
+ * review step when due (Leitner boxes: 1, 3, 7, 14, 30, 60 days).
+ */
+export interface Card {
+  /** skillsetId + question fingerprint: the same question never makes two cards. */
+  id: string;
+  skillsetId: string;
+  mcq: Mcq;
+  /** 0 = not learned yet … 5 = long-term. */
+  box: number;
+  /** Local day (YYYY-MM-DD) when it is due. */
+  due: string;
+  seen: number;
+  lapses: number;
+  createdAt: string;
+  lastDay?: string;
+}
+
+/** Result of the final test of a skillset. */
+export interface FinalResult {
+  score: number;
+  total: number;
+  at: string;
+  /** Topics answered wrong — their cards go back to the start. */
+  weak: string[];
 }
 
 /** A newer app release found on GitHub. */
@@ -309,4 +358,18 @@ export interface LessonDraft {
   sections: (string | null)[];
   review?: { recap: string[]; questions: unknown[] };
   quiz?: unknown[];
+  /** AI tokens spent on this lesson so far. */
+  usage?: TokenUsage;
+}
+
+/** One entry of the local error journal (Settings → Error log). Never contains keys. */
+export interface LogEntry {
+  id?: number;
+  at: string;
+  /** "error" (crash / unhandled), "ai" (AI request failed), "import" (file could not be read), "info". */
+  kind: "error" | "ai" | "import" | "info";
+  message: string;
+  detail?: string;
+  /** App version that logged it. */
+  version: string;
 }

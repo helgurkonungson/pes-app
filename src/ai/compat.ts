@@ -5,8 +5,8 @@
  */
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
-import type { Profile, ProviderId } from "../core/types";
-import { AiError, type ModelInfo, type ToolDef } from "./client";
+import type { Profile, ProviderId, TokenUsage } from "../core/types";
+import { AiError, type ModelInfo, noteUsage, type ToolDef } from "./client";
 import { baseUrl, chatModels, PROVIDERS, wireModel } from "./providers";
 
 type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl">;
@@ -139,7 +139,7 @@ export async function compatStructured<T>(
   id: ProviderId,
   key: string,
   cfg: Cfg,
-  opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal },
+  opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal; onUsage?: (u: TokenUsage) => void },
 ): Promise<T> {
   if (id === "yandex" && !cfg.yandexFolder?.trim()) throw new AiError("Yandex folder id is missing.", "auth");
   if (id === "custom" && !baseUrl(id, cfg)) throw new AiError("Custom server address is missing.", "no-key");
@@ -191,6 +191,8 @@ export async function compatStructured<T>(
     r = await send();
   }
   check(id, r);
+  const usage = (r.data as { usage?: { prompt_tokens?: number; completion_tokens?: number } } | null)?.usage;
+  noteUsage({ input: usage?.prompt_tokens ?? 0, output: usage?.completion_tokens ?? 0, requests: 1 }, opts.onUsage);
   const choice = (r.data as { choices?: { message?: { content?: string | null; tool_calls?: { function?: { name?: string; arguments?: string } }[] }; finish_reason?: string }[] })?.choices?.[0];
   const call = choice?.message?.tool_calls?.find((c) => c.function?.name === opts.tool.name) ?? choice?.message?.tool_calls?.[0];
   // finish_reason ("length" = ran out of tokens, "stop", "content_filter"…) explains most format failures

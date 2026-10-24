@@ -1,7 +1,8 @@
 /** Prompts, tool schemas and the three AI jobs: placement test, lesson, grading. */
 import { normalizeGrade, normalizeMcqs, normalizePlacement, rng } from "../core/normalize";
 import { type SessionPlan, truncateWords } from "../core/planner";
-import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset } from "../core/types";
+import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset, TokenUsage } from "../core/types";
+import { addUsage } from "./usage";
 import { AiError, research, type ResearchNotes, structured, type ToolDef } from "./client";
 
 // ---------- schemas ----------
@@ -60,16 +61,6 @@ const SECTION_TOOL: ToolDef = {
     type: "object",
     properties: { body: { type: "string", description: "Light Markdown" } },
     required: ["body"],
-  },
-};
-
-const REVIEW_TOOL: ToolDef = {
-  name: "emit_review",
-  description: "Return the review step: recap of the last lesson and recall questions.",
-  input_schema: {
-    type: "object",
-    properties: { recap: { type: "array", items: { type: "string" } }, questions: { type: "array", items: MCQ_SCHEMA } },
-    required: ["recap", "questions"],
   },
 };
 
@@ -167,7 +158,7 @@ export async function generatePlacement(opts: {
     "- Measure where the learner stands on this material: about one third easy (e), one third medium (m), one third hard (h), ordered from easy to hard.",
     "- Cover 3–6 distinct topics; tag each question with a short topic name and reuse the exact same name for the same topic.",
     "- Test understanding and application, not recall of page details. 4 options, exactly one correct, plausible distractors.",
-    opts.samples.length ? "- Spread the questions over the excerpts (about one per excerpt) and set excerpt to the number of the excerpt each question checks." : "",
+    opts.samples.length ? "- Ask two questions per excerpt (different aspects of it) and set excerpt to the number of the excerpt each question checks." : "",
     "- intro: 1–2 sentences telling the learner what the test covers and that guessing or tapping “I don't know” is fine.",
   ].join("\n");
   const raw = await structured<unknown>({
@@ -195,7 +186,7 @@ export interface LessonSteps {
 
 /** Steps a lesson takes with this plan (for the progress bar). */
 export function lessonStepCount(sections: number, research: boolean): number {
-  return (research ? 1 : 0) + 1 + sections + 2;
+  return (research ? 1 : 0) + 1 + sections + 1;
 }
 
 function numberedExcerpts(chunks: Chunk[], sourceTitles: Map<string, string>, maxWordsEach: number, only?: number[]): string {
@@ -230,6 +221,11 @@ async function step<T>(run: () => Promise<unknown>, check: (raw: unknown) => T |
  * keeps its option order between the partial lessons and the final one.
  * Partial: only the parts written so far, in order, plus `building` progress.
  */
+/** Review questions come ready-made from the app; drafts from 0.8 may still hold raw AI questions. */
+function reviewQuestions(list: unknown[]): Mcq[] {
+  return list.every((q) => typeof (q as Mcq)?.id === "string" && Array.isArray((q as Mcq).options)) ? (list as Mcq[]) : normalizeMcqs(list, "r", rng(1));
+}
+
 export function assembleLesson(draft: LessonDraft, total: number, done: number, final: boolean): LessonContent {
   const plan = draft.plan!;
   const sections: { heading: string; body: string }[] = [];
@@ -241,11 +237,12 @@ export function assembleLesson(draft: LessonDraft, total: number, done: number, 
   const quiz = draft.quiz ? normalizeMcqs(draft.quiz, "q", rng(2)) : [];
   const lesson: LessonContent = {
     title: plan.title,
-    review: { recap: (draft.review?.recap ?? []).slice(0, 6), questions: normalizeMcqs(draft.review?.questions ?? [], "r", rng(1)) },
+    review: { recap: (draft.review?.recap ?? []).slice(0, 6), questions: reviewQuestions(draft.review?.questions ?? []) },
     theory: { sections, keyPoints: plan.keyPoints.slice(0, 8) },
     quiz,
     open: { id: "open", q: plan.open.q, rubric: plan.open.rubric.slice(0, 6) },
   };
+  if (draft.usage) lesson.usage = draft.usage;
   if (final) {
     if (!sections.length || sections.length < plan.sections.length || !quiz.length) throw new AiError("The lesson came back incomplete.", "bad-response");
   } else {
@@ -273,6 +270,8 @@ export async function generateLesson(opts: {
   saveDraft?: (d: LessonDraft) => Promise<void>;
   /** Called with the lesson so far (review + the parts already written) while the rest is being written. */
   onPartial?: (lesson: LessonContent) => Promise<void>;
+  /** The review step, prepared by the app (due cards or an intermediate test). */
+  review?: LessonContent["review"];
 }): Promise<{ lesson: LessonContent; notes?: ResearchNotes }> {
   const { skillset: s, plan } = opts;
   const now = new Date().toISOString();
@@ -286,6 +285,9 @@ export async function generateLesson(opts: {
     updatedAt: now,
     sections: [],
   };
+  const onUsage = (u: TokenUsage) => {
+    draft.usage = addUsage(draft.usage, u);
+  };
   const save = async () => {
     draft.updatedAt = new Date().toISOString();
     await opts.saveDraft?.(draft);
@@ -293,7 +295,7 @@ export async function generateLesson(opts: {
   const wantResearch = !!s.useInternet && opts.webSearch !== false;
   const total = () => lessonStepCount(draft.plan?.sections.length ?? plan.theorySections, wantResearch);
   const doneCount = () =>
-    (wantResearch && draft.research !== undefined ? 1 : 0) + (draft.plan ? 1 : 0) + draft.sections.filter(isStr).length + (draft.review ? 1 : 0) + (draft.quiz ? 1 : 0);
+    (wantResearch && draft.research !== undefined ? 1 : 0) + (draft.plan ? 1 : 0) + draft.sections.filter(isStr).length + (draft.quiz ? 1 : 0);
   const report = (stage: "research" | "writing", detail: string) => opts.onProgress?.(stage, detail, { done: doneCount(), total: total() });
   const system = tutorSystem(s.language);
 
@@ -306,6 +308,7 @@ export async function generateLesson(opts: {
         model: opts.model,
         maxSearches: plan.minutes >= 30 ? 4 : 2,
         signal: opts.signal,
+        onUsage,
         prompt: [
           `Skillset: ${s.name}. Learner goal: ${s.goal || "—"}.`,
           `Today's lesson focus: ${focus}.`,
@@ -349,7 +352,7 @@ export async function generateLesson(opts: {
       "- title: a short lesson title.",
     ].join("\n");
     draft.plan = await step(
-      () => structured<unknown>({ model: opts.model, system, prompt, tool: PLAN_TOOL, maxTokens: 1200 + plan.theorySections * 160, signal: opts.signal }),
+      () => structured<unknown>({ model: opts.model, system, prompt, tool: PLAN_TOOL, maxTokens: 1200 + plan.theorySections * 160, signal: opts.signal, onUsage }),
       (raw) => {
         const o = (raw ?? {}) as Record<string, any>;
         const sections = (Array.isArray(o.sections) ? o.sections : [])
@@ -376,37 +379,10 @@ export async function generateLesson(opts: {
     await opts.onPartial(assembleLesson(draft, total(), doneCount(), false));
   };
 
-  // 3. review of the last lesson (first, so the lesson can start once part 1 is written);
+  // 3. review step: made by the app (spaced-repetition cards / intermediate test), not by the AI;
   //    the first lesson of a skillset has nothing to review yet
-  if (!draft.review && !opts.lastLesson) {
-    draft.review = { recap: [], questions: [] };
-    await save();
-  }
   if (!draft.review) {
-    report("writing", "review");
-    const last = opts.lastLesson
-      ? `LAST LESSON\nTitle: ${opts.lastLesson.title}\nKey points:\n${opts.lastLesson.theory.keyPoints.map((k) => `- ${k}`).join("\n")}`
-      : `LAST LESSON: none — this is the first lesson. Recap 2–3 prerequisites the learner needs for today's plan:\n${outline}`;
-    const mistakes = opts.mistakes.length ? `RECENT MISTAKES (the learner answered these wrong):\n${opts.mistakes.map((m) => `- ${m.q} (correct: ${m.options[m.answer]})`).join("\n")}` : "";
-    const prompt = [
-      header,
-      "",
-      last,
-      mistakes,
-      "",
-      "Write the review step with the emit_review tool:",
-      opts.lastLesson ? "- recap: 3–5 bullets with the key points of the last lesson." : "- recap: 2–3 bullets with today's prerequisites.",
-      `- questions: exactly ${plan.reviewQuestions} recall question(s) on ${opts.lastLesson ? "the last lesson" : "those prerequisites"}${opts.mistakes.length ? " and the recent mistakes" : ""}. 4 options, one correct, plausible distractors.`,
-    ].join("\n");
-    draft.review = await step(
-      () => structured<unknown>({ model: opts.model, system, prompt, tool: REVIEW_TOOL, maxTokens: plan.reviewQuestions * 320 + 700, signal: opts.signal }),
-      (raw) => {
-        const o = (raw ?? {}) as { recap?: unknown; questions?: unknown };
-        const questions = Array.isArray(o.questions) ? o.questions : [];
-        if (!strList(o.recap).length && !questions.length) return null;
-        return { recap: strList(o.recap), questions };
-      },
-    );
+    draft.review = opts.review ?? { recap: [], questions: [] };
     await save();
   }
   await partial();
@@ -433,7 +409,7 @@ export async function generateLesson(opts: {
       "- body only: do not repeat the heading.",
     ].join("\n");
     draft.sections[i] = await step(
-      () => structured<unknown>({ model: opts.model, system, prompt, tool: SECTION_TOOL, maxTokens: Math.min(8000, Math.round(words * 2.4) + 500), signal: opts.signal }),
+      () => structured<unknown>({ model: opts.model, system, prompt, tool: SECTION_TOOL, maxTokens: Math.min(8000, Math.round(words * 2.4) + 500), signal: opts.signal, onUsage }),
       (raw) => {
         const body = (raw as { body?: unknown } | null)?.body;
         return isStr(body) && body.trim().length >= 40 ? body.trim() : null;
@@ -457,7 +433,7 @@ export async function generateLesson(opts: {
       `Write the quiz with the emit_quiz tool: exactly ${plan.quizQuestions} multiple-choice questions on today's theory only. Test understanding and application, mix difficulty (e/m/h), tag each with a short topic. 4 options, exactly one correct, plausible distractors.`,
     ].join("\n");
     draft.quiz = await step(
-      () => structured<unknown>({ model: opts.model, system, prompt, tool: QUIZ_TOOL, maxTokens: plan.quizQuestions * 320 + 700, signal: opts.signal }),
+      () => structured<unknown>({ model: opts.model, system, prompt, tool: QUIZ_TOOL, maxTokens: plan.quizQuestions * 320 + 700, signal: opts.signal, onUsage }),
       (raw) => {
         const q = (raw as { questions?: unknown } | null)?.questions;
         return Array.isArray(q) && normalizeMcqs(q, "q").length ? q : null;

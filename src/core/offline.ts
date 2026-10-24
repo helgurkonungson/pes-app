@@ -415,11 +415,12 @@ export function buildOfflinePlacement(chunks: Chunk[], count: number, labels: Of
   const ordered = [...chunks].sort((a, b) => a.order - b.order);
   if (!ordered.length) return null;
   const rand = rng(seed);
-  const picks = ordered.length <= count ? ordered : Array.from({ length: count }, (_, i) => ordered[Math.floor((i + 0.5) * (ordered.length / count))]);
+  // two questions per part: one lucky guess must not mark a whole part as known
+  const parts = Math.max(1, Math.ceil(count / 2));
+  const picks = ordered.length <= parts ? ordered : Array.from({ length: parts }, (_, i) => ordered[Math.floor((i + 0.5) * (ordered.length / parts))]);
   const questions: Mcq[] = [];
   for (const c of picks) {
-    const [q] = makeGapQuestions(toUnits(c.text), 1, labels, `p${questions.length + 1}-`, rand);
-    if (q) questions.push({ ...q, id: `p${questions.length + 1}`, topic: c.title, ref: c.id });
+    for (const q of makeGapQuestions(toUnits(c.text), 2, labels, `p${questions.length + 1}-`, rand)) questions.push({ ...q, id: `p${questions.length + 1}`, topic: c.title, ref: c.id });
   }
   return questions.length >= 3 ? { intro: labels.placementIntro, questions } : null;
 }

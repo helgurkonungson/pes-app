@@ -3,7 +3,7 @@
  * `this.version(n)` block with an upgrade — never edit an existing version.
  */
 import Dexie, { type Table } from "dexie";
-import type { Chunk, Course, DayActivity, LessonDraft, Profile, Session, Skillset, Source } from "../core/types";
+import type { Card, Chunk, Course, DayActivity, LessonDraft, LogEntry, Profile, Session, Skillset, Source } from "../core/types";
 import { nowIso } from "../core/ids";
 
 export const DEFAULT_MODEL = "claude-sonnet-5-5";
@@ -17,6 +17,8 @@ export class PesDb extends Dexie {
   activity!: Table<DayActivity, string>;
   courses!: Table<Course, string>;
   drafts!: Table<LessonDraft, string>;
+  cards!: Table<Card, string>;
+  logs!: Table<LogEntry, number>;
 
   constructor(name = "pes") {
     super(name);
@@ -36,11 +38,16 @@ export class PesDb extends Dexie {
     this.version(3).stores({
       drafts: "id, skillsetId",
     });
+    // v0.9: spaced-repetition cards and the local error journal. Additive only.
+    this.version(4).stores({
+      cards: "id, skillsetId, [skillsetId+due]",
+      logs: "++id, at",
+    });
   }
 }
 
 /** Current schema version — bump together with a new `this.version(n)` above. */
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 export const db = new PesDb();
 

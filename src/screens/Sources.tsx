@@ -7,6 +7,7 @@ import { db } from "../data/db";
 import { addSource, deleteSource } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
 import { type Key, useT } from "../i18n";
+import { logEvent } from "../data/logs";
 import { useNav } from "../nav/store";
 import { ACCEPT, importFile, importText, importUrl, type Imported } from "../sources/importers";
 
@@ -26,7 +27,7 @@ export function Sources({ id }: { id: string }) {
 
   const save = async (imp: Imported) => {
     await addSource(id, imp.kind, imp.title, imp.origin, imp.drafts);
-    toast(t("sources.added", { title: imp.title, n: imp.drafts.length }));
+    toast(t("sources.added", { title: imp.title, n: imp.drafts.length }) + (imp.ocrPages ? ` · ${t("import.ocrUsed", { n: imp.ocrPages })}` : ""));
     writeSnapshot();
   };
 
@@ -37,6 +38,7 @@ export function Sources({ id }: { id: string }) {
       await job();
     } catch (e) {
       setError(e instanceof Error ? e.message : t("sources.err"));
+      void logEvent("import", e instanceof Error ? e.message : String(e), e instanceof Error ? e.stack : undefined);
     } finally {
       setBusy(null);
     }

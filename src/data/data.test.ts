@@ -55,7 +55,8 @@ async function onboard() {
   await updateProfile({ name: "Test", onboarded: true });
 }
 
-async function newSkillset(withSource = true) {
+/** A skillset with two source parts; the placement test is skipped unless `keepTest`. */
+async function newSkillset(withSource = true, keepTest = false) {
   const s = await createSkillset({ name: "Data", goal: "Learn", minutes: 15, useInternet: false, language: "English", hue: 174 });
   if (withSource) {
     const words = TEXT.split(/\s+/).length;
@@ -64,7 +65,15 @@ async function newSkillset(withSource = true) {
       { title: "Part B", text: TEXT.replace(/asset/g, "item"), words },
     ]);
   }
-  return s;
+  if (!keepTest) await skipPlacement(s.id);
+  return (await db.skillsets.get(s.id))!;
+}
+
+/** Answers every question of a placement/final test correctly. */
+async function passTest(s: Session): Promise<void> {
+  const mcq = Object.fromEntries(s.placement!.questions.map((q) => [q.id, q.answer]));
+  await db.sessions.update(s.id, { status: "active", progress: { page: 0, mcq, seconds: 300 } });
+  await completeSession(s.id);
 }
 
 /** Answers every question correctly and self-checks the open question. */
@@ -102,14 +111,13 @@ afterEach(() => {
 });
 
 describe("offline lessons (no key)", () => {
-  it("skips the placement test and builds an offline lesson from the sources", async () => {
+  it("after the placement test (skipped here) builds an offline lesson from the sources", async () => {
     const s = await newSkillset();
     const session = await prepareSession(s.id, 15);
     expect(session.kind).toBe("lesson");
     expect(session.lesson?.mode).toBe("offline");
     expect(session.lesson?.fallback).toBe("no-key");
     expect(session.chunkIds.length).toBeGreaterThan(0);
-    expect((await db.skillsets.get(s.id))?.placementSkipped).toBe(true);
     expect(tutor.generateLesson).not.toHaveBeenCalled();
     expect(tutor.generatePlacement).not.toHaveBeenCalled();
   });
@@ -138,20 +146,45 @@ describe("offline lessons (no key)", () => {
     expect((await db.activity.get(localDay()))?.sessions).toBe(1);
   });
 
-  it("the next lesson continues where the last one stopped and reviews mistakes", async () => {
+  it("the next lesson continues where the last one stopped; tomorrow the mistake comes back as a due card", async () => {
     const s = await newSkillset();
     const first = await prepareSession(s.id, 15);
     await passSession(first, true);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 86_400_000);
     const second = await prepareSession(s.id, 15);
     expect(second.id).not.toBe(first.id);
     expect(second.lesson!.theory.sections[0].body).not.toBe(first.lesson!.theory.sections[0].body);
     expect(second.lesson!.review.recap).toEqual(first.lesson!.theory.keyPoints.slice(0, 4));
-    expect(second.lesson!.review.questions.length).toBeGreaterThan(0);
+    const wrong = [...first.lesson!.review.questions, ...first.lesson!.quiz][0];
+    expect(second.lesson!.review.questions.map((q) => q.q)).toContain(wrong.q);
+    expect(second.lesson!.review.questions.every((q) => q.cardId)).toBe(true);
   });
 
-  it("reads every source to the end, then asks to start over", async () => {
+  it("every 5th lesson the review becomes an intermediate test over everything learned", async () => {
+    const s = await createSkillset({ name: "Long", goal: "Learn", minutes: 5, useInternet: false, language: "English", hue: 10 });
+    const words = TEXT.split(/\s+/).length;
+    await addSource(s.id, "text", "Book", "pasted", Array.from({ length: 10 }, (_, i) => ({ title: `Part ${i + 1}`, text: TEXT.replace(/asset/g, `asset${i}`), words })));
+    await skipPlacement(s.id);
+    for (let i = 0; i < 5; i++) {
+      const lesson = await prepareSession(s.id, 5);
+      expect(lesson.lesson?.checkpoint).toBeFalsy();
+      await passSession(lesson);
+    }
+    const sixth = await prepareSession(s.id, 5);
+    expect(sixth.lesson?.checkpoint).toBe(true);
+    expect(sixth.lesson!.review.recap).toEqual([]);
+    expect(sixth.lesson!.review.questions.length).toBeGreaterThanOrEqual(4);
+    expect(sixth.lesson!.review.questions.every((q) => q.cardId)).toBe(true);
+    await passSession(sixth);
+    const done = (await db.sessions.get(sixth.id))!;
+    expect(done.result?.checkpoint).toEqual({ correct: sixth.lesson!.review.questions.length, total: sixth.lesson!.review.questions.length });
+  });
+
+  it("reads every source to the end, takes the final test, then asks to start over", async () => {
     const s = await newSkillset();
     let guard = 0;
+    let sawFinal = false;
     for (;;) {
       let session: Session;
       try {
@@ -161,10 +194,15 @@ describe("offline lessons (no key)", () => {
         expect((e as OfflineError).code).toBe("finished");
         break;
       }
-      await passSession(session);
+      if (session.kind === "final") {
+        sawFinal = true;
+        await passTest(session);
+      } else await passSession(session);
       if (++guard > 30) throw new Error("never finished");
     }
+    expect(sawFinal).toBe(true); // the final test came before "finished"
     const sk = (await db.skillsets.get(s.id))!;
+    expect(sk.final?.total).toBeGreaterThan(0);
     expect(sk.cursor).toBe(2);
     expect(await db.chunks.where("skillsetId").equals(s.id).filter((c) => !c.coveredAt).count()).toBe(0);
     await restartReading(s.id);
@@ -214,7 +252,7 @@ describe("AI lessons and fallback", () => {
 
   it("runs the placement test first when AI is available", async () => {
     tutor.generatePlacement.mockResolvedValue({ intro: "Hi", questions: aiLesson().quiz });
-    const s = await newSkillset();
+    const s = await newSkillset(true, true);
     const session = await prepareSession(s.id, 15);
     expect(session.kind).toBe("placement");
   });
@@ -245,8 +283,10 @@ describe("AI lessons and fallback", () => {
     const qs = test.placement!.questions;
     expect(qs.length).toBeGreaterThanOrEqual(3);
     expect(qs.every((q) => q.ref)).toBe(true);
-    // the first question's part is known, the rest are not
-    const mcq = Object.fromEntries(qs.map((q, i) => [q.id, i === 0 ? q.answer : (q.answer + 1) % q.options.length]));
+    // both questions about the first part right → known; one wrong elsewhere → not known
+    const firstRef = qs[0].ref;
+    expect(qs.filter((q) => q.ref === firstRef)).toHaveLength(2);
+    const mcq = Object.fromEntries(qs.map((q) => [q.id, q.ref === firstRef ? q.answer : (q.answer + 1) % q.options.length]));
     await db.sessions.update(test.id, { status: "active", progress: { page: 0, seconds: 60, mcq } });
     await completeSession(test.id);
     const known = (await db.skillsets.get(s.id))?.placement?.known ?? [];
@@ -260,7 +300,7 @@ describe("AI lessons and fallback", () => {
   it("skipping the placement test = starting from zero; the first lesson follows", async () => {
     tutor.generatePlacement.mockResolvedValue({ intro: "Hi", questions: aiLesson().quiz });
     tutor.generateLesson.mockResolvedValue({ lesson: aiLesson() });
-    const s = await newSkillset();
+    const s = await newSkillset(true, true);
     const test = await prepareSession(s.id, 15);
     expect(test.kind).toBe("placement");
     await skipPlacement(s.id);
@@ -281,13 +321,22 @@ describe("AI lessons and fallback", () => {
     expect((await prepareSession(s.id, 15)).kind).toBe("placement");
   });
 
-  it("credits ran out for the placement test: built from the sources instead, or (too little material) start from zero", async () => {
+  it("credits ran out for the placement test: it is built from the sources instead", async () => {
     tutor.generatePlacement.mockRejectedValue(new AiError("no credits", "credits", 402));
-    const s = await newSkillset();
+    const s = await newSkillset(true, true);
+    const session = await prepareSession(s.id, 15);
+    expect(session.kind).toBe("placement");
+    expect(session.placement!.questions.length).toBeGreaterThanOrEqual(3);
+    expect(session.placement!.questions.every((q) => q.ref)).toBe(true);
+  });
+
+  it("too little material for a test: start from zero", async () => {
+    keyState.key = null;
+    const s = await createSkillset({ name: "Tiny", goal: "", minutes: 15, useInternet: false, language: "English", hue: 1 });
+    await addSource(s.id, "text", "Notes", "pasted", [{ title: "One", text: "Data governance defines decision rights for data. Stewards keep rules.", words: 11 }]);
     const session = await prepareSession(s.id, 15);
     expect(session.kind).toBe("lesson");
-    expect(session.lesson?.mode).toBe("offline");
-    expect((await db.skillsets.get(s.id))?.placementSkipped).toBe(true);
+    expect((await db.skillsets.get(s.id))?.placement?.skipped).toBe(true);
   });
 
   it("network errors are shown to the learner (they can retry or go offline)", async () => {
@@ -395,11 +444,12 @@ describe("courses", () => {
     keyState.key = "sk-ant-test-key-123456789"; // even with AI available, courses don't call it
     const test = await prepareSession(r.skillset.id, 15);
     expect(test.kind).toBe("placement");
-    expect(test.placement?.questions.map((q) => q.ref)).toEqual(["demo-01", "demo-02", "demo-03"]);
+    expect(test.placement?.questions.map((q) => q.ref)).toEqual(["demo-01", "demo-01", "demo-02", "demo-02", "demo-03", "demo-03"]);
     expect(tutor.generatePlacement).not.toHaveBeenCalled();
-    // right about lesson 1, wrong about 2 and 3 → the course starts at lesson 2
+    // both right about lesson 1; lesson 2: one right, one "I don't know" → not known
     const qs = test.placement!.questions;
-    await db.sessions.update(test.id, { status: "active", progress: { page: 0, seconds: 60, mcq: { [qs[0].id]: qs[0].answer, [qs[1].id]: (qs[1].answer + 1) % 4, [qs[2].id]: (qs[2].answer + 1) % 4 } } });
+    const mcq = Object.fromEntries(qs.map((q, i) => [q.id, i < 2 || i === 2 ? q.answer : i === 3 ? -1 : (q.answer + 1) % 4]));
+    await db.sessions.update(test.id, { status: "active", progress: { page: 0, seconds: 60, mcq } });
     await completeSession(test.id);
     expect((await db.skillsets.get(r.skillset.id))?.placement?.known).toEqual(["demo-01"]);
     const s1 = await prepareSession(r.skillset.id, 15);
@@ -416,13 +466,19 @@ describe("courses", () => {
     await skipPlacement(skillset.id);
     const s1 = await prepareSession(skillset.id, 15);
     await passSession(s1, true);
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 86_400_000); // next day: the mistake is a due card
     const s2 = await prepareSession(skillset.id, 15);
     expect(s2.lesson?.courseLessonId).toBe("demo-02");
     expect(s2.lesson?.review.recap).toEqual(["Basics key point 1", "Basics key point 2", "Basics key point 3"]);
     expect(s2.lesson?.review.questions.some((q) => q.q.startsWith("Recall Basics"))).toBe(true);
-    expect(s2.lesson?.review.questions.some((q) => q.q.startsWith("Basics — quiz"))).toBe(true); // the mistake
+    expect(s2.lesson?.review.questions.some((q) => q.q.startsWith("Basics — quiz") && q.cardId)).toBe(true); // the mistake, as a card
     await passSession(s2);
     await passSession(await prepareSession(skillset.id, 15));
+    // all lessons done: the final test over the course, then "finished"
+    const final = await prepareSession(skillset.id, 15);
+    expect(final.kind).toBe("final");
+    await passTest(final);
     await expect(prepareSession(skillset.id, 15)).rejects.toBeInstanceOf(CourseFinishedError);
     expect((await db.skillsets.get(skillset.id))?.cursor).toBe(3);
     expect((await getProfile()).badges["bookworm"]).toBeTruthy();

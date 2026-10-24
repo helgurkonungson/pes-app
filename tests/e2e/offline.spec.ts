@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown, skipPlacementUI } from "./helpers";
+import { btn, createSkillsetWithText, FIXTURES, finishLesson, mockApis, onboard, skipCountdown, skipPlacementUI } from "./helpers";
 
 const para = (topic: string) =>
   Array.from({ length: 8 }, (_, i) => `${topic} помогает команде принимать решения на основе фактов, и это правило номер ${i + 1} для любого руководителя данных в компании.`).join(" ");
@@ -36,6 +36,29 @@ test.describe("lessons without AI", () => {
     expect(text).not.toMatch(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/);
   });
 
+  test("a scanned PDF (pictures only) is recognised on the device, no photos or network needed", async ({ page }) => {
+    test.setTimeout(180_000);
+    await mockApis(page);
+    const outside: string[] = [];
+    page.on("request", (r) => {
+      const u = new URL(r.url());
+      if (!["localhost", "127.0.0.1"].includes(u.hostname) && !u.protocol.startsWith("blob") && !u.protocol.startsWith("data")) outside.push(r.url());
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Навыки" }).click();
+    await btn(page, /Новый навык/).click();
+    await page.locator("#sk-name").fill("Ботаника");
+    await btn(page, /Создать и добавить источники/).click();
+    await page.setInputFiles('[data-testid="source-file"]', `${FIXTURES}scanned-ru.pdf`);
+    await expect(page.getByText(/Распознаны 2 отсканированные страницы/)).toBeVisible({ timeout: 150_000 });
+    await btn(page, "Назад").click();
+    await skipPlacementUI(page);
+    await btn(page, /Начать/).click();
+    await skipCountdown(page);
+    await expect(page.locator(".session-body")).toContainText(/хлоропласт/i);
+    expect(outside.filter((u) => !u.includes("api.github.com"))).toEqual([]);
+  });
+
   test("no key: a full lesson from your own source, then progress updates", async ({ page }) => {
     await mockApis(page);
     await onboard(page);
@@ -52,6 +75,36 @@ test.describe("lessons without AI", () => {
     await page.getByRole("navigation").getByRole("button", { name: "Главная" }).click();
     await expect(page.getByRole("button", { name: /Серия: 1 день/ })).toBeVisible();
     await expect(page.locator(".next-title")).toHaveText("Урок 2");
+  });
+
+  test("without AI: no open question (nothing can grade it), lessons can be listened to, errors go to a journal", async ({ page }) => {
+    await mockApis(page);
+    await onboard(page);
+    await createSkillsetWithText(page);
+    await btn(page, /Начать · 15 мин/).click();
+    await skipCountdown(page);
+    if (await page.evaluate(() => "speechSynthesis" in window)) await expect(page.getByRole("button", { name: "Слушать" }).first()).toBeVisible();
+    for (let guard = 0; guard < 40; guard++) {
+      await expect(page.getByRole("textbox", { name: "Ваш ответ" })).toHaveCount(0);
+      const option = page.locator(".option:not([disabled])").first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      const finish = page.getByRole("button", { name: "Завершить" });
+      if (await finish.isVisible().catch(() => false)) break;
+      await btn(page, /^Далее/).click();
+    }
+    await btn(page, "Завершить").click();
+    await expect(page.getByRole("heading", { name: /Отлично/ })).toBeVisible();
+    await btn(page, "Закрыть").click();
+    // error journal: an app error lands there, keys are masked, it can be cleared
+    await page.evaluate(() => setTimeout(() => { throw new Error("test crash sk-ant-api03-SECRETSECRET123"); }));
+    await btn(page, "Назад").click();
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Журнал ошибок/).click();
+    await expect(page.locator(".log-msg").filter({ hasText: /test crash \[hidden\]/ }).first()).toBeVisible();
+    await expect(page.getByText(/SECRETSECRET/)).toHaveCount(0);
+    await expect(btn(page, "Отправить разработчику")).toBeVisible();
+    await btn(page, "Очистить").click();
+    await expect(page.getByText("Ошибок не было.")).toBeVisible();
   });
 
   test("credits ran out: lessons continue offline and the app explains why", async ({ page }) => {

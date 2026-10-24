@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { UpdateInfo } from "./types";
-import { isUpdateCheckDue, notesPreview, pendingUpdate } from "./updateCheck";
+import { isUpdateCheckDue, notesForLang, notesPreview, pendingUpdate } from "./updateCheck";
 
 const info = (version: string): UpdateInfo => ({ version, notes: "n", pageUrl: "https://x", publishedAt: "2026-10-24T08:00:00Z" });
 
@@ -27,5 +27,17 @@ describe("daily update check", () => {
     expect(p.length).toBeLessThanOrEqual(203);
     expect(p.endsWith("\n…")).toBe(true);
     expect(p.split("\n").slice(0, -1).every((l) => /^- line \d+ with some words$/.test(l))).toBe(true);
+  });
+});
+
+describe("notesForLang", () => {
+  const both = "<!--lang:ru-->\n- Тест в начале\n\n---\n\n<!--lang:en-->\n- Placement first";
+  it("picks the UI language's section", () => {
+    expect(notesForLang(both, "ru")).toBe("- Тест в начале");
+    expect(notesForLang(both, "en")).toBe("- Placement first");
+  });
+  it("falls back to English, and leaves notes without markers alone", () => {
+    expect(notesForLang(both, "de")).toBe("- Placement first");
+    expect(notesForLang("- Old notes", "ru")).toBe("- Old notes");
   });
 });

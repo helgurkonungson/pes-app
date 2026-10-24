@@ -1,13 +1,13 @@
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
-import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb, Sparkles, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb, Sparkles, Square, Volume2, X } from "lucide-react";
 import { liveQuery } from "dexie";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
 import { reportAiError, reportAiOk, useAiState } from "../ai/status";
 import { modelOf } from "../ai/providers";
 import { gradeAnswer } from "../ai/tutor";
-import { confirmDialog, ExtLink } from "../components/ui";
+import { confirmDialog, ExtLink, toast } from "../components/ui";
 import { BookBite } from "../components/BookBite";
 import { BuildProgress } from "../components/BuildProgress";
 import { BadgeIcon, Markdown, ScoreRing } from "../components/visuals";
@@ -22,7 +22,10 @@ import { db, getProfile } from "../data/db";
 import { completeSession, skipPlacement } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
 import { continueWriting, CourseFinishedError, isWriting, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
-import { type Key, type T, useT } from "../i18n";
+import { type Key, locale, type T, useT } from "../i18n";
+import { formatTokens } from "../ai/usage";
+import { scheduleReminders, setReminder } from "../native/reminders";
+import { speak, speakable, stopSpeaking } from "../native/tts";
 import { useNav } from "../nav/store";
 import { keepScreenOn } from "../native/awake";
 
@@ -240,10 +243,13 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     return () => window.removeEventListener("pes:session-back", onBack);
   }, [phase, pop, t]);
 
+  const aiNow = useAiState();
   const pages: Page[] = useMemo(() => {
     if (!session) return [];
-    return session.kind === "placement" && session.placement ? placementPages(session.placement) : session.lesson ? lessonPages(session.lesson) : [];
-  }, [session]);
+    if (session.kind !== "lesson" && session.placement) return placementPages(session.placement);
+    // the open question needs an AI to grade it; without AI the step is left out
+    return session.lesson ? lessonPages(session.lesson, { open: aiNow === "ok" }) : [];
+  }, [session, aiNow]);
 
   const finish = async () => {
     if (!session) return;
@@ -255,6 +261,12 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     setPhase("done");
     haptic("ok");
     writeSnapshot();
+    void scheduleReminders(); // today is done: no reminder tonight
+    // after the first finished session, offer daily reminders once
+    if (Capacitor.isNativePlatform() && !(await getProfile()).reminder) {
+      const yes = await confirmDialog(t("reminder.ask"), { text: t("reminder.askText"), ok: t("reminder.yes"), cancel: t("reminder.no") });
+      await setReminder(yes);
+    }
     const sk = await db.skillsets.get(session.skillsetId);
     if (sk) prefetchNext(sk.id, sk.minutes);
   };
@@ -361,7 +373,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     return (
       <button className="full-accent" onClick={() => setCount(0)}>
         <p className="bold" style={{ opacity: 0.75 }}>
-          {session?.kind === "placement" ? t("step.placement") : session?.lesson?.title}
+          {session?.kind === "placement" ? t("step.placement") : session?.kind === "final" ? t("step.final") : session?.lesson?.title}
         </p>
         {count > 0 ? <div className="countdown">{count}</div> : null}
         <div className="display">{t("session.getReady")}</div>
@@ -398,7 +410,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
           <button className="round-btn" aria-label={t("session.leaveAria")} onClick={close}>
             <X size={20} />
           </button>
-          <span className="pill accent">{t(STEP[page.step])}</span>
+          <span className="pill accent">{t(stepLabel(page, session))}</span>
           <span className="small muted timer" aria-label={t("session.timeAria")}>
             {Math.floor(progress.seconds / 60)}:{String(progress.seconds % 60).padStart(2, "0")}
           </span>
@@ -421,7 +433,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
         </div>
       </div>
 
-      <div className="session-body" tabIndex={0} role="region" aria-label={t(STEP[page.step])}>
+      <div className="session-body" tabIndex={0} role="region" aria-label={t(stepLabel(page, session))}>
         <div className="row-between" style={{ marginBottom: 10 }}>
           <div className="page-count" aria-label={t("session.pageAria", { i: pageIndex + 1, n: pages.length })}>
             {pageIndex + 1}
@@ -469,21 +481,62 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
   );
 }
 
+/** Reads the current theory part aloud; stops when the page changes. */
+function ListenButton({ text }: { text: string }) {
+  const t = useT();
+  const [on, setOn] = useState(false);
+  useEffect(() => () => void stopSpeaking(), []);
+  const toggle = async () => {
+    if (on) {
+      await stopSpeaking();
+      setOn(false);
+      return;
+    }
+    setOn(true);
+    try {
+      await speak(text);
+    } catch {
+      toast(t("tts.unavailable"));
+    } finally {
+      setOn(false);
+    }
+  };
+  return (
+    <button className={`btn small listen-btn${on ? " on" : ""}`} onClick={toggle} aria-pressed={on}>
+      {on ? <Square size={16} /> : <Volume2 size={16} />} {on ? t("tts.stop") : t("tts.listen")}
+    </button>
+  );
+}
+
+/** Label of the current step: the review step is an intermediate test sometimes; the final test reuses the test pages. */
+function stepLabel(page: Page, session: Session): Key {
+  if (page.step === "placement" && session.kind === "final") return "step.final";
+  if (page.step === "review" && session.lesson?.checkpoint) return "step.checkpoint";
+  return STEP[page.step];
+}
+
 // ---------- page renderers ----------
 
 function PageView({ page, session, progress, update, onSkipPlacement }: { page: Page; session: Session; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; onSkipPlacement?: () => void }) {
   const t = useT();
   switch (page.kind) {
+    case "checkpoint":
+      return (
+        <div className="stack-lg">
+          <h2 className="q-title">{t("checkpoint.title")}</h2>
+          <p className="muted">{t("checkpoint.text", { n: page.count })}</p>
+        </div>
+      );
     case "intro":
       return (
         <div className="stack-lg">
-          <h2 className="q-title">{t("placement.title")}</h2>
+          <h2 className="q-title">{session.kind === "final" ? t("final.title") : t("placement.title")}</h2>
           <p className="muted">{page.text}</p>
           <div className="card flat tight">
             <p className="small">{t("placement.howto", { n: page.count })}</p>
           </div>
-          <p className="muted small">{t("placement.skipNote")}</p>
-          {onSkipPlacement && (
+          {session.kind === "placement" && <p className="muted small">{t("placement.skipNote")}</p>}
+          {session.kind === "placement" && onSkipPlacement && (
             <button className="btn dark block" onClick={onSkipPlacement}>
               {t("placement.skip")}
             </button>
@@ -536,6 +589,7 @@ function PageView({ page, session, progress, update, onSkipPlacement }: { page: 
               {page.section.heading}
             </h2>
           </div>
+          <ListenButton key={`${session.id}-${page.index}`} text={`${page.section.heading}.\n${speakable(page.section.body)}${page.keyPoints?.length ? `\n${page.keyPoints.join("\n")}` : ""}`} />
           <Markdown text={page.section.body} />
           {page.keyPoints && page.keyPoints.length > 0 && (
             <div className="keypoints">
@@ -565,13 +619,13 @@ function PageView({ page, session, progress, update, onSkipPlacement }: { page: 
       );
     }
     case "mcq":
-      return <McqView page={page} progress={progress} update={update} allowDontKnow={page.step === "placement"} />;
+      return <McqView page={page} progress={progress} update={update} allowDontKnow={page.step === "placement"} checkpoint={!!session.lesson?.checkpoint} />;
     case "open":
       return <OpenView session={session} progress={progress} update={update} />;
   }
 }
 
-function McqView({ page, progress, update, allowDontKnow }: { page: Extract<Page, { kind: "mcq" }>; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; allowDontKnow: boolean }) {
+function McqView({ page, progress, update, allowDontKnow, checkpoint }: { page: Extract<Page, { kind: "mcq" }>; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; allowDontKnow: boolean; checkpoint?: boolean }) {
   const t = useT();
   const { mcq } = page;
   const chosen = progress.mcq[mcq.id];
@@ -581,7 +635,7 @@ function McqView({ page, progress, update, allowDontKnow }: { page: Extract<Page
     haptic(i === mcq.answer ? "ok" : "bad");
     update({ mcq: { ...progress.mcq, [mcq.id]: i } });
   };
-  const label = page.step === "review" ? t("mcq.recall") : page.step === "placement" ? t("mcq.question") : t("mcq.quiz");
+  const label = page.step === "review" ? t(checkpoint ? "mcq.checkpoint" : "mcq.recall") : page.step === "placement" ? t("mcq.question") : t("mcq.quiz");
   return (
     <div>
       <p className="tiny muted" style={{ marginBottom: 4 }}>
@@ -786,8 +840,10 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
 function Congrats({ session, result, onClose }: { session: Session; result: SessionResult | null; onClose: () => void }) {
   const t = useT();
   const [placement, setPlacement] = useState<{ level: string; strengths: string[]; gaps: string[]; known?: string[] } | null>(null);
+  const [final, setFinal] = useState<{ score: number; total: number; weak: string[] } | null>(null);
   useEffect(() => {
     if (session.kind === "placement" && result) db.skillsets.get(session.skillsetId).then((s) => s?.placement && setPlacement(s.placement));
+    if (session.kind === "final" && result) db.skillsets.get(session.skillsetId).then((s) => s?.final && setFinal(s.final));
   }, [session, result]);
   if (!result) {
     return (
@@ -808,7 +864,9 @@ function Congrats({ session, result, onClose }: { session: Session; result: Sess
         <h1 className="display" style={{ fontSize: 28 }}>
           {t("done.title")}
         </h1>
-        <p style={{ opacity: 0.8, maxWidth: 280 }}>{session.kind === "placement" ? t("done.placement") : t("done.lesson", { title: session.lesson?.title ?? "" })}</p>
+        <p style={{ opacity: 0.8, maxWidth: 280 }}>
+          {session.kind === "placement" ? t("done.placement") : session.kind === "final" ? t("final.title") : t("done.lesson", { title: session.lesson?.title ?? "" })}
+        </p>
         <div className="result-grid">
           <div>
             <div className="v">+{result.xp}</div>
@@ -831,6 +889,22 @@ function Congrats({ session, result, onClose }: { session: Session; result: Sess
             {placement.strengths.length > 0 && <p className="small">{t("done.strong", { list: placement.strengths.join(", ") })}</p>}
             {placement.gaps.length > 0 && <p className="small">{t("done.gaps", { list: placement.gaps.join(", ") })}</p>}
             {!!placement.known?.length && <p className="small">{t("done.known", { n: placement.known.length })}</p>}
+          </div>
+        )}
+        {final && (
+          <div className="placement-box">
+            <p className="bold">{t("done.final", { score: final.score, total: final.total, p: final.total ? Math.round((final.score / final.total) * 100) : 0 })}</p>
+            {final.weak.length > 0 && <p className="small">{t("done.finalWeak", { list: final.weak.join(", ") })}</p>}
+          </div>
+        )}
+        {session.lesson?.usage && (
+          <p className="small" style={{ opacity: 0.75 }}>
+            {t("usage.lesson", { tokens: formatTokens(session.lesson.usage.input + session.lesson.usage.output, locale()), req: t("usage.requests", { n: session.lesson.usage.requests }) })}
+          </p>
+        )}
+        {result.checkpoint && (
+          <div className="placement-box">
+            <p className="bold">{t("done.checkpoint", { score: result.checkpoint.correct, total: result.checkpoint.total })}</p>
           </div>
         )}
         {result.levelUp && <p className="bold">{t("done.levelUp", { n: result.levelUp, rank: t(`rank.${rankFor(result.levelUp)}` as Key) })}</p>}

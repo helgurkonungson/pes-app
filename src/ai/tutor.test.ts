@@ -57,23 +57,23 @@ describe("lesson written in steps", () => {
     ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) => reply(o.tool.name, o.prompt));
   });
 
-  it("plans, reviews, writes each section, then the quiz — saving after every step", async () => {
+  it("plans, writes each section, then the quiz — saving after every step (the review comes from the app)", async () => {
     const saved: LessonDraft[] = [];
     const { lesson } = await run(undefined, saved);
-    expect(tools()).toEqual(["emit_plan", "emit_review", "emit_section", "emit_section", "emit_quiz"]);
+    expect(tools()).toEqual(["emit_plan", "emit_section", "emit_section", "emit_quiz"]);
     expect(saved).toHaveLength(5);
     expect(lesson.title).toBe("Decision rights");
     expect(lesson.theory.sections.map((s) => s.heading)).toEqual(["Who decides", "How to start"]);
     expect(lesson.theory.sections[1].body).toContain("section 2");
     expect(lesson.quiz).toHaveLength(2);
-    expect(lesson.review.questions).toHaveLength(1);
+    expect(lesson.review.questions).toHaveLength(0); // no review given: none written by the AI
     expect(lesson.open.q).toBe("How would you assign rights?");
     // each section only gets the excerpts the plan assigned to it
-    const sec2 = ai.structured.mock.calls[3][0] as { prompt: string };
+    const sec2 = ai.structured.mock.calls[2][0] as { prompt: string };
     expect(sec2.prompt).toContain('n="2"');
     expect(sec2.prompt).not.toContain('n="1"');
     // the quiz is written from the theory that was actually written
-    expect((ai.structured.mock.calls[4][0] as { prompt: string }).prompt).toContain("Body of section 1");
+    expect((ai.structured.mock.calls[3][0] as { prompt: string }).prompt).toContain("Body of section 1");
   });
 
   it("an interruption keeps finished steps; the next run continues from there", async () => {
@@ -114,8 +114,8 @@ describe("lesson written in steps", () => {
       model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), lastLesson, mistakes: [], previousTitles: [],
       onProgress: (_s, detail, st) => seen.push(`${detail} ${st?.done}/${st?.total}`),
     });
-    expect(seen).toEqual(["plan 0/5", "review 1/5", "section 1/2 2/5", "section 2/2 3/5", "quiz 4/5"]);
-    expect(lessonStepCount(3, true)).toBe(7);
+    expect(seen).toEqual(["plan 0/4", "section 1/2 1/4", "section 2/2 2/4", "quiz 3/4"]);
+    expect(lessonStepCount(3, true)).toBe(6);
   });
 
   it("hands out partial lessons once the review and part 1 exist; questions keep their option order", async () => {
@@ -127,7 +127,7 @@ describe("lesson written in steps", () => {
       },
     });
     expect(partials.map((p) => p.theory.sections.length)).toEqual([1, 2]);
-    expect(partials[0].building).toEqual({ done: 3, total: 5, sections: 2 });
+    expect(partials[0].building).toEqual({ done: 2, total: 4, sections: 2 });
     expect(partials[0].quiz).toEqual([]);
     expect(partials[0].review.questions[0]).toEqual(lesson.review.questions[0]);
     expect(lesson.building).toBeUndefined();
@@ -161,5 +161,15 @@ describe("lesson written in steps", () => {
     const p = await generatePlacement({ model: "m", skillset, samples: chunks, sourceTitles: new Map(), count: 4 });
     expect(p.questions.map((q) => q.ref)).toEqual(["c2", "c1", undefined, undefined]);
     expect((ai.structured.mock.calls.at(-1)![0] as { prompt: string }).prompt).toContain('<excerpt n="2"');
+  });
+
+  it("the review step given by the app (due cards) is used as is — option order and card ids kept", async () => {
+    const card = { id: "sr1", q: "Due card?", options: ["x", "y", "z", "w"], answer: 2, explanation: "", cardId: "sk1:abc" };
+    const { lesson } = await generateLesson({
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 3, chunks, sourceTitles: new Map(), lastLesson, mistakes: [], previousTitles: [],
+      review: { recap: ["Eleven knowledge areas"], questions: [card] },
+    });
+    expect(lesson.review.questions).toEqual([card]);
+    expect(tools()).not.toContain("emit_review");
   });
 });

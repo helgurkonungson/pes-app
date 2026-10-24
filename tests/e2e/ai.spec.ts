@@ -24,6 +24,13 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await skipCountdown(page);
     await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
     await finishLesson(page, { aiGrade: true });
+    // token usage: per lesson on the results screen, per month in Settings
+    await expect(page.getByText(/AI для этого урока: [\d\s ]+ токенов · \d+ запрос/)).toBeVisible();
+    await btn(page, "Закрыть").click();
+    await btn(page, "Назад").click();
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await expect(page.getByText("Токены AI в этом месяце")).toBeVisible();
+    await expect(page.getByText(/^[\d\s ]+ · \d+ запрос/)).toBeVisible();
   });
 
   test("new skillset: “Continue without sources” goes straight to the first (AI) session", async ({ page }) => {

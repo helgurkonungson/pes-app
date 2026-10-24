@@ -143,7 +143,7 @@ export function SkillsetDetail({ id }: { id: string }) {
           </Group>
         )}
 
-        {(placementNext || s.placement) && (
+        {(placementNext || s.placement || s.final) && (
           <Group>
             {placementNext && (
               <MenuRow

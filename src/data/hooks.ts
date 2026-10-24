@@ -17,14 +17,17 @@ export interface SkillsetSummary {
   course?: { total: number; done: number; nextTitle?: string; finished: boolean };
   /** Most recent activity (finished session) — used to pick what to continue. */
   lastAt?: string;
+  /** Spaced-repetition cards due today. */
+  due: number;
 }
 
 async function summarize(s: Skillset): Promise<SkillsetSummary> {
-  const [chunks, sources, sessions, course] = await Promise.all([
+  const [chunks, sources, sessions, course, due] = await Promise.all([
     db.chunks.where("skillsetId").equals(s.id).count(),
     db.sources.where("skillsetId").equals(s.id).count(),
     db.sessions.where("skillsetId").equals(s.id).toArray(),
     s.courseId ? db.courses.get(s.courseId) : Promise.resolve(undefined),
+    db.cards.where("[skillsetId+due]").between([s.id, ""], [s.id, localDay()], true, true).count(),
   ]);
   const done = sessions.filter((x) => x.status === "done");
   const open = sessions.find((x) => x.status === "active") ?? sessions.find((x) => x.status === "ready");
@@ -37,7 +40,7 @@ async function summarize(s: Skillset): Promise<SkillsetSummary> {
     courseInfo = { total: course.lessons.length, done: course.lessons.filter((l) => doneIds.has(l.id)).length, nextTitle: next?.title, finished: !next };
     cov = courseCoverage(course, doneIds);
   }
-  return { s, chunks, sources, coverage: cov, accuracy: s.total ? s.correct / s.total : null, open, course: courseInfo, lastAt };
+  return { s, chunks, sources, coverage: cov, accuracy: s.total ? s.correct / s.total : null, open, course: courseInfo, lastAt, due };
 }
 
 export function useProfile(): Profile | undefined {

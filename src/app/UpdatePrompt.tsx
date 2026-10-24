@@ -2,21 +2,22 @@
 import { Download } from "lucide-react";
 import { Sheet, toast } from "../components/ui";
 import { Markdown } from "../components/visuals";
-import { notesPreview } from "../core/updateCheck";
-import { useT } from "../i18n";
+import { notesForLang, notesPreview } from "../core/updateCheck";
+import { useLang, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { APP_VERSION, installUpdateSafely } from "../update/updater";
 import { useUpdate } from "./App";
 
 export function UpdatePrompt() {
   const t = useT();
+  const lang = useLang((s) => s.lang);
   const info = useUpdate((s) => s.info);
   const open = useUpdate((s) => s.prompt);
   const close = useUpdate((s) => s.closePrompt);
   // never interrupt a lesson: the pop-up waits until the learner leaves it
   const inLesson = useNav((s) => s.stack[s.stack.length - 1]?.name === "session");
   if (!open || !info || inLesson) return null;
-  const notes = notesPreview(info.notes);
+  const notes = notesPreview(notesForLang(info.notes, lang));
   return (
     <Sheet title={t("update.popupTitle")} onClose={close}>
       <div className="stack">

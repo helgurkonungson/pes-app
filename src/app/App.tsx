@@ -1,3 +1,5 @@
+import { Logs } from "../screens/Logs";
+import { scheduleReminders } from "../native/reminders";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -51,6 +53,8 @@ function RouteView({ route }: { route: Route }) {
       return <History id={route.id} />;
     case "lesson":
       return <LessonView sessionId={route.sessionId} />;
+    case "logs":
+      return <Logs />;
   }
 }
 
@@ -113,6 +117,7 @@ export function App() {
     // snapshot when the app goes to the background (the OS may kill it later)
     const state = CapApp.addListener("appStateChange", ({ isActive }) => {
       if (!isActive) writeSnapshot();
+      else void scheduleReminders(); // "studied today?" and due cards may have changed
     });
     return () => {
       sub.then((s) => s.remove());
@@ -122,6 +127,7 @@ export function App() {
 
   useEffect(() => {
     // after boot: the check writes to the profile, and an empty database must be restored first
+    if (ready) void scheduleReminders();
     if (!ready || !autoUpdateCheckEnabled()) return;
     runDailyUpdateCheck();
     if (!Capacitor.isNativePlatform()) return;

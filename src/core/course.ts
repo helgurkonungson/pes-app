@@ -166,18 +166,20 @@ export function courseModules(course: Course): { module: string; lessons: Course
 }
 
 /**
- * Placement test for a course: one question from each of up to `count` lessons spread
+ * Placement test for a course: two questions from each of up to `count / 2` lessons spread
  * over the course. Each question remembers its lesson (`ref`): lessons answered right
  * are treated as known and skipped. Null when the course has too few questions.
  */
 export function buildCoursePlacement(course: Course, count: number, intro: string): PlacementContent | null {
   const withQ = course.lessons.filter((l) => l.quiz.length > 0);
-  const picks = withQ.length <= count ? withQ : Array.from({ length: count }, (_, i) => withQ[Math.floor((i + 0.5) * (withQ.length / count))]);
-  const questions: Mcq[] = picks.map((l, i) => {
-    // prefer a harder question: knowing the easy one does not mean knowing the lesson
-    const q = [...l.quiz].sort((a, b) => rank(b.difficulty) - rank(a.difficulty))[0];
-    return { ...q, id: `p${i + 1}`, topic: l.title, ref: l.id };
-  });
+  // two questions per lesson: one lucky guess must not skip a whole lesson
+  const parts = Math.max(1, Math.ceil(count / 2));
+  const picks = withQ.length <= parts ? withQ : Array.from({ length: parts }, (_, i) => withQ[Math.floor((i + 0.5) * (withQ.length / parts))]);
+  const questions: Mcq[] = [];
+  for (const l of picks) {
+    // the harder questions: knowing the easy one does not mean knowing the lesson
+    for (const q of [...l.quiz].sort((a, b) => rank(b.difficulty) - rank(a.difficulty)).slice(0, 2)) questions.push({ ...q, id: `p${questions.length + 1}`, topic: l.title, ref: l.id });
+  }
   return questions.length >= 3 ? { intro, questions } : null;
 }
 

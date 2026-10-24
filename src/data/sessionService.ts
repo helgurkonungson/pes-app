@@ -17,10 +17,12 @@ import { nowIso, uid } from "../core/ids";
 import { buildOfflineLesson, buildOfflinePlacement, type OfflineLabels } from "../core/offline";
 import { clampMinutes, pickChunks, placementSize, planSession, sampleChunks } from "../core/planner";
 import { needsPlacement } from "../core/scoring";
+import { asReviewQuestions, dueCards, isCheckpoint, testCards } from "../core/srs";
+import { localDay } from "../core/dates";
 import type { Chunk, LessonContent, LessonDraft, Mcq, Session, Skillset } from "../core/types";
 import { t } from "../i18n";
 import { db, getProfile } from "./db";
-import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetChunks, skipPlacement } from "./repo";
+import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetCards, skillsetChunks, skipPlacement } from "./repo";
 
 export class CourseFinishedError extends Error {
   constructor() {
@@ -80,6 +82,84 @@ function baseSession(skillsetId: string, kind: Session["kind"], number: number, 
   };
 }
 
+// ---------- review step, intermediate and final tests ----------
+
+/** Review questions per lesson (due cards). */
+const REVIEW_MAX = 6;
+const CHECKPOINT_SIZE = 8;
+const FINAL_SIZE = 15;
+
+/**
+ * The review step of the next lesson: spaced-repetition cards due today, or — every few
+ * lessons — an intermediate test over everything learned so far. Empty for the first lesson.
+ */
+export async function buildReview(skillset: Skillset, last: LessonContent | undefined): Promise<{ review: LessonContent["review"]; checkpoint: boolean }> {
+  if (!last) return { review: { recap: [], questions: [] }, checkpoint: false };
+  const cards = await skillsetCards(skillset.id);
+  if (isCheckpoint(skillset.lessonsDone, cards.length)) {
+    return { review: { recap: [], questions: asReviewQuestions(testCards(cards, CHECKPOINT_SIZE), "ck") }, checkpoint: true };
+  }
+  const due = dueCards(cards, localDay()).slice(0, REVIEW_MAX);
+  return { review: { recap: last.theory.keyPoints.slice(0, 4), questions: asReviewQuestions(due) }, checkpoint: false };
+}
+
+/** A ready lesson may have been prepared days ago: give it today's due cards before it starts. */
+async function refreshReview(session: Session): Promise<Session> {
+  if (session.status !== "ready" || session.kind !== "lesson" || !session.lesson) return session;
+  const skillset = await db.skillsets.get(session.skillsetId);
+  if (!skillset) return session;
+  const last = await lastDoneLesson(session.skillsetId);
+  const { review, checkpoint } = await buildReview(skillset, last?.lesson);
+  // a background writer may have saved newer parts (or the finished lesson) meanwhile:
+  // patch only the review of the stored lesson, never write back the copy we were given
+  return db.transaction("rw", db.sessions, db.drafts, async () => {
+    const fresh = await db.sessions.get(session.id);
+    if (!fresh?.lesson) return fresh ?? session;
+    const lesson = withReview(fresh.lesson, review, checkpoint);
+    await db.sessions.update(fresh.id, { lesson });
+    if (lesson.building) {
+      const d = await db.drafts.get(fresh.skillsetId);
+      if (d) await db.drafts.put({ ...d, review });
+    }
+    return { ...fresh, lesson };
+  });
+}
+
+function withReview(lesson: LessonContent, review: LessonContent["review"], checkpoint: boolean | undefined): LessonContent {
+  const out: LessonContent = { ...lesson, review, checkpoint };
+  if (!checkpoint) delete out.checkpoint;
+  return out;
+}
+
+/** Saves a newer version of a lesson being written, keeping the review step stored with it (refreshReview may have renewed it). */
+async function storeWrittenLesson(sessionId: string, lesson: LessonContent): Promise<void> {
+  await db.transaction("rw", db.sessions, async () => {
+    const cur = await db.sessions.get(sessionId);
+    if (!cur) return;
+    // a late partial must never turn a finished lesson back into one "still being written"
+    if (cur.lesson && !cur.lesson.building && lesson.building) return;
+    await db.sessions.update(sessionId, { lesson: cur.lesson ? withReview(lesson, cur.lesson.review, cur.lesson.checkpoint) : lesson });
+  });
+}
+
+/** The final test, once the material is covered: questions from every topic learned. Null when there is too little to test. */
+async function finalTest(skillset: Skillset, minutes: number): Promise<Session | null> {
+  if (skillset.final) return null;
+  const cards = await skillsetCards(skillset.id);
+  if (cards.length < 4) return null;
+  const ready = await findReadySession(skillset.id, minutes, "final");
+  if (ready) return ready;
+  const s = baseSession(skillset.id, "final", await nextSessionNumber(skillset.id), minutes);
+  s.placement = { intro: t("final.intro"), questions: asReviewQuestions(testCards(cards, FINAL_SIZE), "f") };
+  await saveSession(s);
+  return s;
+}
+
+/** True when every lesson chunk of the sources has been taught. */
+function materialCovered(chunks: Chunk[], skillset: Skillset): boolean {
+  return chunks.length > 0 && chunks.every((c) => c.order < skillset.cursor);
+}
+
 async function prepareCourseSession(skillset: Skillset): Promise<Session> {
   const course = await db.courses.get(skillset.courseId!);
   if (!course) throw new Error("Course not found");
@@ -104,11 +184,19 @@ async function prepareCourseSession(skillset: Skillset): Promise<Session> {
   const active = open.find((s) => s.status === "active" && s.lesson);
   if (active) return active;
   const ready = open.find((s) => s.lesson?.courseLessonId === next?.id);
-  if (ready) return ready;
+  if (ready) return refreshReview(ready);
   for (const s of open) if (s.kind === "lesson") await db.sessions.delete(s.id);
-  if (!next) throw new CourseFinishedError();
-  const mistakes = await recentMistakes(skillset.id, 2);
-  const lesson = buildCourseLesson(course, next, { doneIds, mistakes });
+  if (!next) {
+    const test = await finalTest(skillset, course.minutes);
+    if (test) return test;
+    throw new CourseFinishedError();
+  }
+  // the author's recall questions for the previous lesson + today's due cards
+  const lesson = buildCourseLesson(course, next, { doneIds, mistakes: [] });
+  const last = await lastDoneLesson(skillset.id);
+  const { review, checkpoint } = await buildReview(skillset, last?.lesson);
+  lesson.review = checkpoint ? review : { recap: lesson.review.recap.length ? lesson.review.recap : review.recap, questions: [...review.questions, ...lesson.review.questions].slice(0, REVIEW_MAX) };
+  if (checkpoint) lesson.checkpoint = true;
   const s = baseSession(skillset.id, "lesson", await nextSessionNumber(skillset.id), course.minutes);
   s.lesson = lesson;
   await saveSession(s);
@@ -129,18 +217,19 @@ async function buildOffline(skillset: Skillset, minutes: number, fallback: Lesso
   // no title pages, contents, prefaces or index; no PDF debris
   const chunks = lessonChunks(await skillsetChunks(skillset.id), skillset.placement?.known);
   const last = await lastDoneLesson(skillset.id);
-  const mistakes = await recentMistakes(skillset.id);
   const lesson = buildOfflineLesson({
     chunks,
     cursor: skillset.cursor,
     cursorWord: skillset.cursorWord ?? 0,
     minutes,
-    lastLesson: last?.lesson,
-    mistakes,
+    mistakes: [],
     labels: offlineLabels(),
     seed: skillset.cursor * 100_003 + (skillset.cursorWord ?? 0) + skillset.lessonsDone * 7,
   });
   lesson.fallback = fallback;
+  const { review, checkpoint } = await buildReview(skillset, last?.lesson);
+  lesson.review = review;
+  if (checkpoint) lesson.checkpoint = true;
   const ids = new Set<string>();
   const readTo = lesson.readTo!;
   for (const c of chunks) if (c.order >= skillset.cursor && (c.order < readTo.cursor || (c.order === readTo.cursor && readTo.word > 0))) ids.add(c.id);
@@ -158,6 +247,8 @@ export function usableDraft(d: LessonDraft | undefined, minutes: number, chunkId
 }
 
 interface WriterInputs {
+  /** The review step (due cards / intermediate test); the AI doesn't write it. */
+  review?: { review: LessonContent["review"]; checkpoint: boolean };
   skillset: Skillset;
   minutes: number;
   picked: Chunk[];
@@ -172,7 +263,7 @@ interface WriterInputs {
 const writers = new Map<string, Promise<void>>();
 
 export function isWriting(sessionId: string): boolean {
-  return writers.has(sessionId);
+  return writers.has(sessionId) || resuming.has(sessionId);
 }
 
 /**
@@ -216,10 +307,12 @@ async function writeAiLesson(
       saveDraft: async (d) => {
         await db.drafts.put(d);
       },
+      review: inp.review?.review,
       onPartial: async (partial) => {
         partial.mode = "ai";
+        if (inp.review?.checkpoint) partial.checkpoint = true;
         if (started) {
-          await db.sessions.update(base.id, { lesson: partial });
+          await storeWrittenLesson(base.id, partial);
           return;
         }
         if (!(await db.skillsets.get(base.skillsetId))) throw new Error("Skillset was deleted");
@@ -231,16 +324,24 @@ async function writeAiLesson(
     });
     const done = run.then(async ({ lesson }) => {
       lesson.mode = "ai";
+      if (inp.review?.checkpoint) lesson.checkpoint = true;
+      if (!started) {
+        await db.drafts.delete(base.skillsetId);
+        return resolve({ status: "done", lesson });
+      }
+      // finished lesson first, then the draft: a lesson marked "building" never loses its saved steps
+      await storeWrittenLesson(base.id, lesson);
       await db.drafts.delete(base.skillsetId);
-      if (!started) return resolve({ status: "done", lesson });
-      await db.sessions.update(base.id, { lesson });
     });
     const tracked = done.catch(async (e) => {
       if (!started) return reject(e);
       await markWritingFailed(base.id, e);
     });
-    writers.set(base.id, tracked.then(() => undefined));
-    void tracked.finally(() => writers.delete(base.id));
+    const entry = tracked.then(() => undefined);
+    writers.set(base.id, entry);
+    void entry.finally(() => {
+      if (writers.get(base.id) === entry) writers.delete(base.id);
+    });
   });
 }
 
@@ -256,8 +357,19 @@ async function markWritingFailed(sessionId: string, e: unknown): Promise<void> {
  * phone asleep, network error). Safe to call any time — does nothing when it is
  * already being written or complete.
  */
-export async function continueWriting(sessionId: string): Promise<void> {
-  if (writers.has(sessionId)) return writers.get(sessionId);
+export function continueWriting(sessionId: string): Promise<void> {
+  const running = writers.get(sessionId) ?? resuming.get(sessionId);
+  if (running) return running;
+  // registered before the first await, so two callers can never start two writers
+  const p = resumeWriting(sessionId).finally(() => resuming.delete(sessionId));
+  resuming.set(sessionId, p);
+  return p;
+}
+
+/** continueWriting calls between their start and the moment the writer is registered. */
+const resuming = new Map<string, Promise<void>>();
+
+async function resumeWriting(sessionId: string): Promise<void> {
   const s = await db.sessions.get(sessionId);
   if (!s?.lesson?.building || s.status === "done") return;
   const skillset = await db.skillsets.get(s.skillsetId);
@@ -265,7 +377,7 @@ export async function continueWriting(sessionId: string): Promise<void> {
   const draft = await db.drafts.get(s.skillsetId);
   if (!draft || draft.minutes !== s.minutes || draft.chunkIds.join() !== s.chunkIds.join()) {
     // the saved steps are gone: this lesson can't be finished — drop it, a fresh one will be made
-    if (s.status === "ready" || !s.progress.page) await db.sessions.delete(s.id);
+    if (s.status === "ready" && !s.startedAt && !s.progress.page) await db.sessions.delete(s.id);
     else await markWritingFailed(s.id, new AiError("Lesson draft missing.", "bad-response"));
     return;
   }
@@ -307,12 +419,21 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
     kind = "lesson";
   }
 
+  if (kind === "lesson") {
+    // all the material is covered: the final test comes next (once)
+    const all = lessonChunks(await skillsetChunks(skillsetId), skillset.placement?.known);
+    if (materialCovered(all, skillset) && !(await db.sessions.where("[skillsetId+status]").equals([skillsetId, "active"]).count())) {
+      const test = await finalTest(skillset, minutes);
+      if (test) return test;
+    }
+  }
+
   const existing = await findReadySession(skillsetId, minutes, kind);
   if (existing) {
     const staleOffline = existing.status === "ready" && existing.lesson?.mode === "offline" && useAi;
     if (!staleOffline) {
       if (existing.lesson?.building && !writers.has(existing.id)) void continueWriting(existing.id).catch(() => undefined);
-      return existing;
+      return refreshReview(existing);
     }
     await db.sessions.delete(existing.id);
   }
@@ -328,7 +449,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
       const titles = await sourceTitles(skillsetId);
       if (kind === "placement") {
         opts.onProgress?.("writing");
-        const samples = sampleChunks(chunks, 6);
+        const samples = sampleChunks(chunks, Math.ceil(placementSize(minutes) / 2)); // two questions per part
         base.placement = await generatePlacement({ model: modelOf(profile), skillset, samples, sourceTitles: titles, count: placementSize(minutes), signal: opts.signal });
         base.chunkIds = samples.map((c) => c.id);
       } else {
@@ -345,7 +466,8 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
         const draft = usableDraft(await db.drafts.get(skillsetId), minutes, picked.map((c) => c.id));
         if (draft) base.number = draft.number;
         base.chunkIds = picked.map((c) => c.id);
-        const started = await writeAiLesson(base, { skillset, minutes, picked, titles, last: last?.lesson, mistakes, previousTitles, draft }, opts);
+        const review = draft?.review ? { review: draft.review as LessonContent["review"], checkpoint: false } : await buildReview(skillset, last?.lesson);
+        const started = await writeAiLesson(base, { skillset, minutes, picked, titles, last: last?.lesson, mistakes, previousTitles, draft, review }, opts);
         if (started.status === "saved") {
           await reportAiOk();
           return started.session; // the rest is being written in the background
