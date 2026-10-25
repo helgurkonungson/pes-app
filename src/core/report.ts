@@ -86,3 +86,14 @@ export function reportsToText(reports: LessonReport[]): string {
     )
     .join("\n\n");
 }
+
+/** Developer address for lesson reports (support@ on the app's site; a build may override it). */
+export const DEFAULT_REPORT_EMAIL = "support@chompbook.online";
+/** Mail apps cut very long mailto links: the body is kept under this many characters. */
+export const MAILTO_BODY_MAX = 6000;
+
+/** `mailto:` link with the report(s) filled in — the learner only presses Send in their mail app. */
+export function reportMailto(email: string, subject: string, text: string): string {
+  const body = text.length > MAILTO_BODY_MAX ? `${text.slice(0, MAILTO_BODY_MAX - 1)}…` : text;
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}

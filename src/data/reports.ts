@@ -1,18 +1,18 @@
 /**
  * Lesson reports: saved on the phone first (never lost), then delivered to the developer —
- * silently to the report endpoint when the build has one (VITE_REPORT_URL), otherwise through
- * the share sheet / e-mail the learner confirms.
+ * silently to the report endpoint when the build has one (VITE_REPORT_URL), otherwise as a
+ * ready e-mail to support@chompbook.online that the learner sends from their mail app.
  */
 import { Capacitor } from "@capacitor/core";
 import { Share } from "@capacitor/share";
 import { nowIso } from "../core/ids";
-import { reportsToText } from "../core/report";
+import { DEFAULT_REPORT_EMAIL, reportMailto, reportsToText } from "../core/report";
 import type { LessonReport } from "../core/types";
 import { db } from "./db";
 import { redact } from "./logs";
 
 export const REPORT_URL: string = import.meta.env.VITE_REPORT_URL ?? "";
-export const REPORT_EMAIL: string = import.meta.env.VITE_REPORT_EMAIL ?? "";
+export const REPORT_EMAIL: string = import.meta.env.VITE_REPORT_EMAIL || DEFAULT_REPORT_EMAIL;
 
 /** Saves the report and tries to deliver it. Returns whether it already reached the developer. */
 export async function submitReport(r: LessonReport): Promise<{ id: number; sent: boolean }> {
@@ -47,15 +47,21 @@ export async function retryUnsent(): Promise<void> {
   if (rows.length) await deliver(rows);
 }
 
-/** Opens the share sheet (Android) / mail app with the reports as text. */
+/**
+ * Opens the mail app with the report(s) filled in, addressed to support. On Android the WebView
+ * hands `mailto:` to the mail app. Without an address (never in practice) the share sheet is used.
+ */
 export async function shareReports(reports: LessonReport[], title: string): Promise<void> {
   const text = reportsToText(reports);
   try {
+    if (REPORT_EMAIL) {
+      window.location.href = reportMailto(REPORT_EMAIL, title, text);
+      return;
+    }
     if (Capacitor.isNativePlatform()) await Share.share({ title, text, dialogTitle: title });
-    else if (REPORT_EMAIL) window.location.href = `mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(text.slice(0, 1800))}`;
     else if (navigator.share) await navigator.share({ title, text });
     else await navigator.clipboard.writeText(text);
   } catch {
-    /* share sheet closed */
+    /* no mail app / share sheet closed */
   }
 }

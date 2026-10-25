@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Page } from "./flow";
-import { buildReport, EXCERPT_MAX, pageText, pageWhere, reportsToText } from "./report";
+import { buildReport, DEFAULT_REPORT_EMAIL, EXCERPT_MAX, MAILTO_BODY_MAX, pageText, pageWhere, reportMailto, reportsToText } from "./report";
 import type { LessonContent } from "./types";
 
 const lesson = { title: "Права решений", mode: "ai" } as LessonContent;
@@ -33,5 +33,13 @@ describe("lesson reports", () => {
     expect(txt).toContain("Reason: harmful");
     expect(txt).toContain("lesson · history");
     expect(txt).toContain("Текст урока");
+  });
+  it("goes to the support address as a ready e-mail, cut to what mail apps accept", () => {
+    expect(DEFAULT_REPORT_EMAIL).toBe("support@chompbook.online");
+    const url = reportMailto(DEFAULT_REPORT_EMAIL, "Chompbook: жалоба", "Причина: wrong\nТекст & ещё");
+    expect(url.startsWith("mailto:support@chompbook.online?subject=")).toBe(true);
+    expect(decodeURIComponent(url.split("&body=")[1])).toBe("Причина: wrong\nТекст & ещё");
+    const long = reportMailto("a@b.c", "s", "x".repeat(MAILTO_BODY_MAX * 2));
+    expect(decodeURIComponent(long.split("&body=")[1]).length).toBe(MAILTO_BODY_MAX);
   });
 });
