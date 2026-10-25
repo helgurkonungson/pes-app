@@ -1,11 +1,13 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, BarChart3, Bell, Bot, Bug, Check, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
+import { GeminiSetupSheet } from "../components/GeminiSetup";
+import { googleSignInAvailable } from "../native/googleAuth";
 import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
 import { useBackupRestore } from "../components/FilePickers";
@@ -33,6 +35,8 @@ export function Settings() {
   const [key, setKey] = useState<string | null>(null);
   const [keyVersion, setKeyVersion] = useState(0);
   const ai = useAiState(keyVersion);
+  const [geminiSheet, setGeminiSheet] = useState(false);
+  const [providerView, setProviderView] = useState<"top" | "other">("top");
   const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server" | "reminder">(null);
   const [notifBlocked, setNotifBlocked] = useState(false);
   const [draft, setDraft] = useState("");
@@ -204,8 +208,17 @@ export function Settings() {
             ]}
           />
           <p className="faint small">{(profile.aiMode ?? "auto") === "auto" ? t("settings.aiAutoHint") : t("settings.aiOfflineHint")}</p>
+          {!(provider === "gemini" && key) && (
+            <button className="free-ai" onClick={() => setGeminiSheet(true)}>
+              <Sparkles size={24} aria-hidden />
+              <span className="grow">
+                <b>{t("gemini.cta")}</b>
+                <span>{t(googleSignInAvailable() ? "gemini.ctaHint" : "gemini.ctaHintManual")}</span>
+              </span>
+            </button>
+          )}
           <Group>
-            <MenuRow icon={<Sparkles size={20} />} label={t("settings.provider")} value={providerName(provider, t)} onClick={() => setSheet("provider")} />
+            <MenuRow icon={<Sparkles size={20} />} label={t("settings.provider")} value={providerName(provider, t)} onClick={() => (setProviderView("top"), setSheet("provider"))} />
             {provider === "custom" && (
               <MenuRow
                 icon={<Server size={20} />}
@@ -348,6 +361,15 @@ export function Settings() {
         </Sheet>
       )}
 
+      {geminiSheet && (
+        <GeminiSetupSheet
+          onClose={() => setGeminiSheet(false)}
+          onDone={() => {
+            setGeminiSheet(false);
+            setKeyVersion((v) => v + 1);
+          }}
+        />
+      )}
       {sheet === "key" && (
         <Sheet title={meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) })} onClose={() => setSheet(null)}>
           <div className="stack-lg">
@@ -385,27 +407,65 @@ export function Settings() {
 
       {sheet === "provider" && (
         <Sheet title={t("settings.provider")} onClose={() => setSheet(null)}>
-          <div className="stack" role="radiogroup" aria-label={t("settings.provider")}>
-            {PROVIDER_IDS.map((id) => (
-              <button
-                key={id}
-                role="radio"
-                aria-checked={id === provider}
-                className={`list-card inner${id === provider ? " selected" : ""}`}
-                onClick={async () => {
-                  await updateProfile({ provider: id, aiBlock: undefined });
-                  setKeyVersion((x) => x + 1);
-                  setSheet(null);
-                }}
-              >
-                <span className="grow">
-                  <span className="bold block">{providerName(id, t)}</span>
-                  <span className="small muted block">{id === "custom" ? t("settings.customVendor") : PROVIDERS[id].vendor}</span>
-                </span>
-                {id === provider && <Check size={20} className="accent" />}
+          {providerView === "top" ? (
+            <div className="stack" role="radiogroup" aria-label={t("settings.provider")}>
+              {(
+                [
+                  { id: "builtin", name: t("provider.builtin"), hint: t("provider.builtinHint"), on: provider === "gemini" },
+                  { id: "custom", name: providerName("custom", t), hint: t("settings.customVendor"), on: provider === "custom" },
+                  { id: "other", name: t("provider.other"), hint: t("provider.otherHint"), on: provider !== "gemini" && provider !== "custom" },
+                ] as const
+              ).map((o) => (
+                <button
+                  key={o.id}
+                  role="radio"
+                  aria-checked={o.on}
+                  className={`list-card inner${o.on ? " selected" : ""}`}
+                  onClick={async () => {
+                    if (o.id === "other") return setProviderView("other");
+                    if (o.id === "builtin" && !(await getApiKey("gemini"))) {
+                      setSheet(null);
+                      return setGeminiSheet(true);
+                    }
+                    await updateProfile({ provider: o.id === "builtin" ? "gemini" : "custom", aiBlock: undefined });
+                    setKeyVersion((x) => x + 1);
+                    setSheet(null);
+                  }}
+                >
+                  <span className="grow">
+                    <span className="bold block">{o.name}</span>
+                    <span className="small muted block">{o.hint}</span>
+                  </span>
+                  {o.id === "other" ? <ChevronRight size={20} className="muted" aria-hidden /> : o.on && <Check size={20} className="accent" />}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="stack" role="radiogroup" aria-label={t("provider.other")}>
+              <button className="btn ghost small" style={{ alignSelf: "flex-start" }} onClick={() => setProviderView("top")}>
+                <ChevronLeft size={18} /> {t("common.back")}
               </button>
-            ))}
-          </div>
+              {PROVIDER_IDS.filter((id) => id !== "custom").map((id) => (
+                <button
+                  key={id}
+                  role="radio"
+                  aria-checked={id === provider}
+                  className={`list-card inner${id === provider ? " selected" : ""}`}
+                  onClick={async () => {
+                    await updateProfile({ provider: id, aiBlock: undefined });
+                    setKeyVersion((x) => x + 1);
+                    setSheet(null);
+                  }}
+                >
+                  <span className="grow">
+                    <span className="bold block">{id === "gemini" ? t("provider.geminiOwn") : providerName(id, t)}</span>
+                    <span className="small muted block">{PROVIDERS[id].vendor}</span>
+                  </span>
+                  {id === provider && <Check size={20} className="accent" />}
+                </button>
+              ))}
+            </div>
+          )}
         </Sheet>
       )}
 

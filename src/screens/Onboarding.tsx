@@ -1,8 +1,10 @@
-import { ArrowRight, Check, KeyRound, Upload } from "lucide-react";
+import { ArrowRight, Check, KeyRound, Sparkles, Upload } from "lucide-react";
 import { useState } from "react";
 import { AiError, testKey } from "../ai/client";
 import { setApiKey } from "../ai/key";
 import { useBackupRestore } from "../components/FilePickers";
+import { GeminiSetupSheet } from "../components/GeminiSetup";
+import { googleSignInAvailable } from "../native/googleAuth";
 import { ExtLink, MinutesPicker, Segmented, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
 import { updateProfile } from "../data/db";
@@ -19,6 +21,7 @@ export function Onboarding() {
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gemini, setGemini] = useState(false);
   const restore = useBackupRestore();
 
   const finish = async (withKey: boolean) => {
@@ -116,6 +119,13 @@ export function Onboarding() {
             </span>
             <h1 className="display">{t("onb.keyTitle")}</h1>
             <p className="muted">{t("onb.keyLead")}</p>
+            <button className="free-ai" onClick={() => setGemini(true)}>
+              <Sparkles size={24} aria-hidden />
+              <span className="grow">
+                <b>{t("gemini.cta")}</b>
+                <span>{t(googleSignInAvailable() ? "gemini.ctaHint" : "gemini.ctaHintManual")}</span>
+              </span>
+            </button>
             <div className="card flat tight small">{t("onb.keyOptional")}</div>
             <div className="field">
               <label htmlFor="key">{t("settings.key")}</label>
@@ -145,6 +155,15 @@ export function Onboarding() {
             </button>
           </div>
         </>
+      )}
+      {gemini && (
+        <GeminiSetupSheet
+          onClose={() => setGemini(false)}
+          onDone={() => {
+            setGemini(false);
+            void updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang });
+          }}
+        />
       )}
     </main>
   );

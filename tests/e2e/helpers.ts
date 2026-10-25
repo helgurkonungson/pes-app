@@ -189,7 +189,12 @@ export async function expectNoHorizontalOverflow(page: Page, label = ""): Promis
 /** Settings → AI provider sheet → pick a provider (Settings tab must be open). */
 export async function chooseProvider(page: Page, name: string): Promise<void> {
   await page.getByRole("button", { name: /Провайдер AI|AI provider/ }).click();
-  await page.getByRole("dialog").getByRole("radio", { name: new RegExp(`^${name}`) }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("radio").first()).toBeVisible();
+  const direct = dialog.getByRole("radio", { name: new RegExp(`^${name}`) });
+  // the picker has three groups: built-in Gemini, your own server, other services (Claude, ChatGPT, …)
+  if (!(await direct.count())) await dialog.getByRole("radio", { name: /^(Другие сервисы|Other services)/ }).click();
+  await dialog.getByRole("radio", { name: new RegExp(`^${name}`) }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
 }
 

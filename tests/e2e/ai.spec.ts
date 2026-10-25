@@ -208,6 +208,48 @@ test.describe("Gemini, Groq and a custom server", () => {
     await lessonWorks(page);
   });
 
+  test("free Gemini key: explicit consent first, Google's key page, the copied key is checked and Gemini becomes the provider", async ({ page, context }) => {
+    const KEY = "AIzaSyD-0123456789abcdefghijklmnopqrstu";
+    await mockApis(page, "credits");
+    await page.route("https://generativelanguage.googleapis.com/**", (route) =>
+      route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) }),
+    );
+    await context.route("https://aistudio.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>AI Studio</h1>" }));
+    await page.goto("/");
+    await page.getByRole("radio", { name: "Русский" }).click();
+    await btn(page, "Начать").click();
+    await page.locator("#name").fill("Олег");
+    await btn(page, /Продолжить/).click();
+    await btn(page, /Бесплатный AI от Google/).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/Google может использовать ваши материалы/)).toBeVisible();
+    await expect(dialog.getByText(/ЕС, Великобритании и Швейцарии/)).toBeVisible();
+    // nothing happens without the explicit consent (18+, terms)
+    const open = dialog.getByRole("button", { name: "Открыть страницу ключей Google" });
+    await expect(open).toBeDisabled();
+    await dialog.getByRole("checkbox").check();
+    const popup = page.waitForEvent("popup");
+    await open.click();
+    await (await popup).close();
+    await dialog.getByRole("textbox", { name: "Ключ Gemini" }).fill(`скопировано: ${KEY}`);
+    await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
+    await expect(page.getByText("Ключ Gemini получен — уроки будут с AI")).toBeVisible();
+    await expect(page.getByRole("navigation")).toBeVisible(); // onboarding finished
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");
+    await expect(page.getByRole("button", { name: /Бесплатный AI от Google/ })).toHaveCount(0);
+    // the provider picker: built-in (selected now), your own server, other services
+    await page.getByRole("button", { name: /Провайдер AI/ }).click();
+    await expect(page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ })).toHaveAttribute("aria-checked", "true");
+    await page.getByRole("dialog").getByRole("radio", { name: /^Другие сервисы/ }).click();
+    await expect(page.getByRole("dialog").getByRole("radio", { name: /^Gemini \(свой ключ\)/ })).toHaveAttribute("aria-checked", "true");
+    await page.getByRole("dialog").getByRole("radio", { name: /^Claude/ }).click();
+    await page.getByRole("button", { name: /Провайдер AI/ }).click();
+    await page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ }).click(); // key exists: switches back at once
+    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
+  });
+
   test("Gemini overloaded: retries, then Google's own words + a hint; Retry then works", async ({ page }) => {
     test.setTimeout(90_000);
     await mockApis(page, "credits");

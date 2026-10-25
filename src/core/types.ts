@@ -235,6 +235,8 @@ export interface Profile {
   updateCheck?: UpdateCheck;
   /** Daily reminder (local notification). Unset = on at 19:00 once the learner allows notifications. */
   reminder?: { on: boolean; time: string };
+  /** Explicit consent to create a free Gemini key in the learner's Google account (ADR-021). */
+  geminiConsent?: { version: number; at: string; auto: boolean };
   /** AI tokens used, per calendar month ("2026-10"). */
   usage?: Record<string, TokenUsage>;
 }

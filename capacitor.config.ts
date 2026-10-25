@@ -17,6 +17,11 @@ const config: CapacitorConfig = {
     CapacitorHttp: {
       enabled: false,
     },
+    // Google sign-in only (creating the learner's Gemini key); no Facebook SDK, no AD_ID permission
+    SocialLogin: {
+      providers: { google: true, facebook: false, apple: false, twitter: false },
+      logLevel: 1,
+    },
   },
 };
 

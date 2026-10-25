@@ -2,6 +2,14 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.10.0 — 2026-10-25
+
+- **Free AI from Google (Gemini).** A new button at the first start and in Settings. A consent screen comes first: what will happen, how Google may use materials on the free tier, the EU/UK/Switzerland limit, 18+, and Google's terms. Nothing happens until you tick the box.
+  - When the app build has Google sign-in configured: you sign in to Google right in the app, and the app creates a "Chompbook" project in your Google account, turns on the Gemini API, creates a key that works only for it, checks it and saves it on the phone. Access to your account is used once and not kept.
+  - Otherwise, or if Google asks for something first: Google's key page opens inside the app, and when you close it, the copied key is pasted and checked automatically.
+  - Gemini becomes the AI provider, with the newest Flash model.
+- **The AI provider menu has three choices:** Built-in AI (Gemini, free), Your own API (server), and Other services (Claude, ChatGPT, Alice AI, Qwen, Groq, NVIDIA, Gemini with your own key).
+
 ## 0.9.1 — 2026-10-25
 
 - **The "preparing the lesson" screen always shows progress:** a bar that keeps moving (by the real writing steps when they are known) and phrases that change every few seconds — "Reading your materials…", "Just a little longer…", "Almost ready…".

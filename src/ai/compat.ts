@@ -16,7 +16,7 @@ interface HttpResult {
   data: unknown;
 }
 
-async function http(url: string, opts: { method: "GET" | "POST"; headers: Record<string, string>; body?: unknown; signal?: AbortSignal; timeoutMs?: number }): Promise<HttpResult> {
+export async function http(url: string, opts: { method: "GET" | "POST"; headers: Record<string, string>; body?: unknown; signal?: AbortSignal; timeoutMs?: number }): Promise<HttpResult> {
   const timeoutMs = opts.timeoutMs ?? 240_000;
   if (opts.signal?.aborted) throw new AiError("Cancelled.", "aborted");
   if (Capacitor.isNativePlatform()) {

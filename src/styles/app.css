@@ -576,3 +576,16 @@ button.menu-row:active { opacity: .7; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- free Gemini key (ADR-021) ---------- */
+.gemini-list, .gemini-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.gemini-list li, .gemini-steps li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.4; }
+.gemini-list li svg { color: var(--accent); flex: none; margin-top: 2px; }
+.gemini-steps li { color: var(--faint); align-items: center; min-height: 28px; }
+.gemini-steps li.done, .gemini-steps li.now { color: var(--ink); }
+.gemini-steps li.done svg { color: var(--accent); }
+.gemini-steps .dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--surface-3); flex: none; }
+.gemini-howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; line-height: 1.45; }
+.free-ai { display: flex; gap: 12px; align-items: center; text-align: left; width: 100%; padding: 14px 16px; border-radius: var(--r-lg); background: var(--accent-soft); color: var(--ink); border: 1px solid var(--accent); min-height: var(--touch); }
+.free-ai b { display: block; font-size: 15.5px; }
+.free-ai .grow span { font-size: 13.5px; color: var(--muted); }

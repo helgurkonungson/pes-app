@@ -124,6 +124,11 @@ jobs:
 
       - name: Build web app
         run: npm run build
+        env:
+          # Google OAuth client ids for the one-tap free Gemini key (docs/GEMINI_SETUP.md); not secrets.
+          # Empty = the app falls back to the in-app Google AI Studio page.
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
+          VITE_GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
 
       - name: Sync Capacitor
         run: npx cap sync android
