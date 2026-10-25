@@ -22,6 +22,7 @@ TXT_ONB_START=${TXT_ONB_START:-'^Get started'}                 # first onboardin
 TXT_ONB_NAME_FIELD=${TXT_ONB_NAME_FIELD:-'^android\.widget\.EditText$'}  # name input: matched against the node CLASS
 TXT_ONB_CONTINUE=${TXT_ONB_CONTINUE:-'^Continue'}              # "About you" step button (enabled once a name is typed)
 TXT_ONB_SKIP=${TXT_ONB_SKIP:-'^Continue without AI'}           # "AI key" step: continue without a key
+TXT_TUT_SKIP=${TXT_TUT_SKIP:-'^Skip$'}                         # first-run tutorial (0.13+): "Skip" in its top corner
 TXT_HOME_MARK=${TXT_HOME_MARK:-'^Today$'}                      # heading shown only on the home screen
 TXT_APP_TITLE=${TXT_APP_TITLE:-'^PES$'}                        # title a native ActionBar would show (must be absent)
 ONB_NAME=${ONB_NAME:-Smoke}                                    # typed via `input text`: letters only
@@ -556,6 +557,14 @@ step_onboarding() {  # f
   fi
   snap onb-ai-key
   tap_text "$TXT_ONB_SKIP" || return 1
+  # the first-run tutorial opens over Home; skip it (the "watch later" note is a toast)
+  if wait_text "$TXT_TUT_SKIP" 20; then
+    snap tutorial
+    tap_index "$FOUND"
+    sleep 1
+  else
+    note "WARN: tutorial '$TXT_TUT_SKIP' button not seen after onboarding"
+  fi
   if ! wait_text "$TXT_HOME_MARK" "$STEP_TIMEOUT"; then
     fail "home marker '$TXT_HOME_MARK' did not appear after skipping the key"
     return 1

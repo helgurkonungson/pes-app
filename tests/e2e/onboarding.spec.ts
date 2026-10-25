@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, mockApis, onboard } from "./helpers";
+import { btn, mockApis, onboard, pickLang } from "./helpers";
 
 test.describe("onboarding & language", () => {
   test("follows the phone language: Russian phone → Russian UI", async ({ browser }) => {
@@ -26,12 +26,32 @@ test.describe("onboarding & language", () => {
     await onboard(page, { lang: "en" });
     await expect(page.getByRole("heading", { name: "Hi, Oleg!" })).toBeVisible();
     await page.getByRole("navigation").getByRole("button", { name: "Settings" }).click();
-    await page.getByRole("radio", { name: "Русский" }).click();
+    await page.getByRole("button", { name: /^Interface language/ }).click();
+    await page.getByRole("dialog").getByRole("radio", { name: "Русский" }).click();
     await expect(page.getByRole("heading", { name: "Настройки" })).toBeVisible();
     await expect(page.getByRole("navigation").getByRole("button", { name: "Главная" })).toBeVisible();
     // survives a restart
     await page.reload();
     await expect(page.getByRole("navigation").getByRole("button", { name: "Главная" })).toBeVisible();
+  });
+
+  test("follows the phone language: Ukrainian phone → Ukrainian UI", async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "uk-UA" });
+    const page = await ctx.newPage();
+    await mockApis(page);
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("lang", "uk");
+    await expect(page.locator(".lang-btn")).toContainText("Українська");
+    await ctx.close();
+  });
+
+  test("an unsupported phone language falls back to English", async ({ browser }) => {
+    const ctx = await browser.newContext({ locale: "ja-JP" });
+    const page = await ctx.newPage();
+    await mockApis(page);
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Get started" })).toBeVisible();
+    await ctx.close();
   });
 
   test("works without an AI key and says so", async ({ page }) => {
@@ -53,7 +73,7 @@ test.describe("onboarding & language", () => {
   test("a rejected key shows a clear error and lets you continue without AI", async ({ page }) => {
     await mockApis(page, "auth");
     await page.goto("/");
-    await page.getByRole("radio", { name: "Русский" }).click();
+    await pickLang(page, "Русский");
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();

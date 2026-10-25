@@ -2,7 +2,7 @@
  * Guards for things that would silently wipe or orphan installed users' data
  * on update: the app id and the WebView origin (IndexedDB is per origin).
  */
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import config from "../capacitor.config";
 import { DB_VERSION, PesDb } from "./data/db";
@@ -64,6 +64,18 @@ describe("branding", () => {
     }
     for (const d of ["mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"])
       for (const f of ["ic_launcher", "ic_launcher_round", "ic_launcher_foreground", "ic_launcher_monochrome"])
-        expect(readFileSync(res(`mipmap-${d}/${f}.png`)).subarray(1, 4).toString()).toBe("PNG");
+        expect(readFileSync(res(`mipmap-${d}/${f}.webp`)).subarray(8, 12).toString()).toBe("WEBP");
+  });
+  it("Android images are WebP only (smaller APK) — a PNG of the same name would be a duplicate resource", () => {
+    const pngs = readdirSync(res(""), { recursive: true }).filter((f) => String(f).endsWith(".png"));
+    expect(pngs).toEqual([]);
+  });
+  it("release builds are shrunk by R8 and keep the plugin classes Capacitor finds by reflection", () => {
+    const gradle = readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8");
+    expect(gradle).toMatch(/minifyEnabled true/);
+    expect(gradle).toMatch(/shrinkResources true/);
+    const rules = readFileSync(new URL("../android/app/proguard-rules.pro", import.meta.url), "utf8");
+    for (const pkg of ["com.getcapacitor", "com.capacitorjs.plugins", "com.aparajita.capacitor", "ee.forgr.capacitor", "io.ionic.libs"]) expect(rules).toContain(`-keep class ${pkg}.`);
+    expect(readFileSync(res("raw/keep.xml"), "utf8")).toContain("@drawable/ic_stat_notify");
   });
 });

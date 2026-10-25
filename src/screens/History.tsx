@@ -2,6 +2,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { BookOpen, CloudOff, Target } from "lucide-react";
 import { Chevron, Empty, TopBar } from "../components/ui";
 import { Markdown } from "../components/visuals";
+import { ReportButton } from "../components/ReportLesson";
 import { daysBetween, localDay, shortDate } from "../core/dates";
 import { db } from "../data/db";
 import { locale, type T, useT } from "../i18n";
@@ -57,7 +58,7 @@ export function LessonView({ sessionId }: { sessionId: string }) {
   const l = s?.lesson;
   return (
     <div className="screen">
-      <TopBar title={t("history.lesson")} />
+      <TopBar title={t("history.lesson")} right={s && l ? <ReportButton session={s} text={[l.title, ...l.theory.sections.map((x) => `${x.heading}\n${x.body}`)].join("\n\n")} /> : undefined} />
       {l && (
         <article className="stack-lg">
           <h1 className="display" style={{ fontSize: 26 }}>

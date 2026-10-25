@@ -2,6 +2,14 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.13.0 — 2026-10-25
+
+- **Nine interface languages:** English, Russian, Ukrainian, Belarusian, Spanish, German, French, Chinese (Simplified) and Hindi. The app follows the phone's language; switch it on the first screen (🌐) or in Settings → Interface language. Lessons can be written in any of these languages too (or "as sources"), and "Listen" picks the right voice.
+- **Report this lesson:** a small flag in the lesson's top bar (and on saved lessons) lets you report harmful, offensive, wrong or confusing AI content without leaving the lesson. The text on screen is attached; keys and personal data never are. Reports are listed in Settings → Lesson reports and can be sent to the developer. AI lessons are labelled "Written by AI".
+- **Tutorial:** five short animated slides after the first start show how the app works. Skip it at any time — it's always in Settings → Watch the tutorial.
+- **Smaller and faster:** the APK drops ~3–4 MB (one OCR engine build instead of two, a shrunk native layer, WebP images), and rarely used screens and languages load on demand, so the app starts with ~20 % less script. Scans are still recognised offline.
+- Fixed: long button labels in sheets (e.g. "Send to developer") no longer run past the button on small phones.
+
 ## 0.12.0 — 2026-10-25
 
 - **"Connect a free AI"**: one button at the first start and in Settings opens a list of free services — Gemini (key created automatically), Groq, Mistral and OpenRouter. For the last three, the service's key page opens inside the app; when you close it, the copied key is pasted, checked and saved, and the service becomes your AI. Each service shows what happens to your data on its free tier, and you accept its terms first.

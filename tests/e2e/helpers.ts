@@ -96,11 +96,24 @@ export async function mockApis(page: Page, mode: AiMode = "credits"): Promise<{ 
 
 export const btn = (page: Page, name: string | RegExp) => page.getByRole("button", { name }).first();
 
-/** Completes onboarding. `key` = enter an API key (verified against the mocked API). */
-export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: string; name?: string } = {}): Promise<void> {
+/** Picks the interface language on the first screen (the 🌐 button opens a list). */
+export async function pickLang(page: Page, name: string): Promise<void> {
+  await page.locator(".lang-btn").click();
+  await page.getByRole("dialog").getByRole("radio", { name }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+}
+
+/** Skips the first-run tutorial that opens right after onboarding. */
+export async function skipTutorial(page: Page): Promise<void> {
+  await page.locator(".tutorial").getByRole("button", { name: /^(Пропустить|Skip)$/ }).click();
+  await expect(page.locator(".tutorial")).toHaveCount(0);
+}
+
+/** Completes onboarding. `key` = enter an API key (verified against the mocked API). The tutorial is skipped unless `tutorial`. */
+export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: string; name?: string; tutorial?: boolean } = {}): Promise<void> {
   const lang = opts.lang ?? "ru";
   await page.goto("/");
-  await page.getByRole("radio", { name: lang === "ru" ? "Русский" : "English" }).click();
+  await pickLang(page, lang === "ru" ? "Русский" : "English");
   await btn(page, lang === "ru" ? "Начать" : "Get started").click();
   await page.locator("#name").fill(opts.name ?? (lang === "ru" ? "Олег" : "Oleg"));
   await btn(page, lang === "ru" ? /Продолжить/ : /Continue/).click();
@@ -111,6 +124,7 @@ export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: stri
     await btn(page, lang === "ru" ? "Продолжить без AI" : "Continue without AI").click();
   }
   await expect(page.getByRole("navigation")).toBeVisible();
+  if (!opts.tutorial) await skipTutorial(page);
 }
 
 /** Creates a skillset from pasted text (RU UI). Leaves you on the skillset page — with the placement test skipped unless `keepTest`. */
@@ -173,7 +187,7 @@ export async function expectNoHorizontalOverflow(page: Page, label = ""): Promis
     const out: string[] = [];
     const doc = document.scrollingElement!;
     if (doc.scrollWidth > window.innerWidth + 1) out.push(`document ${doc.scrollWidth}>${window.innerWidth}`);
-    document.querySelectorAll<HTMLElement>(".screen, .session-body, .sheet, .onb").forEach((el) => {
+    document.querySelectorAll<HTMLElement>(".screen, .session-body, .sheet, .onb, .tutorial, .tut-stage, .session-top").forEach((el) => {
       if (el.scrollWidth > el.clientWidth + 1) {
         // name the widest offender to make the failure actionable
         const right = el.getBoundingClientRect().right;

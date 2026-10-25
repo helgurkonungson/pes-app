@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, chooseProvider, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown } from "./helpers";
+import { btn, chooseProvider, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown, pickLang, skipTutorial } from "./helpers";
 
 test.describe("AI lessons (mocked Claude API)", () => {
   test("placement test → AI lesson → AI-graded open answer", async ({ page }) => {
@@ -216,7 +216,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     );
     await context.route("https://aistudio.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>AI Studio</h1>" }));
     await page.goto("/");
-    await page.getByRole("radio", { name: "Русский" }).click();
+    await pickLang(page, "Русский");
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();
@@ -240,6 +240,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
     await expect(page.getByText("Ключ Gemini получен — уроки будут с AI")).toBeVisible();
     await expect(page.getByRole("navigation")).toBeVisible(); // onboarding finished
+    await skipTutorial(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
     await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");

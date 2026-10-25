@@ -38,8 +38,11 @@ android {
     buildTypes {
         release {
             signingConfig = System.getenv("PES_KEYSTORE_PATH") ? signingConfigs.release : signingConfigs.debug
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // R8 shrinks the native layer (AndroidX, Kotlin, Play services): a smaller APK and
+            // store download. Plugin classes are kept in proguard-rules.pro (Capacitor uses reflection).
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

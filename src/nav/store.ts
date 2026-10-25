@@ -10,7 +10,8 @@ export type Route =
   | { name: "session"; skillsetId: string; minutes: number; offline?: boolean }
   | { name: "history"; id: string }
   | { name: "lesson"; sessionId: string }
-  | { name: "logs" };
+  | { name: "logs" }
+  | { name: "reports" };
 
 interface NavState {
   tab: Tab;

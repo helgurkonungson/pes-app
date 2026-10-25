@@ -4,10 +4,11 @@ import { AiError, testKey } from "../ai/client";
 import { setApiKey } from "../ai/key";
 import { useBackupRestore } from "../components/FilePickers";
 import { FreeAiCard, FreeAiSheet } from "../components/FreeAi";
-import { ExtLink, MinutesPicker, Segmented, toast } from "../components/ui";
+import { LanguageButton } from "../components/LanguagePicker";
+import { ExtLink, MinutesPicker, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
 import { updateProfile } from "../data/db";
-import { type Lang, useLang, useT } from "../i18n";
+import { useLang, useT } from "../i18n";
 import { aiErrorDetail, aiErrorText } from "./Session";
 
 export function Onboarding() {
@@ -31,7 +32,7 @@ export function Onboarding() {
         await testKey(key.trim());
         await setApiKey(key.trim());
       }
-      await updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang });
+      await updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang, tutorial: "pending" });
       toast(withKey ? t("onb.keySaved") : t("onb.noKey"));
     } catch (e) {
       setError(e instanceof AiError ? [aiErrorText(e, t), aiErrorDetail(e, t)].filter(Boolean).join("\n\n") : t("onb.keyFailed"));
@@ -50,15 +51,9 @@ export function Onboarding() {
 
       {step === 0 && (
         <>
-          <Segmented<Lang>
-            label={t("settings.language")}
-            value={lang}
-            onChange={setLang}
-            options={[
-              { id: "ru", label: "Русский" },
-              { id: "en", label: "English" },
-            ]}
-          />
+          <div className="onb-lang">
+            <LanguageButton value={lang} onChange={setLang} />
+          </div>
           <div className="hero-art">
             <HeroBg hue={174} name="P" big />
             <div style={{ position: "relative", zIndex: 1 }}>
@@ -154,7 +149,7 @@ export function Onboarding() {
           onClose={() => setGemini(false)}
           onDone={() => {
             setGemini(false);
-            void updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang });
+            void updateProfile({ name: name.trim() || t("onb.defaultName"), dailyGoal: goal, onboarded: true, uiLanguage: lang, tutorial: "pending" });
           }}
         />
       )}

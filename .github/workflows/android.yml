@@ -129,6 +129,10 @@ jobs:
           # Empty = the app falls back to the in-app Google AI Studio page.
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
           VITE_GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+          # "Report this lesson" (ADR-025): HTTPS endpoint receiving JSON reports, and the e-mail for
+          # reports shared by hand. Not secrets; empty = reports are shared through the share sheet.
+          VITE_REPORT_URL: ${{ vars.REPORT_URL }}
+          VITE_REPORT_EMAIL: ${{ vars.REPORT_EMAIL }}
 
       - name: Sync Capacitor
         run: npx cap sync android

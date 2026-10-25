@@ -1,12 +1,14 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Folder, Globe, Server, Sparkles, SunMoon, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Flag, Folder, GraduationCap, Server, Sparkles, SunMoon, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
 import { FreeAiCard, FreeAiSheet } from "../components/FreeAi";
+import { UiLanguageRow } from "../components/LanguagePicker";
+import { useTutorial } from "../app/tutorialStore";
 import { freeProvider } from "../ai/freeProviders";
 import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
@@ -15,7 +17,7 @@ import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, Pa
 import { formatTokens, monthKey } from "../ai/usage";
 import { DEFAULT_REMINDER_TIME } from "../core/reminders";
 import { setReminder } from "../native/reminders";
-import type { AiMode, ProviderId, UiLanguage } from "../core/types";
+import type { AiMode, ProviderId } from "../core/types";
 import type { T } from "../i18n";
 import { localDay } from "../core/dates";
 import { updateProfile } from "../data/db";
@@ -168,6 +170,7 @@ export function Settings() {
           <SectionLabel>{t("settings.profile")}</SectionLabel>
           <Group>
             <MenuRow icon={<User size={20} />} label={t("settings.name")} value={profile.name} onClick={() => (setDraft(profile.name), setSheet("name"))} />
+            <UiLanguageRow value={profile.uiLanguage ?? "system"} onChange={(v) => updateProfile({ uiLanguage: v })} />
             <MenuRow icon={<Target size={20} />} label={t("settings.goal")} value={t("portion.min", { n: profile.dailyGoal })} onClick={() => setSheet("goal")} />
             {Capacitor.isNativePlatform() && (
               <MenuRow
@@ -179,22 +182,6 @@ export function Settings() {
               />
             )}
           </Group>
-        </section>
-
-        <section className="stack">
-          <SectionLabel>
-            <Globe size={14} style={{ verticalAlign: -2 }} /> {t("settings.language")}
-          </SectionLabel>
-          <Segmented<UiLanguage>
-            label={t("settings.language")}
-            value={profile.uiLanguage ?? "system"}
-            onChange={(v) => updateProfile({ uiLanguage: v })}
-            options={[
-              { id: "system", label: t("settings.langSystem") },
-              { id: "ru", label: "Русский" },
-              { id: "en", label: "English" },
-            ]}
-          />
         </section>
 
         <section className="stack">
@@ -302,6 +289,8 @@ export function Settings() {
           <Group>
             <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
             {update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
+            <MenuRow icon={<GraduationCap size={20} />} label={t("settings.tutorial")} onClick={() => useTutorial.getState().show()} />
+            <MenuRow icon={<Flag size={20} />} label={t("settings.reports")} onClick={() => useNav.getState().push({ name: "reports" })} />
             <MenuRow icon={<Bug size={20} />} label={t("settings.logs")} onClick={() => useNav.getState().push({ name: "logs" })} />
             <MenuRow icon={<Code size={20} />} label={t("settings.source")} value={APP_REPO.split("/")[1]} onClick={() => openExternal(`https://github.com/${APP_REPO}`)} />
           </Group>

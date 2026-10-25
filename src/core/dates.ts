@@ -40,8 +40,8 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 export function monthLabel(day: string, loc = "en-GB"): string {
   const d = parseDay(day);
   const month = new Intl.DateTimeFormat(loc, { month: "long" }).formatToParts(d).find((p) => p.type === "month")?.value ?? "";
-  // Russian needs the nominative ("октябрь", not "октября"): LLLL-style via a standalone format
-  const standalone = loc.startsWith("ru") ? new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(d).replace(/\s*\d{4}.*$/, "") : month;
+  // East Slavic languages need the nominative ("октябрь", not "октября"): LLLL-style via a standalone format
+  const standalone = /^(ru|uk|be)\b/.test(loc) ? new Intl.DateTimeFormat(loc, { month: "long", year: "numeric" }).format(d).replace(/\s*\d{4}.*$/, "") : month;
   return `${cap(standalone || month)} ${d.getFullYear()}`;
 }
 

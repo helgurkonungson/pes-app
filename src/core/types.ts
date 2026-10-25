@@ -2,9 +2,10 @@
 
 export type LearnerLevel = "beginner" | "intermediate" | "advanced";
 export type Difficulty = "e" | "m" | "h";
-export type LessonLanguage = "English" | "Russian" | "Source";
+/** Language lessons are written in ("Source" = the language of the materials). */
+export type LessonLanguage = "English" | "Russian" | "Ukrainian" | "Belarusian" | "Spanish" | "German" | "French" | "Chinese" | "Hindi" | "Source";
 /** Interface language. "system" follows the phone's language. */
-export type UiLanguage = "system" | "en" | "ru";
+export type UiLanguage = "system" | "en" | "ru" | "uk" | "be" | "es" | "de" | "fr" | "zh" | "hi";
 /** How lessons are made: "auto" uses AI when it works and falls back to offline lessons; "offline" never calls AI. */
 export type AiMode = "auto" | "offline";
 /** Where a lesson came from. */
@@ -245,6 +246,8 @@ export interface Profile {
   geminiConsent?: { version: number; at: string; auto: boolean };
   /** AI tokens used, per calendar month ("2026-10"). */
   usage?: Record<string, TokenUsage>;
+  /** First-run tutorial: "pending" right after onboarding; unset for learners who started before it existed. */
+  tutorial?: "pending" | "done" | "skipped";
 }
 
 export interface TokenUsage {
@@ -380,4 +383,33 @@ export interface LogEntry {
   detail?: string;
   /** App version that logged it. */
   version: string;
+}
+
+/** Why a learner reported a lesson. */
+export type ReportReason = "harmful" | "wrong" | "inappropriate" | "quality" | "other";
+
+/**
+ * "Report this lesson": kept on the phone and sent to the developer (Google Play's
+ * AI-generated content policy, App Store guideline 1.2). Holds no keys or personal data
+ * beyond what the learner typed.
+ */
+export interface LessonReport {
+  id?: number;
+  at: string;
+  sessionId: string;
+  skillsetId: string;
+  reason: ReportReason;
+  comment?: string;
+  /** Session kind and step the learner was on, e.g. "lesson · theory 2/3". */
+  where: string;
+  /** The reported text (cut). */
+  excerpt: string;
+  lessonTitle?: string;
+  mode?: LessonMode;
+  provider?: ProviderId;
+  model?: string;
+  /** App version. */
+  version: string;
+  /** When it reached the developer (report endpoint); unset = only on the phone / shared by hand. */
+  sentAt?: string;
 }

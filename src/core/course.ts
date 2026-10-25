@@ -4,7 +4,8 @@
  * version of the same course (same `id`) can be imported over the old one
  * without losing what the learner has already done.
  */
-import type { Course, CourseLesson, Difficulty, LessonContent, LessonLanguage, Mcq, OpenQuestion, PlacementContent, TheorySection } from "./types";
+import { isLessonLanguage } from "./languages";
+import type { Course, CourseLesson, Difficulty, LessonContent, Mcq, OpenQuestion, PlacementContent, TheorySection } from "./types";
 
 export const COURSE_FORMAT = "pes-course";
 export const COURSE_FORMAT_VERSION = 1;
@@ -22,7 +23,6 @@ export class CourseError extends Error {
 
 const str = (v: unknown, fallback = ""): string => (typeof v === "string" ? v.trim() : fallback);
 const strArr = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => str(x)).filter(Boolean) : []);
-const LANGS: LessonLanguage[] = ["English", "Russian", "Source"];
 
 function mcqFrom(raw: unknown, id: string): Mcq | null {
   const o = (raw ?? {}) as Record<string, unknown>;
@@ -100,7 +100,7 @@ export function parseCourse(input: string | unknown, importedAt: string): Course
     version: typeof o.version === "number" && o.version >= 1 ? Math.floor(o.version) : 1,
     title: str(o.title) || id,
     description: str(o.description),
-    language: LANGS.includes(o.language) ? o.language : "Source",
+    language: isLessonLanguage(o.language) ? o.language : "Source",
     goal: str(o.goal),
     minutes,
     hue,

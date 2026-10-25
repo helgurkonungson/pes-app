@@ -1,7 +1,9 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { confirmDialog, MinutesPicker, Segmented, toast, Toggle, TopBar } from "../components/ui";
+import { LessonLanguageField } from "../components/LanguagePicker";
+import { confirmDialog, MinutesPicker, toast, Toggle, TopBar } from "../components/ui";
+import { LESSON_LANG_OF } from "../core/languages";
 import type { LessonLanguage } from "../core/types";
 import { db, getProfile } from "../data/db";
 import { createSkillset, deleteSkillset, updateSkillset } from "../data/repo";
@@ -20,7 +22,7 @@ export function SkillsetEdit({ id }: { id?: string }) {
   const [minutes, setMinutes] = useState(15);
   const [hue, setHue] = useState(HUES[0]);
   const [useInternet, setUseInternet] = useState(true);
-  const [language, setLanguage] = useState<LessonLanguage>(uiLang === "ru" ? "Russian" : "English");
+  const [language, setLanguage] = useState<LessonLanguage>(LESSON_LANG_OF[uiLang]);
   const [loaded, setLoaded] = useState(!id);
   const [busy, setBusy] = useState(false);
   const isCourse = !!existing?.courseId;
@@ -92,16 +94,7 @@ export function SkillsetEdit({ id }: { id?: string }) {
             </div>
             <div className="field">
               <span className="label">{t("edit.language")}</span>
-              <Segmented<LessonLanguage>
-                label={t("edit.language")}
-                value={language}
-                onChange={setLanguage}
-                options={[
-                  { id: "Russian", label: "Русский" },
-                  { id: "English", label: "English" },
-                  { id: "Source", label: t("edit.langSource") },
-                ]}
-              />
+              <LessonLanguageField value={language} onChange={setLanguage} />
             </div>
             <div className="card tight row-between">
               <label htmlFor="sk-net" className="grow">

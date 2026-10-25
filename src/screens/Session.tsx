@@ -9,6 +9,7 @@ import { modelOf } from "../ai/providers";
 import { gradeAnswer } from "../ai/tutor";
 import { confirmDialog, ExtLink, toast } from "../components/ui";
 import { BookBite } from "../components/BookBite";
+import { ReportButton } from "../components/ReportLesson";
 import { BuildProgress } from "../components/BuildProgress";
 import { BadgeIcon, Markdown, ScoreRing } from "../components/visuals";
 import type { AiErrorKind } from "../core/aiStatus";
@@ -402,8 +403,11 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             <X size={20} />
           </button>
           <span className="pill accent">{t(stepLabel(page, session))}</span>
-          <span className="small muted timer" aria-label={t("session.timeAria")}>
-            {Math.floor(progress.seconds / 60)}:{String(progress.seconds % 60).padStart(2, "0")}
+          <span className="row top-right">
+            <span className="small muted timer" aria-label={t("session.timeAria")}>
+              {Math.floor(progress.seconds / 60)}:{String(progress.seconds % 60).padStart(2, "0")}
+            </span>
+            <ReportButton session={session} page={page} />
           </span>
         </div>
         {session.lesson?.building && page.kind !== "pending" && (
@@ -439,8 +443,8 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
               </div>
             );
           })()}
-          {pageIndex === 0 && session.lesson?.mode && session.lesson.mode !== "ai" && (
-            <span className={`mode-tag ${session.lesson.mode}`}>{t(session.lesson.mode === "course" ? "mode.course" : "mode.offline")}</span>
+          {pageIndex === 0 && session.lesson && (
+            <span className={`mode-tag ${session.lesson.mode ?? "ai"}`}>{t(session.lesson.mode === "course" ? "mode.course" : session.lesson.mode === "offline" ? "mode.offline" : "report.aiTag")}</span>
           )}
         </div>
         {pageIndex === 0 && session.lesson?.mode === "offline" && session.lesson.fallback && session.lesson.fallback !== "offline-mode" && (
@@ -527,7 +531,7 @@ function ListenButton({ text }: { text: string }) {
     }
     setOn(true);
     try {
-      await speak(text);
+      await speak(text, locale());
     } catch {
       toast(t("tts.unavailable"));
     } finally {

@@ -1,6 +1,7 @@
 /** Prompts, tool schemas and the three AI jobs: placement test, lesson, grading. */
 import { normalizeGrade, normalizeMcqs, normalizePlacement, rng } from "../core/normalize";
 import { type SessionPlan, truncateWords } from "../core/planner";
+import { languageForPrompt } from "../core/languages";
 import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset, TokenUsage } from "../core/types";
 import { addUsage } from "./usage";
 import { AiError, research, type ResearchNotes, structured, type ToolDef } from "./client";
@@ -110,7 +111,7 @@ const GRADE_TOOL: ToolDef = {
 
 function languageRule(lang: LessonLanguage): string {
   if (lang === "Source") return "Write in the same language as the source excerpts (if there are none, English).";
-  return `Write everything in ${lang}.`;
+  return `Write everything in ${languageForPrompt(lang)}.`;
 }
 
 function tutorSystem(lang: LessonLanguage): string {

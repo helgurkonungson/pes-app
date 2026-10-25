@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import { type AiState, aiState, isBlocking } from "../core/aiStatus";
 import { nowIso } from "../core/ids";
-import type { Profile } from "../core/types";
 import { getProfile, updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
 import { AiError } from "./client";
@@ -19,11 +18,6 @@ export async function reportAiError(e: unknown): Promise<void> {
 export async function reportAiOk(): Promise<void> {
   const p = await getProfile();
   if (p.aiBlock) await updateProfile({ aiBlock: undefined });
-}
-
-export async function currentAiState(profile?: Profile): Promise<AiState> {
-  const p = profile ?? (await getProfile());
-  return aiState(p, await providerReady());
 }
 
 /** Live AI state for screens. `keyVersion` lets Settings force a refresh after the key changes. */

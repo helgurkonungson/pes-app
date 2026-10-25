@@ -1,28 +1,45 @@
 import { applyTheme } from "./theme";
-import { Logs } from "../screens/Logs";
+import { retryUnsent } from "../data/reports";
 import { scheduleReminders } from "../native/reminders";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useEffect, useState } from "react";
+import { type ComponentType, lazy, Suspense, useEffect, useState } from "react";
 import { create } from "zustand";
 import { ConfirmHost, toast, Toaster } from "../components/ui";
 import { db, getProfile } from "../data/db";
 import { requestPersistentStorage, restoreIfEmpty, writeSnapshot } from "../data/safety";
 import { resolveLang, t, useLang } from "../i18n";
 import { type Route, useNav } from "../nav/store";
-import { History, LessonView } from "../screens/History";
 import { Home } from "../screens/Home";
-import { Onboarding } from "../screens/Onboarding";
-import { Progress } from "../screens/Progress";
 import { SessionScreen } from "../screens/Session";
-import { Settings } from "../screens/Settings";
 import { SkillsetDetail } from "../screens/SkillsetDetail";
-import { SkillsetEdit } from "../screens/SkillsetEdit";
 import { Skillsets } from "../screens/Skillsets";
-import { Sources } from "../screens/Sources";
 import { autoUpdateCheckEnabled, dailyUpdateCheck, type UpdateInfo } from "../update/updater";
 import { TabBar } from "./TabBar";
+import { useTutorial } from "./tutorialStore";
+
+/**
+ * Screens opened now and then load as separate chunks (smaller start-up script); Home,
+ * Skillsets, a skillset and the lesson stay in the main bundle. All chunks ship inside the
+ * APK, so this never needs the network.
+ */
+function named<M, K extends keyof M>(load: () => Promise<M>, key: K) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- props come from M[K]
+  return lazy(async () => ({ default: (await load())[key] as M[K] & ComponentType<any> }));
+}
+const loadSettings = () => import("../screens/Settings");
+const loadProgress = () => import("../screens/Progress");
+const Settings = named(loadSettings, "Settings");
+const Progress = named(loadProgress, "Progress");
+const Onboarding = named(() => import("../screens/Onboarding"), "Onboarding");
+const Sources = named(() => import("../screens/Sources"), "Sources");
+const SkillsetEdit = named(() => import("../screens/SkillsetEdit"), "SkillsetEdit");
+const History = named(() => import("../screens/History"), "History");
+const LessonView = named(() => import("../screens/History"), "LessonView");
+const Logs = named(() => import("../screens/Logs"), "Logs");
+const Reports = named(() => import("../screens/Reports"), "Reports");
+const Tutorial = named(() => import("../components/Tutorial"), "Tutorial");
 import { UpdatePrompt } from "./UpdatePrompt";
 
 /** The newer release (Home banner, Settings row) and whether the "new version" pop-up is open. */
@@ -56,6 +73,8 @@ function RouteView({ route }: { route: Route }) {
       return <LessonView sessionId={route.sessionId} />;
     case "logs":
       return <Logs />;
+    case "reports":
+      return <Reports />;
   }
 }
 
@@ -73,6 +92,7 @@ function useBoot(): boolean {
       await getProfile(); // creates the default profile on first launch
       if (alive) setReady(true);
       requestPersistentStorage();
+      void retryUnsent(); // lesson reports that could not be delivered last time
       // refresh the automatic snapshot a little after start, off the critical path
       setTimeout(() => writeSnapshot(), 8000);
     })();
@@ -89,6 +109,7 @@ export function App() {
   const profile = useLiveQuery(() => db.profile.get("me").then((p) => p ?? null), []);
   const { tab, stack } = useNav();
   const setLang = useLang((s) => s.set);
+  const replay = useTutorial((s) => s.open);
 
   // the interface language follows the profile (or the phone when set to "system")
   useEffect(() => {
@@ -145,11 +166,20 @@ export function App() {
     };
   }, [ready]);
 
+  // the two other tabs are warmed up once the app is idle, so the first tap shows them at once
+  useEffect(() => {
+    if (!ready) return;
+    const tm = setTimeout(() => void Promise.all([loadSettings(), loadProgress()]).catch(() => undefined), 3000);
+    return () => clearTimeout(tm);
+  }, [ready]);
+
   if (!ready || !profile) return <div className="app" />;
   if (!profile.onboarded) {
     return (
       <div className="app">
-        <Onboarding />
+        <Suspense fallback={<div className="onb" />}>
+          <Onboarding />
+        </Suspense>
         <ConfirmHost />
         <Toaster />
       </div>
@@ -157,20 +187,29 @@ export function App() {
   }
 
   const top = stack[stack.length - 1];
+  const tutorial = replay || profile.tutorial === "pending";
   return (
     <div className="app">
-      {top ? (
-        <RouteView key={JSON.stringify(top)} route={top} />
+      <Suspense fallback={<div className="screen" />}>
+        {top ? (
+          <RouteView key={JSON.stringify(top)} route={top} />
+        ) : (
+          <>
+            {tab === "home" && <Home />}
+            {tab === "skillsets" && <Skillsets />}
+            {tab === "progress" && <Progress />}
+            {tab === "settings" && <Settings />}
+          </>
+        )}
+      </Suspense>
+      {!top && <TabBar />}
+      {tutorial ? (
+        <Suspense fallback={<div className="tutorial" />}>
+          <Tutorial />
+        </Suspense>
       ) : (
-        <>
-          {tab === "home" && <Home />}
-          {tab === "skillsets" && <Skillsets />}
-          {tab === "progress" && <Progress />}
-          {tab === "settings" && <Settings />}
-          <TabBar />
-        </>
+        <UpdatePrompt />
       )}
-      <UpdatePrompt />
       <ConfirmHost />
       <Toaster />
     </div>

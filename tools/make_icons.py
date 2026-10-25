@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Generates the Android launcher icons and splash screens for PES.
+"""OUTDATED (pre-0.5.0 "PES" bars design) — kept for reference only, do not run.
+
+Since 0.5.0 the icon is the book with a bite; since 0.13.0 the Android resources are
+lossless WebP files (smaller APK). Running this would write PNGs next to them and
+break the build with duplicate resources.
+
+Generates the Android launcher icons and splash screens for PES.
 
 Design: three rounded "portion" bars on a dark tile (Tiffany, faded Tiffany, grey).
 Run from the repo root:  python3 tools/make_icons.py   (needs Pillow)
@@ -57,6 +63,7 @@ def splash(w: int, h: int) -> Image.Image:
 
 
 def main() -> None:
+    raise SystemExit("outdated: see the docstring")
     for density, px in {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}.items():
         folder = RES / f"mipmap-{density}"
         icon(px, "square").save(folder / "ic_launcher.png")

@@ -17,11 +17,41 @@ export function speakable(md: string): string {
     .trim();
 }
 
-/** BCP-47 language of a text: Russian when it is mostly Cyrillic. */
-export function speechLang(text: string): string {
-  const cyr = (text.match(/[А-Яа-яЁё]/g) ?? []).length;
-  const lat = (text.match(/[A-Za-z]/g) ?? []).length;
-  return cyr >= lat ? "ru-RU" : "en-US";
+const count = (text: string, re: RegExp) => (text.match(re) ?? []).length;
+
+// frequent short words that tell Latin-script languages apart
+const STOPWORDS: [string, RegExp][] = [
+  ["en-US", /\b(the|and|of|to|is|in|that|with|for|are)\b/gi],
+  ["es-ES", /\b(el|la|los|las|de|que|y|en|es|por|con|una)\b/gi],
+  ["de-DE", /\b(der|die|das|und|ist|nicht|mit|ein|eine|zu|den|auf)\b/gi],
+  ["fr-FR", /\b(le|la|les|et|des|est|une|dans|que|pour|du|pas)\b/gi],
+];
+
+/**
+ * BCP-47 language of a text for the speech engine: by script (Cyrillic, Han, Devanagari, Latin),
+ * then by letters (Ukrainian і/ї/є/ґ, Belarusian ў) or frequent words. `hint` (e.g. the interface
+ * locale) breaks ties inside a script.
+ */
+export function speechLang(text: string, hint?: string): string {
+  const cyr = count(text, /[\u0400-\u04ff]/g);
+  const lat = count(text, /[A-Za-z\u00c0-\u024f]/g);
+  const han = count(text, /[\u4e00-\u9fff]/g);
+  const dev = count(text, /[\u0900-\u097f]/g);
+  const top = Math.max(cyr, lat, han, dev);
+  if (top === 0) return hint ?? "en-US";
+  if (han === top) return "zh-CN";
+  if (dev === top) return "hi-IN";
+  if (cyr === top) {
+    if (count(text, /ў/gi) > 0) return "be-BY";
+    if (count(text, /[їєґ]/gi) > 0 || (count(text, /і/gi) > 0 && count(text, /[ыэъё]/gi) === 0)) return "uk-UA";
+    return "ru-RU";
+  }
+  const scores = STOPWORDS.map(([loc, re]) => [loc, count(text, re)] as const).sort((a, b) => b[1] - a[1]);
+  if (scores[0][1] === 0 || scores[0][1] === scores[1][1]) {
+    const h = hint && STOPWORDS.find(([loc]) => loc.slice(0, 2) === hint.slice(0, 2));
+    if (h) return h[0];
+  }
+  return scores[0][1] > 0 ? scores[0][0] : "en-US";
 }
 
 /** Engines cut very long inputs: speak in pieces of whole sentences (≤ ~1500 chars). */
@@ -43,9 +73,9 @@ export function pieces(text: string, max = 1500): string[] {
 let run = 0;
 
 /** Speaks the text; resolves when finished or stopped. Throws when no engine is available. */
-export async function speak(text: string): Promise<void> {
+export async function speak(text: string, hint?: string): Promise<void> {
   const my = ++run;
-  const lang = speechLang(text);
+  const lang = speechLang(text, hint);
   const parts = pieces(text);
   if (Capacitor.isNativePlatform()) {
     for (const p of parts) {

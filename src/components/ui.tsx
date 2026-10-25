@@ -217,15 +217,16 @@ export function Sheet({ title, onClose, children }: { title?: string; onClose: (
 
 // ---------- toast ----------
 
-const useToastStore = create<{ msg: string | null; show: (m: string) => void }>((set) => ({
+const useToastStore = create<{ msg: string | null; show: (m: string, ms?: number) => void }>((set) => ({
   msg: null,
-  show: (msg) => {
+  show: (msg, ms = 3200) => {
     set({ msg });
-    setTimeout(() => set((s) => (s.msg === msg ? { msg: null } : s)), 3200);
+    setTimeout(() => set((s) => (s.msg === msg ? { msg: null } : s)), ms);
   },
 }));
 
-export const toast = (m: string) => useToastStore.getState().show(m);
+/** Short message at the bottom; `ms` = how long it stays (longer for something to remember). */
+export const toast = (m: string, ms?: number) => useToastStore.getState().show(m, ms);
 
 export function Toaster() {
   const msg = useToastStore((s) => s.msg);
@@ -271,13 +272,4 @@ export function ConfirmHost() {
       </div>
     </Sheet>
   );
-}
-
-/** Re-renders every `ms` milliseconds (for clocks/timers). */
-export function useTick(ms: number) {
-  const [, set] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => set((x) => x + 1), ms);
-    return () => clearInterval(t);
-  }, [ms]);
 }
