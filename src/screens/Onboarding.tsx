@@ -1,10 +1,9 @@
-import { ArrowRight, Check, KeyRound, Sparkles, Upload } from "lucide-react";
+import { ArrowRight, Check, KeyRound, Upload } from "lucide-react";
 import { useState } from "react";
 import { AiError, testKey } from "../ai/client";
 import { setApiKey } from "../ai/key";
 import { useBackupRestore } from "../components/FilePickers";
-import { GeminiSetupSheet } from "../components/GeminiSetup";
-import { googleSignInAvailable } from "../native/googleAuth";
+import { FreeAiCard, FreeAiSheet } from "../components/FreeAi";
 import { ExtLink, MinutesPicker, Segmented, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
 import { updateProfile } from "../data/db";
@@ -119,13 +118,7 @@ export function Onboarding() {
             </span>
             <h1 className="display">{t("onb.keyTitle")}</h1>
             <p className="muted">{t("onb.keyLead")}</p>
-            <button className="free-ai" onClick={() => setGemini(true)}>
-              <Sparkles size={24} aria-hidden />
-              <span className="grow">
-                <b>{t("gemini.cta")}</b>
-                <span>{t(googleSignInAvailable() ? "gemini.ctaHint" : "gemini.ctaHintManual")}</span>
-              </span>
-            </button>
+            <FreeAiCard onClick={() => setGemini(true)} />
             <div className="card flat tight small">{t("onb.keyOptional")}</div>
             <div className="field">
               <label htmlFor="key">{t("settings.key")}</label>
@@ -157,7 +150,7 @@ export function Onboarding() {
         </>
       )}
       {gemini && (
-        <GeminiSetupSheet
+        <FreeAiSheet
           onClose={() => setGemini(false)}
           onDone={() => {
             setGemini(false);

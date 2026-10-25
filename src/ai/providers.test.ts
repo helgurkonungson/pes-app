@@ -116,6 +116,15 @@ describe("compatListModels", () => {
     mockFetch(200, { data: [{ id: "gpt-5-mini" }, { id: "text-embedding-3-small" }, { id: "o4-mini" }] });
     expect((await compatListModels("openai", "K", {})).map((m) => m.id)).toEqual(["gpt-5-mini", "o4-mini"]);
   });
+  it("OpenRouter checks the key itself first (its model list needs no key)", async () => {
+    const f = mockReplies([200, { data: { label: "k" } }], [200, { data: [{ id: "x/y:free" }] }]);
+    expect((await compatListModels("openrouter", "K", {})).map((m) => m.id)).toEqual(["x/y:free"]);
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://openrouter.ai/api/v1/key");
+    expect((init.headers as Record<string, string>)["X-Title"]).toBe("Chompbook");
+    mockReplies([401, { error: { message: "No auth credentials found", code: 401 } }]);
+    await expect(compatListModels("openrouter", "bad", {})).rejects.toMatchObject({ kind: "auth" });
+  });
   it("Yandex verifies the key with a 1-token request and returns the fixed list", async () => {
     const f = mockFetch(200, { choices: [{ message: { content: "p" } }] });
     const list = await compatListModels("yandex", "K", { yandexFolder: "b1g" });
@@ -179,7 +188,9 @@ describe("Gemini, Groq, custom", () => {
     expect(pickDefaultModel("gemini", ["models/gemini-2.5-flash", "models/gemini-3.8-flash", "models/gemini-3.8-flash-lite", "models/gemini-3-pro-preview"])).toBe("gemini-3.8-flash");
     expect(pickDefaultModel("gemini", ["models/gemini-flash-latest"])).toBe("gemini-flash-latest");
     expect(chatModels("groq", ["llama-3.3-70b-versatile", "whisper-large-v3", "meta-llama/llama-guard-4-12b", "openai/gpt-oss-120b"])).toEqual(["llama-3.3-70b-versatile", "openai/gpt-oss-120b"]);
-    expect(pickDefaultModel("groq", ["llama-3.3-70b-versatile"])).toBe(""); // keep the built-in default
+    expect(pickDefaultModel("groq", ["llama-3.3-70b-versatile"])).toBe("llama-3.3-70b-versatile");
+    expect(pickDefaultModel("groq", ["openai/gpt-oss-120b", "llama-3.3-70b-versatile"])).toBe("openai/gpt-oss-120b");
+    expect(pickDefaultModel("groq", ["some-new-model"])).toBe(""); // keep the built-in default
     expect(pickDefaultModel("custom", ["qwen3:8b", "llama3.1:8b"])).toBe("llama3.1:8b");
     expect(modelOf({ provider: "groq", model: "c" })).toBe("llama-3.3-70b-versatile");
     expect(modelOf({ provider: "custom", model: "c" })).toBe("");
@@ -313,5 +324,16 @@ describe("per-minute rate limits (0.6.0)", () => {
     const f = mockReplies([429, perMinute]);
     await expect(compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).rejects.toMatchObject({ kind: "rate", status: 429 });
     expect(f).toHaveBeenCalledTimes(3);
+  });
+});
+
+describe("Mistral and OpenRouter", () => {
+  it("endpoints, model lists and free defaults", () => {
+    expect(baseUrl("mistral", {})).toBe("https://api.mistral.ai/v1");
+    expect(baseUrl("openrouter", {})).toBe("https://openrouter.ai/api/v1");
+    expect(chatModels("mistral", ["mistral-small-latest", "mistral-embed", "mistral-ocr-latest", "magistral-medium-latest"])).toEqual(["magistral-medium-latest", "mistral-small-latest"]);
+    expect(pickDefaultModel("mistral", ["magistral-medium-latest", "mistral-small-latest"])).toBe("mistral-small-latest");
+    expect(pickDefaultModel("openrouter", ["openai/gpt-5", "google/gemma-3-27b-it:free", "deepseek/deepseek-chat-v3-0324:free"])).toBe("deepseek/deepseek-chat-v3-0324:free");
+    expect(pickDefaultModel("openrouter", ["x/y:free"])).toBe("x/y:free");
   });
 });

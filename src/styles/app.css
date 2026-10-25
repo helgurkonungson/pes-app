@@ -638,3 +638,6 @@ button.menu-row:active { opacity: .7; }
 :root[data-theme="light"] .stat-cards > *,
 :root[data-theme="light"] .option { box-shadow: 0 1px 2px rgba(23, 24, 27, 0.06), 0 0 0 1px var(--line); }
 :root[data-theme="light"] .tabbar { box-shadow: 0 6px 24px rgba(23, 24, 27, 0.12), 0 0 0 1px var(--line); }
+.tiny-pill { margin-left: 8px; height: 22px; padding: 0 8px; font-size: 11.5px; vertical-align: 2px; }
+.warn-text { color: var(--warn); margin-top: 2px; }
+.list-card:disabled { opacity: .6; }

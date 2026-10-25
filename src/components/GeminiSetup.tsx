@@ -17,7 +17,9 @@ import { getProfile, updateProfile } from "../data/db";
 import { logEvent } from "../data/logs";
 import { type Key, useT } from "../i18n";
 import { GoogleSignInCancelled, googleAccessToken, googleSignInAvailable } from "../native/googleAuth";
+import { AgeBlocked, AgeGate } from "./AgeGate";
 import { ExtLink, Sheet, toast } from "./ui";
+import { useProfile } from "../data/hooks";
 
 type State = { k: "consent" } | { k: "working"; step: SetupStep } | { k: "error"; reason: SetupFailure; detail?: string } | { k: "manual"; checking?: boolean; error?: string };
 
@@ -49,6 +51,7 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
   const [pasted, setPasted] = useState("");
   const token = useRef<string | null>(null); // in memory only, for a retry within this sheet
   const auto = googleSignInAvailable();
+  const profile = useProfile();
 
   const finish = () => {
     toast(t("gemini.done"));
@@ -127,6 +130,15 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
     network: "gemini.errNetwork",
     unknown: "gemini.errUnknown",
   };
+
+  if (!profile) return null;
+  // the Gemini API terms allow it from 18 only: the neutral age screen comes first
+  if (profile.ageGroup !== "adult")
+    return (
+      <Sheet title={t("gemini.title")} onClose={onClose}>
+        {profile.ageGroup ? <AgeBlocked onClose={onClose} /> : <AgeGate onDone={() => undefined} />}
+      </Sheet>
+    );
 
   return (
     <Sheet title={t("gemini.title")} onClose={onClose}>

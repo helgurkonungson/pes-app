@@ -1,7 +1,7 @@
 /**
  * AI providers the learner can bring a key for. Claude uses the Anthropic
  * Messages API; every other provider — ChatGPT, Gemini, Alice AI (Yandex AI
- * Studio), Qwen (DashScope), Groq, NVIDIA and any custom/local OpenAI-compatible
+ * Studio), Qwen (DashScope), Groq, NVIDIA, Mistral, OpenRouter and any custom/local OpenAI-compatible
  * server (Ollama, LM Studio…) — uses OpenAI-compatible Chat Completions.
  */
 import type { Profile, ProviderId } from "../core/types";
@@ -90,6 +90,24 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     forceTool: true,
     vendor: "GroqCloud",
   },
+  mistral: {
+    id: "mistral",
+    name: "Mistral",
+    keyUrl: "https://console.mistral.ai/api-keys",
+    keyPlaceholder: "…",
+    defaultModel: "mistral-small-latest",
+    webSearch: false,
+    vendor: "Mistral AI",
+  },
+  openrouter: {
+    id: "openrouter",
+    name: "OpenRouter",
+    keyUrl: "https://openrouter.ai/settings/keys",
+    keyPlaceholder: "sk-or-…",
+    defaultModel: "", // a free model is picked from the list after the key is verified
+    webSearch: false,
+    vendor: "OpenRouter",
+  },
   custom: {
     id: "custom",
     name: "Custom API",
@@ -112,7 +130,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   },
 };
 
-export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "gemini", "yandex", "qwen", "groq", "nvidia", "custom"];
+export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "gemini", "groq", "mistral", "openrouter", "yandex", "qwen", "nvidia", "custom"];
 
 export function activeProvider(p: Pick<Profile, "provider"> | undefined): ProviderId {
   return p?.provider && PROVIDERS[p.provider] ? p.provider : "anthropic";
@@ -140,6 +158,10 @@ export function baseUrl(id: ProviderId, p: Pick<Profile, "qwenRegion" | "customB
       return "https://generativelanguage.googleapis.com/v1beta/openai";
     case "groq":
       return "https://api.groq.com/openai/v1";
+    case "mistral":
+      return "https://api.mistral.ai/v1";
+    case "openrouter":
+      return "https://openrouter.ai/api/v1";
     case "custom":
       return normalizeBaseUrl(p.customBaseUrl);
     case "openai":
@@ -176,6 +198,10 @@ export function isGeminiChatModel(id: string): boolean {
   return /gemini/i.test(id) && !/(embedding|image|imagen|tts|audio|live|aqa|veo|robotics|computer-use)/i.test(id);
 }
 
+export function isMistralChatModel(id: string): boolean {
+  return /(mistral|magistral|ministral|pixtral|codestral|devstral)/i.test(id) && !/(embed|moderation|ocr|transcribe|voxtral)/i.test(id);
+}
+
 export function isGroqChatModel(id: string): boolean {
   return !/(whisper|guard|tts|playai|orpheus|prompt-guard|safeguard)/i.test(id);
 }
@@ -195,6 +221,10 @@ export function chatModels(id: ProviderId, ids: string[]): string[] {
         return isGeminiChatModel(m);
       case "groq":
         return isGroqChatModel(m);
+      case "mistral":
+        return isMistralChatModel(m);
+      case "openrouter":
+        return !/(embed|image|audio|tts|whisper|moderation|guard)/i.test(m);
       default:
         return true;
     }
@@ -212,6 +242,9 @@ export function pickDefaultModel(id: ProviderId, ids: string[]): string {
     const ver = (m: string) => parseFloat(m.split("-")[1] ?? "0");
     return flash.sort((a, b) => ver(b) - ver(a))[0] ?? (list.includes("gemini-flash-latest") ? "gemini-flash-latest" : "");
   }
+  if (id === "groq") return ["openai/gpt-oss-120b", "llama-3.3-70b-versatile"].find((m) => list.includes(m)) ?? "";
+  if (id === "mistral") return ["mistral-small-latest", "mistral-medium-latest"].find((m) => list.includes(m)) ?? "";
+  if (id === "openrouter") return pickOpenRouterModel(list);
   if (id === "custom") return list[0] ?? "";
   return "";
 }
@@ -220,4 +253,15 @@ export function pickDefaultModel(id: ProviderId, ids: string[]): string {
 export function pickOpenAiModel(ids: string[]): string {
   const chat = ids.filter(isChatModel).sort().reverse();
   return chat.find((m) => /^gpt-\d+(\.\d+)?-mini$/.test(m)) ?? chat.find((m) => /^gpt-\d/.test(m)) ?? chat[0] ?? "";
+}
+
+/** OpenRouter: a free model (":free") from a known strong family, else any free one. */
+export function pickOpenRouterModel(ids: string[]): string {
+  const free = ids.filter((m) => m.endsWith(":free"));
+  const prefer = [/deepseek\/deepseek-(chat|v3)/, /meta-llama\/llama-[34][\d.]*-\d+b-instruct/, /qwen\/qwen[\d.]*-\d+b/, /google\/gemma/, /mistralai\//];
+  for (const re of prefer) {
+    const hit = free.find((m) => re.test(m));
+    if (hit) return hit;
+  }
+  return free[0] ?? ids[0] ?? "";
 }

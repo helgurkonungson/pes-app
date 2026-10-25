@@ -6,8 +6,8 @@ import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../ai/key";
-import { GeminiSetupSheet } from "../components/GeminiSetup";
-import { googleSignInAvailable } from "../native/googleAuth";
+import { FreeAiCard, FreeAiSheet } from "../components/FreeAi";
+import { freeProvider } from "../ai/freeProviders";
 import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../ai/providers";
 import { useAiState } from "../ai/status";
 import { useBackupRestore } from "../components/FilePickers";
@@ -35,7 +35,8 @@ export function Settings() {
   const [key, setKey] = useState<string | null>(null);
   const [keyVersion, setKeyVersion] = useState(0);
   const ai = useAiState(keyVersion);
-  const [geminiSheet, setGeminiSheet] = useState(false);
+  /** Free AI sheet: a provider to open directly, "gemini-direct", or "" for the list; null = closed. */
+  const [freeSheet, setFreeSheet] = useState<ProviderId | "gemini-direct" | "" | null>(null);
   const [providerView, setProviderView] = useState<"top" | "other">("top");
   const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server" | "reminder">(null);
   const [notifBlocked, setNotifBlocked] = useState(false);
@@ -224,15 +225,7 @@ export function Settings() {
             ]}
           />
           <p className="faint small">{(profile.aiMode ?? "auto") === "auto" ? t("settings.aiAutoHint") : t("settings.aiOfflineHint")}</p>
-          {!(provider === "gemini" && key) && (
-            <button className="free-ai" onClick={() => setGeminiSheet(true)}>
-              <Sparkles size={24} aria-hidden />
-              <span className="grow">
-                <b>{t("gemini.cta")}</b>
-                <span>{t(googleSignInAvailable() ? "gemini.ctaHint" : "gemini.ctaHintManual")}</span>
-              </span>
-            </button>
-          )}
+          {!key && !meta.keyOptional && <FreeAiCard onClick={() => setFreeSheet("")} />}
           <Group>
             <MenuRow icon={<Sparkles size={20} />} label={t("settings.provider")} value={providerName(provider, t)} onClick={() => (setProviderView("top"), setSheet("provider"))} />
             {provider === "custom" && (
@@ -377,11 +370,12 @@ export function Settings() {
         </Sheet>
       )}
 
-      {geminiSheet && (
-        <GeminiSetupSheet
-          onClose={() => setGeminiSheet(false)}
+      {freeSheet !== null && (
+        <FreeAiSheet
+          initial={freeSheet === "gemini-direct" ? "gemini" : freeSheet && freeProvider(freeSheet) && freeSheet !== "gemini" ? freeSheet : undefined}
+          onClose={() => setFreeSheet(null)}
           onDone={() => {
-            setGeminiSheet(false);
+            setFreeSheet(null);
             setKeyVersion((v) => v + 1);
           }}
         />
@@ -395,6 +389,11 @@ export function Settings() {
               <p className="muted small">
                 {t("settings.keyHelpAny", { name: providerName(provider, t) })} <ExtLink href={meta.keyUrl}>{meta.keyUrl.replace(/^https:\/\//, "")}</ExtLink>
               </p>
+            )}
+            {freeProvider(provider) && (
+              <button className="btn dark block" onClick={() => (setSheet(null), setFreeSheet(provider === "gemini" ? "gemini-direct" : provider))}>
+                <Sparkles size={20} /> {t("free.getFree", { name: providerName(provider, t) })}
+              </button>
             )}
             <input className="input selectable" aria-label={meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) })} placeholder={meta.keyOptional ? t("settings.keyOptionalPh") : meta.keyPlaceholder} value={draft} onChange={(e) => setDraft(e.target.value)} autoCapitalize="off" spellCheck={false} autoComplete="off" />
             {err && (
@@ -441,7 +440,7 @@ export function Settings() {
                     if (o.id === "other") return setProviderView("other");
                     if (o.id === "builtin" && !(await getApiKey("gemini"))) {
                       setSheet(null);
-                      return setGeminiSheet(true);
+                      return setFreeSheet("gemini-direct");
                     }
                     await updateProfile({ provider: o.id === "builtin" ? "gemini" : "custom", aiBlock: undefined });
                     setKeyVersion((x) => x + 1);

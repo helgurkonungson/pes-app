@@ -12,7 +12,7 @@ export type LessonMode = "ai" | "offline" | "course";
 /** Error kinds that make AI unusable until the learner fixes something. */
 export type AiBlock = "no-key" | "auth" | "credits";
 /** AI provider whose key the learner uses. */
-export type ProviderId = "anthropic" | "openai" | "gemini" | "yandex" | "qwen" | "groq" | "nvidia" | "custom";
+export type ProviderId = "anthropic" | "openai" | "gemini" | "yandex" | "qwen" | "groq" | "nvidia" | "mistral" | "openrouter" | "custom";
 
 export interface Skillset {
   id: string;
@@ -235,6 +235,10 @@ export interface Profile {
   updateCheck?: UpdateCheck;
   /** Daily reminder (local notification). Unset = on at 19:00 once the learner allows notifications. */
   reminder?: { on: boolean; time: string };
+  /** Age band from a neutral age screen (only the band is kept), asked before connecting an AI service. */
+  ageGroup?: "child" | "teen" | "adult";
+  /** Explicit consents for the assisted free connections (Groq, Mistral, OpenRouter). */
+  aiConsents?: Partial<Record<ProviderId, { version: number; at: string }>>;
   /** Colour theme; default "system". */
   theme?: "system" | "light" | "dark";
   /** Explicit consent to create a free Gemini key in the learner's Google account (ADR-021). */

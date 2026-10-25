@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.12.0 — 2026-10-25
+
+- **"Connect a free AI"**: one button at the first start and in Settings opens a list of free services — Gemini (key created automatically), Groq, Mistral and OpenRouter. For the last three, the service's key page opens inside the app; when you close it, the copied key is pasted, checked and saved, and the service becomes your AI. Each service shows what happens to your data on its free tier, and you accept its terms first.
+- **New providers:** Mistral and OpenRouter (the free model is picked automatically). Groq now picks its best available model too.
+- **Age only when it matters:** the app is for everyone. Before connecting an AI service you pick your birth year once; only the age group is kept. Gemini, Groq and OpenRouter are available from 18 (their terms). Mistral is open from 13 (with a parent's permission under 18). Lessons without AI work at any age.
+
 ## 0.11.0 — 2026-10-25
 
 - **Light theme.** Settings → Theme: System (default), Light or Dark. The status bar follows, and the choice applies from the very first screen on the next start.

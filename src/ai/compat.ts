@@ -57,6 +57,11 @@ function headers(id: ProviderId, key: string, cfg: Cfg): Record<string, string> 
   const h: Record<string, string> = { "content-type": "application/json" };
   if (key) h.authorization = `Bearer ${key}`; // local servers usually need no key
   if (id === "yandex" && cfg.yandexFolder) h["OpenAI-Project"] = cfg.yandexFolder.trim();
+  if (id === "openrouter") {
+    // optional attribution headers OpenRouter asks apps to send
+    h["HTTP-Referer"] = "https://github.com/helgurkonungson/pes-app";
+    h["X-Title"] = "Chompbook";
+  }
   return h;
 }
 
@@ -143,6 +148,11 @@ export async function compatStructured<T>(
 ): Promise<T> {
   if (id === "yandex" && !cfg.yandexFolder?.trim()) throw new AiError("Yandex folder id is missing.", "auth");
   if (id === "custom" && !baseUrl(id, cfg)) throw new AiError("Custom server address is missing.", "no-key");
+  if (id === "openrouter") {
+    // OpenRouter lists models without a key, so check the key itself first
+    const k = await http(`${baseUrl(id, cfg)}/key`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
+    check(id, k);
+  }
   if (!opts.model) throw new AiError("No model selected.", "no-key");
   // providers that can't force a function (Yandex: only auto/none; many NVIDIA, Gemini and local
   // models) are asked in words, and JSON in the text answer is accepted as a fallback
@@ -240,6 +250,11 @@ export async function compatListModels(id: ProviderId, key: string, cfg: Cfg): P
     return fixed.map((m) => ({ id: m.id, display_name: m.name }));
   }
   if (id === "custom" && !baseUrl(id, cfg)) throw new AiError("Custom server address is missing.", "no-key");
+  if (id === "openrouter") {
+    // OpenRouter lists models without a key, so check the key itself first
+    const k = await http(`${baseUrl(id, cfg)}/key`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
+    check(id, k);
+  }
   const r = await http(`${baseUrl(id, cfg)}/models`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
   check(id, r);
   const list = ((r.data as { data?: { id: string }[]; models?: { name?: string; model?: string }[] })?.data ?? []).map((m) => m.id);

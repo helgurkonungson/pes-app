@@ -220,8 +220,13 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();
-    await btn(page, /Бесплатный AI от Google/).click();
+    await btn(page, /Подключить бесплатный AI/).click();
     const dialog = page.getByRole("dialog");
+    // a neutral age screen first (the year isn't kept, only the age group)
+    await expect(dialog.getByRole("button", { name: "Продолжить" })).toBeDisabled();
+    await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 30));
+    await dialog.getByRole("button", { name: "Продолжить" }).click();
+    await dialog.getByRole("button", { name: /^Gemini/ }).click();
     await expect(dialog.getByText(/Google может использовать ваши материалы/)).toBeVisible();
     await expect(dialog.getByText(/ЕС, Великобритании и Швейцарии/)).toBeVisible();
     // nothing happens without the explicit consent (18+, terms)
@@ -238,7 +243,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
     await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");
-    await expect(page.getByRole("button", { name: /Бесплатный AI от Google/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Подключить бесплатный AI/ })).toHaveCount(0);
     // the provider picker: built-in (selected now), your own server, other services
     await page.getByRole("button", { name: /Провайдер AI/ }).click();
     await expect(page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ })).toHaveAttribute("aria-checked", "true");
@@ -248,6 +253,76 @@ test.describe("Gemini, Groq and a custom server", () => {
     await page.getByRole("button", { name: /Провайдер AI/ }).click();
     await page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ }).click(); // key exists: switches back at once
     await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
+  });
+
+  test("free AI by age: a teen gets only Mistral (with a parent's permission), the key is picked up and Mistral becomes the provider", async ({ page, context }) => {
+    const KEY = "AbCdEfGhIjKlMnOpQrStUvWxYz012345";
+    await mockApis(page, "credits");
+    await page.route("https://api.mistral.ai/**", (route) => {
+      expect(route.request().headers()["authorization"]).toBe(`Bearer ${KEY}`);
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "mistral-small-latest" }, { id: "mistral-embed" }] }) });
+    });
+    await context.route("https://console.mistral.ai/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Mistral</h1>" }));
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 15));
+    await dialog.getByRole("button", { name: "Продолжить" }).click();
+    for (const name of [/^Gemini/, /^Groq/, /^OpenRouter/]) await expect(dialog.getByRole("button", { name })).toBeDisabled();
+    await expect(dialog.getByText("Доступно с 18 лет").first()).toBeVisible();
+    await dialog.getByRole("button", { name: /^Mistral/ }).click();
+    await expect(dialog.getByText(/Mistral может использовать ваши материалы/)).toBeVisible();
+    const open = dialog.getByRole("button", { name: "Открыть страницу ключей Mistral" });
+    await dialog.getByRole("checkbox", { name: /принимаю/ }).check();
+    await expect(open).toBeDisabled(); // a teen also needs the parent's permission
+    await dialog.getByRole("checkbox", { name: /родители/ }).check();
+    const popup = page.waitForEvent("popup");
+    await open.click();
+    await (await popup).close();
+    await dialog.getByRole("textbox", { name: "Ключ Mistral" }).fill(KEY);
+    await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
+    await expect(page.getByText("Mistral подключён — уроки будут с AI")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Mistral");
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("mistral-small-latest");
+  });
+
+  test("free AI: under 13 nothing can be connected, and the age isn't asked again", async ({ page }) => {
+    await mockApis(page, "credits");
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    await page.getByRole("dialog").getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 10));
+    await page.getByRole("dialog").getByRole("button", { name: "Продолжить" }).click();
+    await expect(page.getByRole("dialog").getByText(/только с определённого возраста/)).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "Закрыть" }).last().click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    await expect(page.getByRole("dialog").getByLabel("Год рождения")).toHaveCount(0);
+    await expect(page.getByRole("dialog").getByText(/только с определённого возраста/)).toBeVisible();
+  });
+
+  test("free AI: Groq for an adult — key page, key checked, Groq with its best free model", async ({ page, context }) => {
+    const KEY = `gsk_${"A1b2".repeat(13)}`;
+    await mockApis(page, "credits");
+    await page.route("https://api.groq.com/**", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "openai/gpt-oss-120b" }, { id: "whisper-large-v3" }] }) }));
+    await context.route("https://console.groq.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Groq</h1>" }));
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 40));
+    await dialog.getByRole("button", { name: "Продолжить" }).click();
+    await dialog.getByRole("button", { name: /^Groq/ }).click();
+    await expect(dialog.getByText(/не использует ваши материалы для обучения/)).toBeVisible();
+    await expect(dialog.getByRole("checkbox", { name: /родители/ })).toHaveCount(0);
+    await dialog.getByRole("checkbox", { name: /принимаю/ }).check();
+    const popup = page.waitForEvent("popup");
+    await dialog.getByRole("button", { name: "Открыть страницу ключей Groq" }).click();
+    await (await popup).close();
+    await dialog.getByRole("textbox", { name: "Ключ Groq" }).fill(KEY);
+    await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
+    await expect(page.getByText("Groq подключён — уроки будут с AI")).toBeVisible();
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gpt-oss-120b");
   });
 
   test("Gemini overloaded: retries, then Google's own words + a hint; Retry then works", async ({ page }) => {
