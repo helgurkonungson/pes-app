@@ -33,6 +33,29 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await expect(page.getByText(/^[\d\s ]+ · \d+ запрос/)).toBeVisible();
   });
 
+  test("while a lesson is written: a moving progress bar and changing phrases; the test counts its own questions", async ({ page }) => {
+    await mockApis(page, "ok");
+    // slow AI: every request takes 9 s
+    await page.route("https://api.anthropic.com/v1/messages", async (route) => {
+      await new Promise((r) => setTimeout(r, 9000));
+      await route.fallback();
+    });
+    await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
+    await createSkillsetWithText(page, undefined, { keepTest: true });
+    await btn(page, "Пройти входной тест").click();
+    const bar = page.getByRole("progressbar");
+    await expect(bar).toBeVisible();
+    const title = page.locator(".preparing [role=status]");
+    const first = await title.innerText();
+    await expect(title).not.toHaveText(first, { timeout: 7000 }); // the phrase changes
+    await skipCountdown(page);
+    // intro page: no counter; question 1 of 6 — the big number and the question number agree
+    await expect(page.locator(".page-count")).toHaveCount(0);
+    await btn(page, /^Далее/).click();
+    await expect(page.locator(".page-count")).toHaveText(/^1\s*\/\s*6$/);
+    await expect(page.getByText(/Вопрос \d+ из/)).toHaveCount(0);
+  });
+
   test("new skillset: “Continue without sources” goes straight to the first (AI) session", async ({ page }) => {
     await mockApis(page, "ok");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });

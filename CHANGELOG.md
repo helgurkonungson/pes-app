@@ -2,6 +2,11 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.9.1 — 2026-10-25
+
+- **The "preparing the lesson" screen always shows progress:** a bar that keeps moving (by the real writing steps when they are known) and phrases that change every few seconds — "Reading your materials…", "Just a little longer…", "Almost ready…".
+- **Fixed the test counter:** the big number at the top of a placement, intermediate or final test now counts questions ("8 / 10") and matches the question you're on; before, the intro page was counted too ("9 / 11" next to "Question 8 of 10").
+
 ## 0.9.0 — 2026-10-25
 
 - **Spaced repetition.** Every question you answer becomes a review card. Cards you got wrong come back the next day, right ones after 3, 7, 14, 30 and 60 days. The review at the start of a lesson is made of the cards due today plus the last lesson's key points. Home shows how many cards are due.

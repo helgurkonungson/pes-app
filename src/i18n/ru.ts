@@ -260,6 +260,15 @@ export const ru: Dict = {
   "course.finishedTitle": "Курс пройден",
 
   // session
+  "loading.early1": "Готовлю урок…",
+  "loading.early2": "Читаю ваши материалы…",
+  "loading.early3": "Выбираю самое важное…",
+  "loading.mid1": "Собираю объяснения…",
+  "loading.mid2": "Подбираю примеры…",
+  "loading.mid3": "Ещё чуть-чуть…",
+  "loading.late1": "Почти готово…",
+  "loading.late2": "Последние штрихи…",
+  "loading.late3": "Осталось совсем немного…",
   "session.preparing": "Готовлю урок…",
   "session.writing": "Пишу урок…",
   "session.researching": "Ищу свежие материалы в интернете…",
@@ -292,6 +301,7 @@ export const ru: Dict = {
   "session.leaveOk": "Выйти",
   "session.leaveAria": "Выйти из урока",
   "session.timeAria": "Затраченное время",
+  "session.questionAria": "Вопрос {i} из {n}",
   "session.pageAria": "Страница {i} из {n}",
   "session.finish": "Завершить",
   "session.fallback.credits": "Кредиты AI закончились, поэтому этот урок собран из вашего источника без AI.",

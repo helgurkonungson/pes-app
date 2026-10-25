@@ -255,6 +255,15 @@ export const en = {
   "course.finishedTitle": "Course completed",
 
   // session
+  "loading.early1": "Preparing your lesson…",
+  "loading.early2": "Reading your materials…",
+  "loading.early3": "Picking out what matters…",
+  "loading.mid1": "Putting the explanations together…",
+  "loading.mid2": "Finding good examples…",
+  "loading.mid3": "Just a little longer…",
+  "loading.late1": "Almost ready…",
+  "loading.late2": "Final touches…",
+  "loading.late3": "Nearly there…",
   "session.preparing": "Getting things ready…",
   "session.writing": "Writing your lesson…",
   "session.researching": "Searching the web for fresh material…",
@@ -287,6 +296,7 @@ export const en = {
   "session.leaveOk": "Leave",
   "session.leaveAria": "Leave lesson",
   "session.timeAria": "Time spent",
+  "session.questionAria": "Question {i} of {n}",
   "session.pageAria": "Page {i} of {n}",
   "session.finish": "Finish",
   "session.fallback.credits": "AI credits ran out, so this lesson is built from your source without AI.",

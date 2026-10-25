@@ -24,6 +24,7 @@ import { writeSnapshot } from "../data/safety";
 import { continueWriting, CourseFinishedError, isWriting, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
 import { type Key, locale, type T, useT } from "../i18n";
 import { formatTokens } from "../ai/usage";
+import { loadingPhrase, loadingProgress } from "../core/loading";
 import { scheduleReminders, setReminder } from "../native/reminders";
 import { speak, speakable, stopSpeaking } from "../native/tts";
 import { useNav } from "../nav/store";
@@ -289,17 +290,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
           {phase === "loading" ? (
             <>
               <BookBite size={220} />
-              <h2 className="section-title" role="status">
-                {stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)}
-              </h2>
-              {genSteps && genSteps.total > 1 && !forceOffline && (
-                <div className="gen-steps">
-                  <div className="gen-bar" role="progressbar" aria-valuemin={0} aria-valuemax={genSteps.total} aria-valuenow={genSteps.done} aria-label={t("session.stepCount", { i: Math.min(genSteps.done + 1, genSteps.total), n: genSteps.total })}>
-                    <span style={{ width: `${Math.round((genSteps.done / genSteps.total) * 100)}%` }} />
-                  </div>
-                  <p className="muted small">{t("session.stepCount", { i: Math.min(genSteps.done + 1, genSteps.total), n: genSteps.total })}</p>
-                </div>
-              )}
+              <LoadingStatus stage={stage} stageText={stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)} steps={forceOffline ? null : genSteps} />
               <p className="muted small" style={{ maxWidth: 300 }}>
                 {forceOffline ? t("session.offlineFast") : t("session.slowHint")}
               </p>
@@ -435,10 +426,19 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
 
       <div className="session-body" tabIndex={0} role="region" aria-label={t(stepLabel(page, session))}>
         <div className="row-between" style={{ marginBottom: 10 }}>
-          <div className="page-count" aria-label={t("session.pageAria", { i: pageIndex + 1, n: pages.length })}>
-            {pageIndex + 1}
-            <small>/ {pages.length}</small>
-          </div>
+          {(() => {
+            // a test counts its questions (the intro page is not one); a lesson counts its pages
+            const test = session.kind !== "lesson";
+            if (test && page.kind !== "mcq") return <span />;
+            const i = test && page.kind === "mcq" ? page.index + 1 : pageIndex + 1;
+            const n = test && page.kind === "mcq" ? page.of : pages.length;
+            return (
+              <div className="page-count" aria-label={t(test ? "session.questionAria" : "session.pageAria", { i, n })}>
+                {i}
+                <small>/ {n}</small>
+              </div>
+            );
+          })()}
           {pageIndex === 0 && session.lesson?.mode && session.lesson.mode !== "ai" && (
             <span className={`mode-tag ${session.lesson.mode}`}>{t(session.lesson.mode === "course" ? "mode.course" : "mode.offline")}</span>
           )}
@@ -482,6 +482,39 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
 }
 
 /** Reads the current theory part aloud; stops when the page changes. */
+/** Title, an always-moving progress bar and phrases that change every few seconds while a lesson is prepared. */
+function LoadingStatus({ stage, stageText, steps }: { stage: Key; stageText: string; steps: { done: number; total: number } | null }) {
+  const t = useT();
+  const [seconds, setSeconds] = useState(0);
+  const stepStart = useRef({ done: -1, at: 0 });
+  useEffect(() => {
+    const tm = setInterval(() => setSeconds((x) => x + 1), 1000);
+    return () => clearInterval(tm);
+  }, []);
+  const real = steps && steps.total > 1 ? steps : null;
+  if (real && stepStart.current.done !== real.done) stepStart.current = { done: real.done, at: seconds };
+  const value = loadingProgress({ steps: real, secondsInStep: seconds - stepStart.current.at, secondsTotal: seconds });
+  const phrase = t(loadingPhrase(value, seconds));
+  // a generic stage gets the changing phrase as its title; a specific one keeps it and shows the phrase below
+  const generic = stage === "session.preparing" || stage === "session.writing";
+  const pct = Math.round(value * 100);
+  return (
+    <>
+      <h2 className="section-title" role="status">
+        {generic ? phrase : stageText}
+      </h2>
+      <div className="gen-steps">
+        <div className="gen-bar" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={real ? t("session.stepCount", { i: Math.min(real.done + 1, real.total), n: real.total }) : stageText}>
+          <span style={{ width: `${Math.max(3, pct)}%` }} />
+        </div>
+        <p className="muted small loading-phrase" key={generic ? "steps" : phrase} aria-hidden={!generic ? true : undefined}>
+          {real ? `${t("session.stepCount", { i: Math.min(real.done + 1, real.total), n: real.total })}${generic ? "" : ` · ${phrase}`}` : generic ? `${pct}%` : phrase}
+        </p>
+      </div>
+    </>
+  );
+}
+
 function ListenButton({ text }: { text: string }) {
   const t = useT();
   const [on, setOn] = useState(false);
@@ -619,13 +652,13 @@ function PageView({ page, session, progress, update, onSkipPlacement }: { page: 
       );
     }
     case "mcq":
-      return <McqView page={page} progress={progress} update={update} allowDontKnow={page.step === "placement"} checkpoint={!!session.lesson?.checkpoint} />;
+      return <McqView page={page} progress={progress} update={update} test={session.kind !== "lesson"} allowDontKnow={page.step === "placement"} checkpoint={!!session.lesson?.checkpoint} />;
     case "open":
       return <OpenView session={session} progress={progress} update={update} />;
   }
 }
 
-function McqView({ page, progress, update, allowDontKnow, checkpoint }: { page: Extract<Page, { kind: "mcq" }>; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; allowDontKnow: boolean; checkpoint?: boolean }) {
+function McqView({ page, progress, update, allowDontKnow, checkpoint, test }: { page: Extract<Page, { kind: "mcq" }>; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; allowDontKnow: boolean; checkpoint?: boolean; test?: boolean }) {
   const t = useT();
   const { mcq } = page;
   const chosen = progress.mcq[mcq.id];
@@ -639,8 +672,8 @@ function McqView({ page, progress, update, allowDontKnow, checkpoint }: { page: 
   return (
     <div>
       <p className="tiny muted" style={{ marginBottom: 4 }}>
-        {t("mcq.counter", { label, i: page.index + 1, n: page.of })}
-        {mcq.topic ? ` · ${mcq.topic}` : ""}
+        {/* in a test the big counter above already says "question i of n" */}
+        {test ? (mcq.topic ?? label) : `${t("mcq.counter", { label, i: page.index + 1, n: page.of })}${mcq.topic ? ` · ${mcq.topic}` : ""}`}
       </p>
       <h2 className="q-title selectable">{mcq.q}</h2>
       <div role="radiogroup" aria-label={mcq.q}>
