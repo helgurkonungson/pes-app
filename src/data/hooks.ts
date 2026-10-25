@@ -15,7 +15,7 @@ export interface SkillsetSummary {
   /** Ready or started session, if any. */
   open?: Session;
   course?: { total: number; done: number; nextTitle?: string; finished: boolean };
-  /** Most recent activity (finished session) — used to pick what to continue. */
+  /** Most recent activity (a session started or finished) — used to pick what to continue. */
   lastAt?: string;
   /** Spaced-repetition cards due today. */
   due: number;
@@ -31,7 +31,7 @@ async function summarize(s: Skillset): Promise<SkillsetSummary> {
   ]);
   const done = sessions.filter((x) => x.status === "done");
   const open = sessions.find((x) => x.status === "active") ?? sessions.find((x) => x.status === "ready");
-  const lastAt = done.map((x) => x.finishedAt ?? "").sort().pop();
+  const lastAt = sessions.map((x) => [x.finishedAt ?? "", x.startedAt ?? ""].sort().pop() ?? "").filter(Boolean).sort().pop();
   let courseInfo: SkillsetSummary["course"];
   let cov = coverage(chunks, s.cursor + (s.cursorWord ? 0.5 : 0));
   if (course) {
@@ -57,10 +57,8 @@ export function useSkillsetSummaries(): SkillsetSummary[] | undefined {
   return useLiveQuery(async () => Promise.all((await db.skillsets.orderBy("createdAt").toArray()).map(summarize)), []);
 }
 
-/** The skillset to continue: one with a started lesson, else the most recently studied, else the newest. */
+/** The skillset to continue: the one studied most recently (a lesson started or finished), else the newest. */
 export function pickCurrent(list: SkillsetSummary[]): SkillsetSummary | undefined {
-  const active = list.find((x) => x.open?.status === "active");
-  if (active) return active;
   const unfinished = list.filter((x) => !x.course?.finished);
   const pool = unfinished.length ? unfinished : list;
   return [...pool].sort((a, b) => (b.lastAt ?? b.s.createdAt).localeCompare(a.lastAt ?? a.s.createdAt))[0];

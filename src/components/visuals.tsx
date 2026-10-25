@@ -59,9 +59,8 @@ export function ScoreRing({ score, max = 10 }: { score: number; max?: number }) 
 
 // ---------- hero artwork ----------
 
-/** Generated cover for a skillset: hue gradient, stacked "portion" bars and a monogram. */
-export function HeroBg({ hue, name, big }: { hue: number; name: string; big?: boolean }) {
-  const letter = (name.trim()[0] ?? "P").toUpperCase();
+/** Generated cover for a skillset: a clean hue gradient with a soft shade at the bottom (no pattern, no watermark). */
+export function HeroBg({ hue, big }: { hue: number; name?: string; big?: boolean }) {
   const a = `hsl(${hue} 58% 52%)`;
   const b = `hsl(${(hue + 28) % 360} 46% 30%)`;
   const id = `g${hue}${big ? "b" : "s"}`;
@@ -78,16 +77,6 @@ export function HeroBg({ hue, name, big }: { hue: number; name: string; big?: bo
         </linearGradient>
       </defs>
       <rect width="400" height="300" fill={`url(#${id})`} />
-      <g fill="#fff" opacity="0.10" transform="rotate(-18 200 150)">
-        {Array.from({ length: 7 }).map((_, row) =>
-          Array.from({ length: 6 }).map((__, col) => (
-            <rect key={`${row}-${col}`} x={col * 92 - 80 + (row % 2) * 40} y={row * 58 - 60} width={30 + ((row + col) % 3) * 22} height="22" rx="11" />
-          )),
-        )}
-      </g>
-      <text x="330" y="250" textAnchor="end" fontSize="230" fontWeight="800" fill="#fff" opacity="0.16" fontFamily="Plus Jakarta Sans Variable, sans-serif">
-        {letter}
-      </text>
       <rect width="400" height="300" fill={`url(#${id}s)`} />
     </svg>
   );
@@ -116,8 +105,8 @@ export function LineChart({ values, labels, height = 120 }: { values: number[]; 
   return (
     <div className="chart-wrap">
       <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} aria-hidden>
-        <line x1="8" x2={w - 8} y1={h - 14} y2={h - 14} stroke="#4a4b51" strokeDasharray="2 5" />
-        <path d={d} fill="none" stroke="#f5f6f7" strokeWidth="2.5" strokeLinecap="round" />
+        <line x1="8" x2={w - 8} y1={h - 14} y2={h - 14} style={{ stroke: "var(--chart-grid)" }} strokeDasharray="2 5" />
+        <path d={d} fill="none" style={{ stroke: "var(--chart-line)" }} strokeWidth="2.5" strokeLinecap="round" />
         {last && <circle cx={last[0]} cy={last[1]} r="5" style={{ fill: "var(--accent)", stroke: "var(--bg)" }} strokeWidth="2" />}
       </svg>
       {labels && (

@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.11.0 — 2026-10-25
+
+- **Light theme.** Settings → Theme: System (default), Light or Dark. The status bar follows, and the choice applies from the very first screen on the next start.
+- **Home shows the skillset you studied last** (a lesson started or finished most recently) instead of the first one ever created, which stuck on top when it had an unfinished lesson.
+- **Cleaner covers:** the pattern and the big letter on skillset covers and icons are gone — just the colour gradient.
+
 ## 0.10.0 — 2026-10-25
 
 - **Free AI from Google (Gemini).** A new button at the first start and in Settings. A consent screen comes first: what will happen, how Google may use materials on the free tier, the EU/UK/Switzerland limit, 18+, and Google's terms. Nothing happens until you tick the box.

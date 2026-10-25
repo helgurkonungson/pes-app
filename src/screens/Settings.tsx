@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Folder, Globe, Server, Sparkles, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Folder, Globe, Server, Sparkles, SunMoon, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
@@ -192,6 +192,22 @@ export function Settings() {
               { id: "system", label: t("settings.langSystem") },
               { id: "ru", label: "Русский" },
               { id: "en", label: "English" },
+            ]}
+          />
+        </section>
+
+        <section className="stack">
+          <SectionLabel>
+            <SunMoon size={14} style={{ verticalAlign: -2 }} /> {t("settings.theme")}
+          </SectionLabel>
+          <Segmented<"system" | "light" | "dark">
+            label={t("settings.theme")}
+            value={profile.theme ?? "system"}
+            onChange={(v) => updateProfile({ theme: v })}
+            options={[
+              { id: "system", label: t("settings.themeSystem") },
+              { id: "light", label: t("settings.themeLight") },
+              { id: "dark", label: t("settings.themeDark") },
             ]}
           />
         </section>

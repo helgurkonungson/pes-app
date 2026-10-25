@@ -1,3 +1,4 @@
+import { applyTheme } from "./theme";
 import { Logs } from "../screens/Logs";
 import { scheduleReminders } from "../native/reminders";
 import { App as CapApp } from "@capacitor/app";
@@ -94,6 +95,11 @@ export function App() {
     // no saved preference (e.g. right after "Delete all data") → keep the language in use
     if (profile?.uiLanguage) setLang(resolveLang(profile.uiLanguage));
   }, [profile?.uiLanguage, profile, setLang]);
+
+  // light / dark / system (ADR-022)
+  useEffect(() => {
+    if (profile) applyTheme(profile.theme);
+  }, [profile?.theme, profile]);
 
   useEffect(() => {
     if (ready && profile === null) getProfile(); // recreate the default profile → onboarding

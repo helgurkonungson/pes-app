@@ -22,6 +22,8 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     serviceWorkers: "block",
+    // the phone in dark mode (the theme follows the system by default); the light theme has its own test
+    colorScheme: "dark",
   },
   webServer: {
     command: `npm run build && npx vite preview --port ${PORT} --strictPort`,

@@ -8,7 +8,7 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - Data schema changes: add a new `this.version(n)` in `src/data/db.ts` with an upgrade; never edit an existing version. Never lose the user's history.
 - AI output is untrusted: always pass it through `src/core/normalize.ts`.
 - No developer secrets in the repo or app. The user's key lives only in secure storage.
-- Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark theme, sun-yellow accent `#ffc53a` (brand «Солнце», same as the icon; orange `--warn`, blue `--info`); 360 px min width; safe-area variables.
+- Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark and light themes (ADR-022: accent text via `--accent-ink`, fills via `--accent`), sun-yellow accent `#ffc53a` (brand «Солнце», same as the icon; orange `--warn`, blue `--info`); 360 px min width; safe-area variables.
 - Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **both** `en.ts` and `ru.ts` (Russian needs one/few/many/other for plurals).
 - Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.
 - Never break update safety (ADR-009): don't change the app id, signing key, WebView origin or existing Dexie versions.

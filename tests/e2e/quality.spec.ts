@@ -48,6 +48,36 @@ test("every screen: no horizontal scroll, no serious accessibility issues", asyn
   }
 });
 
+test("light theme: chosen in Settings, kept after a restart, readable (AA contrast) on every main screen", async ({ page }) => {
+  await mockApis(page);
+  await onboard(page);
+  await createSkillsetWithText(page);
+  await btn(page, /Начать · 15 мин/).click();
+  await skipCountdown(page);
+  await btn(page, "Выйти из урока").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Выйти" }).click();
+  await btn(page, "Назад").click();
+  await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+  await page.getByRole("radio", { name: "Светлая" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  for (const tab of ["Главная", "Навыки", "Прогресс", "Настройки"]) {
+    await page.getByRole("navigation").getByRole("button", { name: tab }).click();
+    await audit(page, `light ${tab}`);
+    await contrast(page, `light ${tab}`);
+  }
+  await page.getByRole("navigation").getByRole("button", { name: "Главная" }).click();
+  await page.locator(".next-card .btn.primary").click();
+  await skipCountdown(page);
+  await contrast(page, "light lesson");
+  await btn(page, "Выйти из урока").click();
+  await page.getByRole("dialog").getByRole("button", { name: "Выйти" }).click();
+  await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+  await page.getByRole("radio", { name: "Тёмная" }).click();
+  await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
+});
+
 test("touch targets in the tab bar and session controls are at least 44 px", async ({ page }) => {
   await mockApis(page);
   await onboard(page);
