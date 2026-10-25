@@ -1,0 +1,11 @@
+// Cloudflare Worker that only serves the static files in ./public (chompbok.online).
+// Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "site".
+{
+  "name": "chompbook-site",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}
