@@ -1,6 +1,7 @@
 /** Rings, hero artwork, chart, markdown and badge icons. */
 import {
-  Award, BookOpenCheck, Brain, Flame, Footprints, Layers, Medal, Repeat, Target, Timer, Zap,
+  Award,
+  CalendarCheck, BookOpenCheck, Brain, Flame, Footprints, Layers, Medal, Repeat, Target, Timer, Zap,
   type LucideIcon,
 } from "lucide-react";
 import { Fragment, type ReactNode } from "react";
@@ -203,6 +204,7 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   repeat: Repeat,
   "book-open-check": BookOpenCheck,
   medal: Medal,
+  "calendar-check": CalendarCheck,
 };
 
 export function BadgeIcon({ name, size = 24 }: { name: string; size?: number }) {

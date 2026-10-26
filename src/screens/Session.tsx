@@ -1,6 +1,6 @@
 import { Capacitor } from "@capacitor/core";
 import { Haptics, ImpactStyle, NotificationType } from "@capacitor/haptics";
-import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb, Sparkles, Square, Volume2, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CloudOff, ExternalLink, Flame, Lightbulb, Sparkles, Square, Volume2, X, Zap } from "lucide-react";
 import { liveQuery } from "dexie";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
@@ -14,6 +14,7 @@ import { BuildProgress } from "../components/BuildProgress";
 import { BadgeIcon, Markdown, ScoreRing } from "../components/visuals";
 import type { AiErrorKind } from "../core/aiStatus";
 import { badgeById } from "../core/badges";
+import { totalEnergy } from "../core/energy";
 import { canAdvance, lessonPages, type Page, placementPages, type StepKey, stepsOf } from "../core/flow";
 import { nowIso } from "../core/ids";
 import { OfflineError } from "../core/offline";
@@ -944,6 +945,15 @@ function Congrats({ session, result, onClose }: { session: Session; result: Sess
             <p className="bold">{t("done.checkpoint", { score: result.checkpoint.correct, total: result.checkpoint.total })}</p>
           </div>
         )}
+        {!!result.energy?.length && (
+          <div className="placement-box energy-box">
+            <p className="bold">
+              <Zap size={16} style={{ verticalAlign: -2 }} /> {t("done.energy", { n: totalEnergy(result.energy) })}
+            </p>
+            <p className="small">{result.energy.map((g) => `+${g.amount} ${t(`energy.r.${g.reason}` as Key)}`).join(" · ")}</p>
+          </div>
+        )}
+        {result.repaired && <p className="bold">{t("done.repaired", { n: result.streak })}</p>}
         {result.levelUp && <p className="bold">{t("done.levelUp", { n: result.levelUp, rank: t(`rank.${rankFor(result.levelUp)}` as Key) })}</p>}
         {result.badges.length > 0 && (
           <div className="row" style={{ flexWrap: "wrap", justifyContent: "center", gap: 8 }}>

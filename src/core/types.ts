@@ -178,7 +178,13 @@ export interface SessionResult {
   badges: string[];
   levelUp?: number;
   streak: number;
+  /** Energy earned by this session, by reason (ADR-029). */
+  energy?: { reason: EnergyReason; amount: number }[];
+  /** The broken streak was won back by this session (two lessons the day after one missed day). */
+  repaired?: boolean;
 }
+
+export type EnergyReason = "session" | "review" | "perfect" | "checkpoint" | "final" | "streak" | "comeback" | "week";
 
 /** placement = entry test; final = the final test once the material is covered (both use `placement` content). */
 export type SessionKind = "placement" | "lesson" | "final";
@@ -205,6 +211,16 @@ export interface StreakState {
   current: number;
   best: number;
   lastDay?: string;
+  /** Missed days are settled up to this day (yesterday at the last check), see core/streak `settleStreak`. */
+  checkedTo?: string;
+  /** Days the streak survived without a lesson: a planned rest day or a freeze (newest 60, for the calendar). */
+  kept?: Record<string, "rest" | "freeze">;
+  /** Freezes spent at the check on `day` (Home says so that day). */
+  frozeOn?: { day: string; n: number };
+  /** The streak broke on exactly one missed day: two lessons on `day` win back `streak` days. */
+  repair?: { day: string; streak: number };
+  /** Back after `missed` days away: the first lesson on `day` earns a bonus. */
+  comeback?: { day: string; missed: number; claimed?: boolean };
 }
 
 export interface Profile {
@@ -248,6 +264,14 @@ export interface Profile {
   usage?: Record<string, TokenUsage>;
   /** First-run tutorial: "pending" right after onboarding; unset for learners who started before it existed. */
   tutorial?: "pending" | "done" | "skipped";
+  /** Energy balance (ADR-029): earned by learning, spent on streak freezes. */
+  energy?: number;
+  /** Streak freezes in stock (0…MAX_FREEZES). */
+  freezes?: number;
+  /** Planned rest days, Monday-first weekday indexes (0 = Monday), at most two. */
+  restDays?: number[];
+  /** Monday of the last week that earned the "clean week" bonus. */
+  cleanWeek?: string;
 }
 
 export interface TokenUsage {

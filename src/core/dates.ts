@@ -52,6 +52,12 @@ export function weekdayLetter(index: number, loc = "en-GB"): string {
   return cap(new Intl.DateTimeFormat(loc, { weekday: "narrow" }).format(d));
 }
 
+/** Short weekday name, Monday-first index (0 = Monday): "Mon" / "пн". */
+export function weekdayShort(index: number, loc = "en-GB"): string {
+  const d = new Date(2024, 0, 1 + index);
+  return new Intl.DateTimeFormat(loc, { weekday: "short" }).format(d).replace(/\.$/, "");
+}
+
 /** Short date like "23 Oct" / "23 окт." */
 export function shortDate(day: string, loc = "en-GB"): string {
   return new Intl.DateTimeFormat(loc, { day: "numeric", month: "short" }).format(parseDay(day));

@@ -21,4 +21,12 @@ describe("planReminders", () => {
     expect(at(false, 0)).toHaveLength(0);
     expect(at(false, 4, "22:00")).toHaveLength(0);
   });
+  it("no reminders on rest days (2026-10-24 is a Saturday)", () => {
+    const plan = planReminders({ ...base, streak: 4, now: atLocal("2026-10-24", "10:00"), studiedToday: false, restDays: [5, 6] });
+    expect(plan.map((p) => p.id)).toEqual([1002, 1003, 1004, 1005, 1006]);
+  });
+  it("no streak pressure for children and teens", () => {
+    const nudge = (ageGroup?: "child" | "teen" | "adult") => planReminders({ ...base, streak: 4, studiedToday: false, now: atLocal("2026-10-24", "20:00"), ageGroup }).some((p) => p.kind === "streak");
+    expect([nudge(), nudge("adult"), nudge("teen"), nudge("child")]).toEqual([true, true, false, false]);
+  });
 });

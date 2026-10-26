@@ -2,6 +2,15 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.15.0 — 2026-10-26
+
+- **Energy ⚡:** a new balance next to your streak on Home. You earn it by learning — +5 for every finished lesson or test, +1 for each right answer in the review, +5 for a lesson without mistakes, +5/+15 for passed intermediate/final tests, +20/+50/+100 at 7/30/100-day streaks, +15 for a week without missed days and +10 for the first lesson after a break. The results screen shows what you earned. Progress → Energy lists how to earn more.
+- **Streak freezes:** buy a freeze for 50 energy (keep up to two). It saves your streak on a missed day by itself, and Home tells you when it did. A freeze is never spent on a streak that would break anyway.
+- **Win your streak back:** missed one day without a freeze? Finish two lessons the next day and the streak returns as if nothing happened.
+- **Rest days:** Settings → Rest days — up to two days a week off. They never break your streak and get no reminders. The calendar on Progress marks rest days 🌙 and frozen days ❄.
+- **Welcome back:** after a break, Home says how many cards are waiting and the first lesson earns a bonus.
+- New badge "Clean Week". No more "streak ends tonight" nudges for children and teens.
+
 ## 0.14.0 — 2026-10-26
 
 - **Free AI in one tap, also where Google isn't available:** "Connect a free AI" now recommends one service for you. OpenRouter is first everywhere: sign in on openrouter.ai with Google, GitHub or e-mail and the app comes back with the key by itself — nothing to copy (free models, about 8 lessons a day). Gemini is offered too where Google provides it; in Russia, Belarus, China and the EU/UK/Switzerland (no free tier) it moves to "Other services". If Google answers that Gemini isn't available in your country, the app says so at once (instead of a minute of retries) and offers OpenRouter.

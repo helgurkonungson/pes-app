@@ -313,6 +313,16 @@ a { color: var(--accent-ink); }
 .day.has::after { content: ""; position: absolute; bottom: 7px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
 .day.on.has::after { background: var(--on-accent); }
 .day.future { opacity: 0.45; }
+.day .kept-mark { position: absolute; bottom: 5px; }
+.day.kept-freeze .kept-mark { color: var(--info); }
+.day.kept-rest .kept-mark { color: var(--muted); }
+.day.on .kept-mark { color: var(--on-accent); }
+.energy-number { display: flex; align-items: center; gap: 6px; color: var(--accent-ink); margin-top: 2px; }
+.freeze-stock { text-align: right; }
+.frost { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2); color: var(--faint); }
+.frost.on { background: var(--info-soft); color: var(--info); }
+.earn summary { cursor: pointer; padding: 12px 0; }
+.earn ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 
 /* ---------- forms ---------- */
 .field { display: flex; flex-direction: column; gap: 8px; }
@@ -486,6 +496,15 @@ button.menu-row:active { opacity: .7; }
 .home-head h1 { font-size: 26px; font-weight: 750; letter-spacing: -0.02em; line-height: 1.15; }
 .streak-chip { display: inline-flex; align-items: center; gap: 6px; height: var(--touch); padding: 0 14px; border-radius: var(--pill); background: var(--surface); color: var(--muted); font-weight: 700; }
 .streak-chip.on { color: var(--accent-ink); }
+.head-chips { display: flex; gap: 6px; flex-shrink: 0; }
+.head-chips .streak-chip { padding: 0 12px; gap: 5px; }
+.chip-frost { color: var(--info); margin-left: -2px; }
+.banner.info { background: var(--info-soft); }
+.weekday-pick { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.weekday-pick button { height: var(--touch); border-radius: var(--r-sm); background: var(--surface-2); color: var(--ink); font-weight: 650; font-size: 13px; }
+.weekday-pick button.on { background: var(--accent); color: var(--on-accent); }
+.weekday-pick button:disabled { opacity: .4; }
+.energy-box p + p { margin-top: 4px; opacity: .85; }
 
 .next-card { position: relative; border-radius: var(--r-xl); overflow: hidden; color: #fff; }
 .next-card .hero-bg { position: absolute; inset: 0; }

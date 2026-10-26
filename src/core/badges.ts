@@ -15,6 +15,8 @@ export interface BadgeContext {
     coverage: number;
   };
   level: number;
+  /** Last week had a lesson (or a planned rest day) every day. */
+  cleanWeek?: boolean;
 }
 
 export interface BadgeDef {
@@ -37,6 +39,7 @@ export const BADGES: BadgeDef[] = [
   { id: "polymath", title: "Polymath", description: "Learn 3 skillsets at once", icon: "layers", earned: (c) => c.skillsets >= 3 },
   { id: "ten-lessons", title: "Habit Formed", description: "Complete 10 lessons", icon: "repeat", earned: (c) => c.sessionsDone >= 10 },
   { id: "bookworm", title: "Bookworm", description: "Cover all sources of a skillset", icon: "book-open-check", earned: (c) => (c.last?.coverage ?? 0) >= 1 },
+  { id: "clean-week", title: "Clean Week", description: "A week without missed days", icon: "calendar-check", earned: (c) => !!c.cleanWeek },
   { id: "level-5", title: "Level 5", description: "Reach level 5", icon: "medal", earned: (c) => c.level >= 5 },
 ];
 

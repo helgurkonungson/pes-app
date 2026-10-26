@@ -1,6 +1,7 @@
 import { applyTheme } from "./theme";
 import { retryUnsent } from "../data/reports";
 import { scheduleReminders } from "../native/reminders";
+import { settleStreakNow } from "../data/repo";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -144,7 +145,7 @@ export function App() {
     // snapshot when the app goes to the background (the OS may kill it later)
     const state = CapApp.addListener("appStateChange", ({ isActive }) => {
       if (!isActive) writeSnapshot();
-      else void scheduleReminders(); // "studied today?" and due cards may have changed
+      else void settleStreakNow().then(scheduleReminders); // a new day may have started; "studied today?" and due cards may have changed
     });
     return () => {
       sub.then((s) => s.remove());
@@ -154,7 +155,7 @@ export function App() {
 
   useEffect(() => {
     // after boot: the check writes to the profile, and an empty database must be restored first
-    if (ready) void scheduleReminders();
+    if (ready) void settleStreakNow().then(scheduleReminders); // missed days: freezes, rest days, repair (ADR-029)
     if (!ready || !autoUpdateCheckEnabled()) return;
     runDailyUpdateCheck();
     if (!Capacitor.isNativePlatform()) return;

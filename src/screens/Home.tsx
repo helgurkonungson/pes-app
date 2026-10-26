@@ -1,7 +1,7 @@
 import { needsPlacement } from "../core/scoring";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BuildProgress } from "../components/BuildProgress";
-import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, Sparkles } from "lucide-react";
+import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
 import { useUpdate } from "../app/App";
 import { useAiState } from "../ai/status";
 import { useCourseImport } from "../components/FilePickers";
@@ -10,7 +10,9 @@ import { HeroBg } from "../components/visuals";
 import type { AiState } from "../core/aiStatus";
 import { lastNDays, localDay, longDate, parseDay, weekdayLetter } from "../core/dates";
 import { pct } from "../core/scoring";
-import { liveStreak } from "../core/streak";
+import { ENERGY } from "../core/energy";
+import { liveStreak, REPAIR_SESSIONS } from "../core/streak";
+import type { Profile } from "../core/types";
 import { db } from "../data/db";
 import { pickCurrent, type SkillsetSummary, useProfile, useSkillsetSummaries, useToday } from "../data/hooks";
 import { locale, type T, useT } from "../i18n";
@@ -51,6 +53,49 @@ function AiBanner({ state }: { state: AiState }) {
       <Chevron />
     </button>
   );
+}
+
+/** What happened to the streak while the learner was away (ADR-029): a freeze, a repair offer, a comeback. */
+function StreakNews({ profile, due }: { profile: Profile; due: number }) {
+  const t = useT();
+  const today = useToday();
+  const day = localDay();
+  const st = profile.streak;
+  if (st.repair?.day === day) {
+    const left = Math.max(1, REPAIR_SESSIONS - today.sessions);
+    return (
+      <div className="banner warn" role="status">
+        <span className="icon-dot">
+          <RotateCcw size={20} />
+        </span>
+        <span className="grow small">{left < REPAIR_SESSIONS ? t("home.repairLeft") : t("home.repair", { n: st.repair.streak })}</span>
+      </div>
+    );
+  }
+  if (st.comeback?.day === day && !st.comeback.claimed) {
+    return (
+      <div className="banner" role="status">
+        <span className="icon-dot accent">
+          <Sunrise size={20} />
+        </span>
+        <span className="grow small">
+          {t("home.comeback", { n: st.comeback.missed, e: ENERGY.comeback })}
+          {due > 0 && <span className="block muted">{t("home.comebackDue", { n: due })}</span>}
+        </span>
+      </div>
+    );
+  }
+  if (st.frozeOn?.day === day) {
+    return (
+      <div className="banner info" role="status">
+        <span className="icon-dot">
+          <Snowflake size={20} />
+        </span>
+        <span className="grow small">{t("home.frozen", { n: st.frozeOn.n })}</span>
+      </div>
+    );
+  }
+  return null;
 }
 
 function NextUp({ x, ai }: { x: SkillsetSummary; ai: AiState | undefined }) {
@@ -165,9 +210,15 @@ export function Home() {
             <p className="muted small">{longDate(localDay(), locale())}</p>
             <h1>{firstName ? t("home.hello", { name: firstName }) : t("home.helloAnon")}</h1>
           </div>
-          <button className={`streak-chip${streak ? " on" : ""}`} onClick={() => setTab("progress")} aria-label={t("home.streakAria", { n: streak })}>
-            <Flame size={18} /> {streak}
-          </button>
+          <div className="head-chips">
+            <button className="streak-chip on" onClick={() => setTab("progress")} aria-label={t("home.energyAria", { n: profile.energy ?? 0 })}>
+              <Zap size={17} /> {profile.energy ?? 0}
+            </button>
+            <button className={`streak-chip${streak ? " on" : ""}`} onClick={() => setTab("progress")} aria-label={t("home.streakAria", { n: streak })}>
+              <Flame size={18} /> {streak}
+              {(profile.freezes ?? 0) > 0 && <Snowflake size={13} className="chip-frost" aria-hidden />}
+            </button>
+          </div>
         </header>
 
         {update && (
@@ -181,6 +232,8 @@ export function Home() {
             </span>
           </button>
         )}
+
+        <StreakNews profile={profile} due={list.reduce((a, x) => a + x.due, 0)} />
 
         {ai && needsAiNote && <AiBanner state={ai} />}
 

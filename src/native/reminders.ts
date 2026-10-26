@@ -6,6 +6,7 @@ import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { localDay } from "../core/dates";
 import { DEFAULT_REMINDER_TIME, planReminders } from "../core/reminders";
+import { liveStreak } from "../core/streak";
 import { db, getProfile, updateProfile } from "../data/db";
 import { t } from "../i18n";
 
@@ -51,14 +52,16 @@ export async function scheduleReminders(): Promise<void> {
       now: new Date(),
       time: p.reminder.time,
       studiedToday: (act?.sessions ?? 0) > 0,
-      streak: p.streak.current,
+      streak: liveStreak(p.streak, today),
       dueOn: (day) => cards.filter((c) => c.due <= day).length,
+      restDays: p.restDays,
+      ageGroup: p.ageGroup,
     });
     if (!plan.length) return;
     await LocalNotifications.schedule({
       notifications: plan.map((r) => ({
         id: r.id,
-        title: r.kind === "streak" ? t("notif.streakTitle", { n: p.streak.current }) : t("notif.title"),
+        title: r.kind === "streak" ? t("notif.streakTitle", { n: liveStreak(p.streak, today) }) : t("notif.title"),
         body: r.kind === "streak" ? t("notif.streakBody") : r.due > 0 ? t("notif.bodyDue", { n: r.due }) : t("notif.body"),
         schedule: { at: r.at, allowWhileIdle: false },
         smallIcon: "ic_stat_notify",

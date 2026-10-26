@@ -26,12 +26,13 @@ vi.mock("../ai/tutor", () => tutor);
 
 import { AiError } from "../ai/client";
 import { buildCourseLesson } from "../core/course";
-import { localDay } from "../core/dates";
+import { addDays, localDay } from "../core/dates";
+import { FREEZE_COST } from "../core/energy";
 import { OfflineError } from "../core/offline";
 import type { LessonContent, LessonDraft, Session } from "../core/types";
 import { importCourse } from "./courses";
 import { db, DB_VERSION, getProfile, PesDb, updateProfile } from "./db";
-import { addSource, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, skipPlacement, wipeAll } from "./repo";
+import { addSource, buyStreakFreeze, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, setRestDays, settleStreakNow, skipPlacement, wipeAll } from "./repo";
 import { clearSnapshots, readSnapshot, restoreIfEmpty, setSnapshotStore, SNAPSHOT, SNAPSHOT_PREV, type SnapshotStore, writeSnapshot } from "./safety";
 import { CourseFinishedError, prepareSession, restartReading, usableDraft } from "./sessionService";
 
@@ -632,5 +633,65 @@ describe("schema migration", () => {
     expect(await upgraded.courses.count()).toBe(0);
     expect(await upgraded.drafts.count()).toBe(0);
     upgraded.close();
+  });
+});
+
+describe("streak & energy (ADR-029)", () => {
+  const today = () => localDay();
+  const lesson = async (skillsetId: string) => {
+    const s = await prepareSession(skillsetId, 15);
+    await passSession(s);
+    return (await db.sessions.get(s.id))!.result!;
+  };
+
+  it("a lesson earns energy, kept in the profile and in the result", async () => {
+    await onboard();
+    const s = await newSkillset();
+    const r = await lesson(s.id);
+    expect(r.energy?.[0]).toEqual({ reason: "session", amount: 5 });
+    const total = r.energy!.reduce((a, g) => a + g.amount, 0);
+    expect((await getProfile()).energy).toBe(total);
+  });
+
+  it("a freeze bought for energy keeps the streak over a missed day", async () => {
+    await updateProfile({ energy: FREEZE_COST + 1, streak: { current: 8, best: 8, lastDay: addDays(today(), -2) } });
+    expect(await buyStreakFreeze()).toBe(true);
+    expect(await buyStreakFreeze()).toBe(false); // not enough energy left
+    await settleStreakNow();
+    const p = await getProfile();
+    expect(p.freezes).toBe(0);
+    expect(p.energy).toBe(1);
+    expect(p.streak.current).toBe(8);
+    expect(p.streak.kept?.[addDays(today(), -1)]).toBe("freeze");
+    const s = await newSkillset();
+    expect((await lesson(s.id)).streak).toBe(9);
+  });
+
+  it("two lessons the day after one missed day win the streak back", async () => {
+    await updateProfile({ streak: { current: 12, best: 12, lastDay: addDays(today(), -2) } });
+    await settleStreakNow();
+    expect((await getProfile()).streak.repair?.streak).toBe(12);
+    const s = await newSkillset();
+    const first = await lesson(s.id);
+    expect(first.streak).toBe(1);
+    expect(first.repaired).toBeUndefined();
+    const second = await lesson(s.id);
+    expect(second.repaired).toBe(true);
+    expect(second.streak).toBe(13);
+    expect((await getProfile()).streak.best).toBe(13);
+  });
+
+  it("coming back after days away pays a bonus once", async () => {
+    await updateProfile({ streak: { current: 5, best: 5, lastDay: addDays(today(), -5) } });
+    const s = await newSkillset();
+    const first = await lesson(s.id);
+    expect(first.energy?.some((g) => g.reason === "comeback")).toBe(true);
+    const second = await lesson(s.id);
+    expect(second.energy?.some((g) => g.reason === "comeback")).toBe(false);
+  });
+
+  it("rest days are stored normalized", async () => {
+    await setRestDays([6, 5, 5, 3]);
+    expect((await getProfile()).restDays).toEqual([3, 5]);
   });
 });

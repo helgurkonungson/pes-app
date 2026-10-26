@@ -1,7 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { Directory, Encoding, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
-import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Flag, Folder, GraduationCap, Server, Sparkles, SunMoon, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
+import { Activity, BarChart3, Bell, Bot, Bug, Check, ChevronLeft, ChevronRight, Code, Download, Moon, Flag, Folder, GraduationCap, Server, Sparkles, SunMoon, KeyRound, RefreshCw, ShieldCheck, Target, Trash2, Upload, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useUpdate } from "../app/App";
 import { AiError, listModels, type ModelInfo, testKey } from "../ai/client";
@@ -16,13 +16,14 @@ import { useBackupRestore } from "../components/FilePickers";
 import { confirmDialog, ExtLink, Group, MenuRow, MinutesPicker, openExternal, PageTitle, Segmented, SectionLabel, Sheet, toast, Toggle } from "../components/ui";
 import { formatTokens, monthKey } from "../ai/usage";
 import { DEFAULT_REMINDER_TIME } from "../core/reminders";
-import { setReminder } from "../native/reminders";
+import { scheduleReminders, setReminder } from "../native/reminders";
 import type { AiMode, ProviderId } from "../core/types";
 import type { T } from "../i18n";
-import { localDay } from "../core/dates";
+import { localDay, weekdayShort } from "../core/dates";
+import { MAX_REST_DAYS } from "../core/streak";
 import { updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
-import { exportBackup, wipeAll } from "../data/repo";
+import { exportBackup, setRestDays, wipeAll } from "../data/repo";
 import { clearSnapshots } from "../data/safety";
 import { locale, useT } from "../i18n";
 import { useNav } from "../nav/store";
@@ -40,7 +41,7 @@ export function Settings() {
   /** Free AI sheet: a provider to open directly, "gemini-direct", or "" for the list; null = closed. */
   const [freeSheet, setFreeSheet] = useState<ProviderId | "gemini-direct" | "" | null>(null);
   const [providerView, setProviderView] = useState<"top" | "other">("top");
-  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server" | "reminder">(null);
+  const [sheet, setSheet] = useState<null | "name" | "goal" | "key" | "model" | "folder" | "provider" | "server" | "reminder" | "rest">(null);
   const [notifBlocked, setNotifBlocked] = useState(false);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -172,6 +173,13 @@ export function Settings() {
             <MenuRow icon={<User size={20} />} label={t("settings.name")} value={profile.name} onClick={() => (setDraft(profile.name), setSheet("name"))} />
             <UiLanguageRow value={profile.uiLanguage ?? "system"} onChange={(v) => updateProfile({ uiLanguage: v })} />
             <MenuRow icon={<Target size={20} />} label={t("settings.goal")} value={t("portion.min", { n: profile.dailyGoal })} onClick={() => setSheet("goal")} />
+            <MenuRow
+              icon={<Moon size={20} />}
+              label={t("settings.restDays")}
+              hint={t("settings.restDaysHint")}
+              value={profile.restDays?.length ? profile.restDays.map((d) => weekdayShort(d, locale())).join(", ") : t("settings.restDaysNone")}
+              onClick={() => setSheet("rest")}
+            />
             {Capacitor.isNativePlatform() && (
               <MenuRow
                 icon={<Bell size={20} />}
@@ -320,6 +328,37 @@ export function Settings() {
         <Sheet title={t("settings.goal")} onClose={() => setSheet(null)}>
           <div className="stack-lg">
             <MinutesPicker value={profile.dailyGoal} onChange={(m) => updateProfile({ dailyGoal: m })} label={t("settings.goal")} />
+            <button className="btn primary block" onClick={() => setSheet(null)}>
+              {t("common.done")}
+            </button>
+          </div>
+        </Sheet>
+      )}
+
+      {sheet === "rest" && (
+        <Sheet title={t("settings.restDays")} onClose={() => setSheet(null)}>
+          <div className="stack-lg">
+            <div className="weekday-pick" role="group" aria-label={t("settings.restDays")}>
+              {Array.from({ length: 7 }, (_, i) => {
+                const days = profile.restDays ?? [];
+                const on = days.includes(i);
+                return (
+                  <button
+                    key={i}
+                    className={on ? "on" : ""}
+                    aria-pressed={on}
+                    disabled={!on && days.length >= MAX_REST_DAYS}
+                    onClick={async () => {
+                      await setRestDays(on ? days.filter((d) => d !== i) : [...days, i]);
+                      void scheduleReminders();
+                    }}
+                  >
+                    {weekdayShort(i, locale())}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="faint small">{t("settings.restDaysHint")}</p>
             <button className="btn primary block" onClick={() => setSheet(null)}>
               {t("common.done")}
             </button>

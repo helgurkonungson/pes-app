@@ -2,7 +2,9 @@
  * What the daily reminder says and when it fires. Pure — the native scheduling lives in
  * src/native/reminders.ts.
  */
+import type { AgeGroup } from "./age";
 import { addDays } from "./dates";
+import { isRestDay } from "./streak";
 
 export const DEFAULT_REMINDER_TIME = "19:00";
 /** Evening nudge when a streak would break today. */
@@ -25,19 +27,33 @@ export function atLocal(day: string, time: string): Date {
 
 /**
  * Reminders for the next `days` days: one daily reminder at `time` (not today if the
- * learner already studied or the time has passed) and, if a streak is running and today
- * isn't done yet, an evening "streak at risk" nudge.
+ * learner already studied or the time has passed, never on a rest day) and, if a streak is
+ * running and today isn't done yet, an evening "streak at risk" nudge — for adults only.
  */
-export function planReminders(opts: { today: string; now: Date; time: string; studiedToday: boolean; streak: number; dueOn: (day: string) => number; days?: number }): ReminderPlan[] {
+export function planReminders(opts: {
+  today: string;
+  now: Date;
+  time: string;
+  studiedToday: boolean;
+  streak: number;
+  dueOn: (day: string) => number;
+  days?: number;
+  /** Planned rest days (ADR-029): no reminders on them. */
+  restDays?: readonly number[];
+  /** Streak pressure ("ends tonight") is off for children and teens (ADR-029). */
+  ageGroup?: AgeGroup;
+}): ReminderPlan[] {
   const out: ReminderPlan[] = [];
   const days = opts.days ?? 7;
   for (let i = 0; i < days; i++) {
     const day = addDays(opts.today, i);
     const at = atLocal(day, opts.time);
     if (i === 0 && (opts.studiedToday || at <= opts.now)) continue;
+    if (isRestDay(day, opts.restDays)) continue;
     out.push({ id: 1000 + i, at, kind: "daily", due: opts.dueOn(day) });
   }
   const risk = atLocal(opts.today, STREAK_RISK_TIME);
-  if (opts.streak > 0 && !opts.studiedToday && risk > opts.now && atLocal(opts.today, opts.time) < risk) out.push({ id: 1100, at: risk, kind: "streak", due: opts.dueOn(opts.today) });
+  const pressure = opts.ageGroup !== "child" && opts.ageGroup !== "teen" && !isRestDay(opts.today, opts.restDays);
+  if (pressure && opts.streak > 0 && !opts.studiedToday && risk > opts.now && atLocal(opts.today, opts.time) < risk) out.push({ id: 1100, at: risk, kind: "streak", due: opts.dueOn(opts.today) });
   return out;
 }

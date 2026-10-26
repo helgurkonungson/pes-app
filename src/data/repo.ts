@@ -1,14 +1,15 @@
 /** Data operations used by the screens. All writes go through here. */
 import { badgeById, newBadges } from "../core/badges";
 import type { ChunkDraft } from "../core/chunker";
-import { localDay } from "../core/dates";
+import { addDays, localDay, weekOf } from "../core/dates";
 import { mistakesOf, tallyLesson } from "../core/flow";
 import { nowIso, uid } from "../core/ids";
 import { advanceCursor, clampMinutes, coverage } from "../core/planner";
 import { levelFromXp, scorePlacement, skippedPlacement, XP } from "../core/scoring";
-import { registerDay } from "../core/streak";
+import { buyFreeze, cleanWeekToAward, sessionEnergy, totalEnergy } from "../core/energy";
+import { liveStreak, normalizeRestDays, registerDay, settleStreak } from "../core/streak";
 import { cardId, review } from "../core/srs";
-import type { Card, Chunk, DayActivity, LessonLanguage, Mcq, Session, SessionResult, Skillset, Source, SourceKind } from "../core/types";
+import type { Card, Chunk, DayActivity, LessonLanguage, Mcq, Profile, Session, SessionResult, Skillset, Source, SourceKind } from "../core/types";
 import { db, getProfile } from "./db";
 
 // ---------- skillsets ----------
@@ -205,9 +206,17 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
     if (session.status === "done" && session.result) return session.result;
     const skillset = await db.skillsets.get(session.skillsetId);
     if (!skillset) throw new Error("Skillset not found");
-    const profile = await getProfile();
     const today = localDay();
-    const streakState = registerDay(profile.streak, today);
+    // missed days first: freezes, rest days, a repair offer, a comeback (ADR-029)
+    const profile = settledProfile(await getProfile(), today);
+    const sessionsToday = ((await db.activity.get(today))?.sessions ?? 0) + 1;
+    const { repaired, ...streakState } = registerDay(profile.streak, today, sessionsToday);
+    const streakBefore = repaired ? (profile.streak.repair?.streak ?? 0) : liveStreak(profile.streak, today);
+    const comeback = !!profile.streak.comeback && profile.streak.comeback.day === today && !profile.streak.comeback.claimed;
+    if (comeback) streakState.comeback = { ...profile.streak.comeback!, claimed: true };
+    const lastWeek = weekOf(addDays(today, -7));
+    const lastWeekActive = await db.activity.where("day").between(lastWeek[0], lastWeek[6], true, true).toArray();
+    const cleanWeek = cleanWeekToAward(today, new Set(lastWeekActive.filter((a) => a.sessions > 0).map((a) => a.day)), profile.restDays, profile.cleanWeek);
     const minutesSpent = Math.max(1, Math.min(session.minutes * 2, Math.round(session.progress.seconds / 60)));
 
     let xp = 0;
@@ -216,6 +225,7 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
     let openScore: number | undefined;
     const skillsetPatch: Partial<Skillset> = {};
 
+    let reviewCorrect = 0;
     let checkpoint: SessionResult["checkpoint"];
     if (session.kind === "placement" && session.placement) {
       const r = scorePlacement(session.placement.questions, session.progress.mcq, nowIso());
@@ -242,6 +252,7 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
       xp = t.xp;
       correct = t.correct;
       total = t.total;
+      reviewCorrect = t.reviewCorrect;
       // badges like "Deep Thinker" need an AI grade; self-checks still earn XP
       openScore = session.progress.grade && !session.progress.grade.self ? session.progress.grade.score : undefined;
       const chunks = (await db.chunks.bulkGet(session.chunkIds)).filter((c): c is Chunk => !!c);
@@ -288,6 +299,7 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
         streak: streakState.current,
         skillsets: await db.skillsets.count(),
         level: levelAfter,
+        cleanWeek: !!cleanWeek,
         last: {
           kind: session.kind,
           minutes: session.minutes,
@@ -302,6 +314,8 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
     const badgeMap = { ...profile.badges };
     for (const id of earned) if (badgeById(id)) badgeMap[id] = nowIso();
 
+    const energy = sessionEnergy({ kind: session.kind, correct, total, reviewCorrect, checkpoint, streakBefore, streakAfter: streakState.current, comeback, cleanWeek: !!cleanWeek });
+
     const result: SessionResult = {
       xp,
       correct,
@@ -312,6 +326,8 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
       badges: earned,
       levelUp: levelAfter > levelBefore ? levelAfter : undefined,
       streak: streakState.current,
+      energy,
+      ...(repaired ? { repaired } : {}),
     };
 
     await db.sessions.put({ ...session, status: "done", finishedAt: nowIso(), result });
@@ -323,10 +339,52 @@ export async function completeSession(sessionId: string): Promise<SessionResult>
       total: skillset.total + total,
       minutesSpent: skillset.minutesSpent + minutesSpent,
     });
-    await db.profile.put({ ...profile, xp: newXp, streak: streakState, badges: badgeMap });
+    await db.profile.put({
+      ...profile,
+      xp: newXp,
+      streak: streakState,
+      badges: badgeMap,
+      energy: (profile.energy ?? 0) + totalEnergy(energy),
+      ...(cleanWeek ? { cleanWeek } : {}),
+    });
     await bumpActivity(today, { minutes: minutesSpent, xp, sessions: 1, correct, total });
     return result;
   });
+}
+
+// ---------- streak & energy (ADR-029) ----------
+
+/** The profile with missed days settled up to yesterday (freezes spent, repair/comeback offered). */
+function settledProfile(p: Profile, today: string): Profile {
+  const freezes = p.freezes ?? 0;
+  const { state, freezesUsed } = settleStreak(p.streak, today, { restDays: p.restDays, freezes });
+  return { ...p, streak: state, freezes: freezes - freezesUsed };
+}
+
+/** Settles missed days now (on start and on return to the app). Writes only when something changed. */
+export async function settleStreakNow(today = localDay()): Promise<void> {
+  await db.transaction("rw", db.profile, async () => {
+    const p = await db.profile.get("me");
+    if (!p) return;
+    const next = settledProfile(p, today);
+    if (JSON.stringify(next) !== JSON.stringify({ ...p, freezes: p.freezes ?? 0 })) await db.profile.put(next);
+  });
+}
+
+/** Buys one streak freeze for energy. False when there isn't enough energy or the stock is full. */
+export async function buyStreakFreeze(): Promise<boolean> {
+  return db.transaction("rw", db.profile, async () => {
+    const p = await getProfile();
+    const next = buyFreeze(p.energy ?? 0, p.freezes ?? 0);
+    if (!next) return false;
+    await db.profile.put({ ...p, ...next });
+    return true;
+  });
+}
+
+export async function setRestDays(days: number[]): Promise<void> {
+  const p = await getProfile();
+  await db.profile.put({ ...p, restDays: normalizeRestDays(days) });
 }
 
 // ---------- backup ----------
