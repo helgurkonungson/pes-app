@@ -10,7 +10,7 @@ import { Check, ExternalLink, Loader2, ShieldAlert, Sparkles } from "lucide-reac
 import { useEffect, useRef, useState } from "react";
 import { AiError, testKey } from "../ai/client";
 import { http } from "../ai/compat";
-import { AI_STUDIO_KEYS, CLOUD_SCOPE, CONSENT_VERSION, createGeminiKey, GEMINI_TERMS, GeminiSetupError, geminiKeyIn, type SetupFailure, type SetupStep } from "../ai/geminiSetup";
+import { AI_STUDIO_KEYS, CLOUD_SCOPE, CONSENT_VERSION, createGeminiKey, GEMINI_TERMS, GeminiSetupError, geminiKeyIn, isRegionBlocked, type SetupFailure, type SetupStep } from "../ai/geminiSetup";
 import { setApiKey } from "../ai/key";
 import { pickDefaultModel } from "../ai/providers";
 import { getProfile, updateProfile } from "../data/db";
@@ -44,7 +44,8 @@ async function adoptKey(key: string, auto: boolean): Promise<void> {
   });
 }
 
-export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onDone: () => void }) {
+/** `onUseOpenRouter`: where Google doesn't offer Gemini, the error screen offers OpenRouter instead. */
+export function GeminiSetupSheet({ onClose, onDone, onUseOpenRouter }: { onClose: () => void; onDone: () => void; onUseOpenRouter?: () => void }) {
   const t = useT();
   const [state, setState] = useState<State>({ k: "consent" });
   const [agreed, setAgreed] = useState(false);
@@ -71,7 +72,7 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
       finish();
     } catch (e) {
       if (e instanceof GoogleSignInCancelled) return setState({ k: "consent" });
-      const reason: SetupFailure = e instanceof GeminiSetupError ? e.reason : e instanceof AiError && e.kind === "network" ? "network" : "unknown";
+      const reason: SetupFailure = e instanceof GeminiSetupError ? e.reason : isRegionBlocked(e) ? "region" : e instanceof AiError && e.kind === "network" ? "network" : "unknown";
       const detail = e instanceof Error ? e.message : String(e);
       if (reason === "denied") token.current = null;
       void logEvent("ai", `Gemini setup: ${reason}`, detail);
@@ -102,6 +103,7 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
       await adoptKey(key, false);
       finish();
     } catch (e) {
+      if (isRegionBlocked(e)) return setState({ k: "error", reason: "region" });
       setState({ k: "manual", error: e instanceof AiError ? t("gemini.manualBad") : t("settings.keyCheckFailed") });
     }
   };
@@ -127,6 +129,7 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
     denied: "gemini.errDenied",
     quota: "gemini.errQuota",
     config: "gemini.errConfig",
+    region: "gemini.errRegion",
     network: "gemini.errNetwork",
     unknown: "gemini.errUnknown",
   };
@@ -213,9 +216,17 @@ export function GeminiSetupSheet({ onClose, onDone }: { onClose: () => void; onD
               {t("common.retry")}
             </button>
           )}
-          <button className={`btn ${state.reason === "quota" || state.reason === "config" ? "primary" : "dark"} block`} onClick={() => void openKeyPage("pickup")}>
-            {t("gemini.manualInstead")}
-          </button>
+          {state.reason === "region" ? (
+            onUseOpenRouter && (
+              <button className="btn primary block" onClick={onUseOpenRouter}>
+                <Sparkles size={20} /> {t("gemini.useOpenRouter")}
+              </button>
+            )
+          ) : (
+            <button className={`btn ${state.reason === "quota" || state.reason === "config" ? "primary" : "dark"} block`} onClick={() => void openKeyPage("pickup")}>
+              {t("gemini.manualInstead")}
+            </button>
+          )}
         </div>
       )}
 

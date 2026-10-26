@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="referrer" content="no-referrer">
+<title>Back to Chompbook</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body><main>
+<h1 id="h">Returning to Chompbook…</h1>
+<p id="p" class="muted">If the app didn't open by itself, tap the button.</p>
+<p><a id="open" class="btn" href="#">Open Chompbook</a></p>
+<p id="err" class="muted" hidden></p>
+<script>
+// OpenRouter sends the one-time sign-in code here; this page only passes it to the app on this phone.
+// The code is useless without the secret that never left the app (PKCE). Nothing is stored or logged.
+(function () {
+  var ru = /^(ru|uk|be|kk|ky|tg)\b/i.test(navigator.language || "");
+  if (ru) {
+    document.documentElement.lang = "ru";
+    document.title = "Назад в Грызи";
+    document.getElementById("h").textContent = "Возвращаемся в Грызи…";
+    document.getElementById("p").textContent = "Если приложение не открылось само, нажмите кнопку.";
+    document.getElementById("open").textContent = "Открыть Грызи";
+  }
+  var q = location.search;
+  var app = "io.github.helgurkonungson.pes://oauth/openrouter" + q;
+  var intent = "intent://oauth/openrouter" + q + "#Intent;scheme=io.github.helgurkonungson.pes;package=io.github.helgurkonungson.pes;end";
+  var android = /Android/i.test(navigator.userAgent);
+  var link = android ? intent : app;
+  document.getElementById("open").href = link;
+  if (window.opener) {
+    // the web version of the app opened this sign-in in a new tab
+    try { window.opener.postMessage({ type: "pes-oauth", url: location.href }, "*"); } catch (e) {}
+    setTimeout(function () { window.close(); }, 300);
+    return;
+  }
+  if (!/[?&](code|error)=/.test(q)) {
+    var e = document.getElementById("err");
+    e.hidden = false;
+    e.textContent = ru ? "Ссылка неполная — начните вход заново в приложении." : "This link is incomplete — start the sign-in again in the app.";
+  }
+  location.replace(link);
+})();
+</script>
+</main></body>
+</html>

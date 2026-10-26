@@ -218,6 +218,9 @@ a { color: var(--accent-ink); }
 .btn.ghost { background: transparent; color: var(--accent-ink); height: 44px; }
 .btn.danger { background: var(--bad-soft); color: var(--bad); }
 .btn.block { width: 100%; }
+/* full-width buttons wrap a long label (German, Ukrainian, 320 px) instead of running past the edge */
+.btn.block { white-space: normal; height: auto; min-height: 54px; padding-block: 8px; line-height: 1.2; text-align: center; }
+.btn.ghost.block { min-height: 44px; }
 .btn.sm { height: 40px; font-size: 14px; padding: 0 16px; }
 .cta-bar {
   position: absolute; left: 0; right: 0; bottom: 0; padding: 14px calc(var(--side) + 6px) calc(var(--sab) + 14px);

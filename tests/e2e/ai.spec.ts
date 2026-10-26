@@ -173,6 +173,8 @@ test("Alice AI: a valid key without folder rights explains how to fix it", async
 });
 
 test.describe("Gemini, Groq and a custom server", () => {
+  // the free-AI screen depends on the phone's time zone (where Gemini works); India: everything is offered
+  test.use({ timezoneId: "Asia/Kolkata" });
   const lessonReply = async (route: import("@playwright/test").Route, asText = false) => {
     const { compatRequest, toolInput } = await import("./helpers");
     const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
@@ -270,8 +272,9 @@ test.describe("Gemini, Groq and a custom server", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 15));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
-    for (const name of [/^Gemini/, /^Groq/, /^OpenRouter/]) await expect(dialog.getByRole("button", { name })).toBeDisabled();
-    await expect(dialog.getByText("Доступно с 18 лет").first()).toBeVisible();
+    // only the services a teen may use are offered — no adult-only ones, no "Other services"
+    await expect(dialog.getByRole("button", { name: /^(Gemini|Groq|OpenRouter)/ })).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: /Другие сервисы/ })).toHaveCount(0);
     await dialog.getByRole("button", { name: /^Mistral/ }).click();
     await expect(dialog.getByText(/Mistral может использовать ваши материалы/)).toBeVisible();
     const open = dialog.getByRole("button", { name: "Открыть страницу ключей Mistral" });
@@ -313,6 +316,8 @@ test.describe("Gemini, Groq and a custom server", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 40));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
+    await expect(dialog.getByRole("button", { name: /^Groq/ })).toHaveCount(0); // behind "Other services"
+    await dialog.getByRole("button", { name: /Другие сервисы/ }).click();
     await dialog.getByRole("button", { name: /^Groq/ }).click();
     await expect(dialog.getByText(/не использует ваши материалы для обучения/)).toBeVisible();
     await expect(dialog.getByRole("checkbox", { name: /родители/ })).toHaveCount(0);
@@ -324,6 +329,34 @@ test.describe("Gemini, Groq and a custom server", () => {
     await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
     await expect(page.getByText("Groq подключён — уроки будут с AI")).toBeVisible();
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gpt-oss-120b");
+  });
+
+  test("Gemini isn't offered in the learner's country: a clear error and OpenRouter instead, no minute of retries", async ({ page, context }) => {
+    const KEY = "AIzaSyD-0123456789abcdefghijklmnopqrstu";
+    await mockApis(page, "credits");
+    let checks = 0;
+    await page.route("https://generativelanguage.googleapis.com/**", (route) => {
+      checks++;
+      return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify([{ error: { code: 400, message: "User location is not supported for the API use.", status: "FAILED_PRECONDITION" } }]) });
+    });
+    await context.route("https://aistudio.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>AI Studio</h1>" }));
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 30));
+    await dialog.getByRole("button", { name: "Продолжить" }).click();
+    await dialog.getByRole("button", { name: /^Gemini/ }).click();
+    await dialog.getByRole("checkbox").check();
+    const popup = page.waitForEvent("popup");
+    await dialog.getByRole("button", { name: "Открыть страницу ключей Google" }).click();
+    await (await popup).close();
+    await dialog.getByRole("textbox", { name: "Ключ Gemini" }).fill(KEY);
+    await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
+    await expect(dialog.getByRole("alert")).toContainText("Google не предоставляет Gemini API в вашей стране");
+    expect(checks).toBeLessThanOrEqual(2);
+    await dialog.getByRole("button", { name: "Подключить OpenRouter" }).click();
+    await expect(dialog.getByRole("button", { name: "Войти через OpenRouter" })).toBeVisible();
   });
 
   test("Gemini overloaded: retries, then Google's own words + a hint; Retry then works", async ({ page }) => {
@@ -523,5 +556,70 @@ test.describe("Gemini, Groq and a custom server", () => {
     await page.getByRole("dialog").getByRole("textbox").fill("http://10.0.0.9:1234/v1");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
     await expect(page.getByRole("alert")).toContainText("принимает подключения с других устройств");
+  });
+});
+
+test.describe("OpenRouter in one tap (Russia)", () => {
+  test.use({ timezoneId: "Europe/Moscow" });
+
+  test("sign in on openrouter.ai → the app comes back by the deep link → the key is swapped, checked and OpenRouter becomes the provider", async ({ page, context }) => {
+    const KEY = "sk-or-v1-0123456789abcdef0123456789abcdef";
+    await mockApis(page, "credits");
+    let exchanged: Record<string, unknown> | null = null;
+    await page.route("https://openrouter.ai/api/v1/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/auth/keys")) {
+        exchanged = JSON.parse(route.request().postData() ?? "{}");
+        return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ key: KEY, user_id: "u1" }) });
+      }
+      expect(route.request().headers()["authorization"]).toBe(`Bearer ${KEY}`);
+      if (url.endsWith("/key")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: { label: "Chompbook", is_free_tier: true } }) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "openai/gpt-5" }, { id: "meta-llama/llama-3.3-70b-instruct:free" }] }) });
+    });
+    await context.route("https://openrouter.ai/auth**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>OpenRouter sign-in</h1>" }));
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await btn(page, /Подключить бесплатный AI/).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 30));
+    await dialog.getByRole("button", { name: "Продолжить" }).click();
+    // in Russia Google doesn't offer Gemini: OpenRouter is the one recommended service, the rest are tucked away
+    await expect(dialog.getByRole("button", { name: /^Gemini/ })).toHaveCount(0);
+    await expect(dialog.getByRole("button", { name: /^OpenRouter/ })).toContainText("проще всего");
+    await dialog.getByRole("button", { name: /Другие сервисы/ }).click();
+    await expect(dialog.getByRole("button", { name: /^Gemini/ })).toBeVisible();
+    await dialog.getByRole("button", { name: /^OpenRouter/ }).click();
+    await expect(dialog.getByText(/около 50 запросов к AI в день/)).toBeVisible();
+    await expect(dialog.getByText(/OpenRouter может использовать ваши материалы/)).toBeVisible();
+    const signIn = dialog.getByRole("button", { name: "Войти через OpenRouter" });
+    await expect(signIn).toBeDisabled();
+    await dialog.getByRole("checkbox", { name: /принимаю/ }).check();
+    const popupP = page.waitForEvent("popup");
+    await signIn.click();
+    const popup = await popupP;
+    const auth = new URL(popup.url());
+    await popup.close();
+    expect(auth.origin + auth.pathname).toBe("https://openrouter.ai/auth");
+    expect(auth.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(auth.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    const callback = new URL(auth.searchParams.get("callback_url") ?? "");
+    expect(callback.origin + callback.pathname).toBe("https://chompbook.online/oauth/openrouter/");
+    await expect(dialog.getByText(/Завершите вход на странице OpenRouter/)).toBeVisible();
+    // a link with a foreign state is refused
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: "io.github.helgurkonungson.pes://oauth/openrouter?code=evil&state=forged" })));
+    await expect(dialog.getByRole("alert")).toContainText("Попробуйте ещё раз");
+    expect(exchanged).toBeNull();
+    // the real sign-in: the callback page opens the app with the code and our state
+    const popup2P = page.waitForEvent("popup");
+    await dialog.getByRole("button", { name: "Повторить" }).click();
+    const auth2 = new URL((await popup2P).url());
+    const state = new URL(auth2.searchParams.get("callback_url") ?? "").searchParams.get("state");
+    await page.evaluate((s) => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: `io.github.helgurkonungson.pes://oauth/openrouter?state=${s}&code=one-time-code` })), state);
+    await expect(page.getByText("OpenRouter подключён — уроки будут с AI")).toBeVisible();
+    expect(exchanged).toMatchObject({ code: "one-time-code", code_challenge_method: "S256" });
+    expect(String((exchanged as unknown as { code_verifier: string }).code_verifier)).toMatch(/^[A-Za-z0-9_-]{43,128}$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("OpenRouter");
+    await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("llama-3.3-70b-instruct:free");
   });
 });

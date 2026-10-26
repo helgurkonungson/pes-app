@@ -1,53 +1,59 @@
 /**
- * Connecting a free AI service with as few steps as possible (ADR-021, ADR-023):
- * a neutral age screen once (only the band is kept), then a list of free services the
- * learner's age allows. Gemini creates its key automatically; Groq, Mistral and OpenRouter
- * open their key page inside the app and pick the copied key from the clipboard.
+ * Connecting a free AI service with as few steps as possible (ADR-021, ADR-023, ADR-028):
+ * a neutral age screen once (only the band is kept), then one recommended service for this
+ * learner — OpenRouter in one tap (sign in, the key comes back by itself) for adults
+ * everywhere, Gemini too where Google offers it — and the rest under "Other services".
  */
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
-import { Check, ChevronRight, ExternalLink, ShieldAlert, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ExternalLink, KeyRound, Loader2, ShieldAlert, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { AiError, testKey } from "../ai/client";
-import { FREE_CONSENT_VERSION, FREE_PROVIDERS, type FreeProvider, freeProvider } from "../ai/freeProviders";
-import { setApiKey } from "../ai/key";
-import { pickDefaultModel, PROVIDERS } from "../ai/providers";
+import { AiError } from "../ai/client";
+import { adoptFreeKey } from "../ai/freeKey";
+import { type FreeProvider, freeProvider } from "../ai/freeProviders";
+import { type OrStatus, useOpenRouter } from "../ai/openrouterConnect";
+import { PROVIDERS } from "../ai/providers";
 import { meetsMinAge } from "../core/age";
+import { freeAiPlan, phoneTimeZone } from "../core/freeAiPlan";
 import { AgeBlocked, AgeGate } from "./AgeGate";
 import type { ProviderId } from "../core/types";
-import { getProfile, updateProfile } from "../data/db";
 import { useProfile } from "../data/hooks";
 import { type Key, useT } from "../i18n";
-import { googleSignInAvailable } from "../native/googleAuth";
 import { GeminiSetupSheet } from "./GeminiSetup";
 import { ExtLink, Sheet, toast } from "./ui";
 
-/** Saves a verified key, makes the provider active and records the consent. */
-export async function adoptFreeKey(id: ProviderId, key: string): Promise<void> {
-  const models = await testKey(key, id);
-  await setApiKey(key, id);
-  const p = await getProfile();
-  const model = p.providerModels?.[id] || pickDefaultModel(id, models.map((m) => m.id));
-  await updateProfile({
-    provider: id,
-    aiBlock: undefined,
-    providerModels: { ...p.providerModels, ...(model ? { [id]: model } : {}) },
-    aiConsents: { ...p.aiConsents, [id]: { version: FREE_CONSENT_VERSION, at: new Date().toISOString() } },
-  });
-}
+export { adoptFreeKey };
 
 const NAME = (id: ProviderId) => PROVIDERS[id].name;
 
-/** "Free AI": age screen → list of free services → the chosen connection. */
+/** "Free AI": age screen → the recommended service (+ "Other services") → the chosen connection. */
 export function FreeAiSheet({ onClose, onDone, initial }: { onClose: () => void; onDone: () => void; initial?: ProviderId }) {
   const t = useT();
   const profile = useProfile();
   const [pick, setPick] = useState<ProviderId | null>(initial ?? null);
+  const [more, setMore] = useState(false);
   if (!profile) return null;
   const group = profile.ageGroup;
+  const back = initial ? undefined : () => setPick(null);
 
-  if (pick === "gemini") return <GeminiSetupSheet onClose={onClose} onDone={onDone} />;
-  if (pick) return <AssistedConnectSheet id={pick} onClose={onClose} onDone={onDone} onBack={initial ? undefined : () => setPick(null)} />;
+  if (pick === "gemini") return <GeminiSetupSheet onClose={onClose} onDone={onDone} onUseOpenRouter={group === "adult" ? () => setPick("openrouter") : undefined} />;
+  if (pick === "openrouter") return <OpenRouterConnectSheet onClose={onClose} onDone={onDone} onBack={back} onManual={() => setPick("openrouter-manual" as ProviderId)} />;
+  if ((pick as string) === "openrouter-manual") return <AssistedConnectSheet id="openrouter" onClose={onClose} onDone={onDone} onBack={() => setPick("openrouter")} />;
+  if (pick) return <AssistedConnectSheet id={pick} onClose={onClose} onDone={onDone} onBack={back} />;
+
+  const plan = freeAiPlan(group, phoneTimeZone());
+  const card = (id: ProviderId, first: boolean) => (
+    <button key={id} className="list-card inner" onClick={() => setPick(id)} aria-label={`${NAME(id)}. ${t(`free.${id}` as Key)}`}>
+      <span className="grow" style={{ textAlign: "left" }}>
+        <span className="bold block">
+          {NAME(id)}
+          {first && <span className="pill accent tiny-pill">{t("free.recommended")}</span>}
+        </span>
+        <span className="small muted block">{t(`free.${id}` as Key)}</span>
+      </span>
+      <ChevronRight size={20} className="muted" aria-hidden />
+    </button>
+  );
 
   return (
     <Sheet title={t("free.title")} onClose={onClose}>
@@ -60,22 +66,120 @@ export function FreeAiSheet({ onClose, onDone, initial }: { onClose: () => void;
           <p className="muted small" style={{ marginBottom: 6 }}>
             {t("free.lead")}
           </p>
-          {FREE_PROVIDERS.map((fp) => {
-            const ok = meetsMinAge(group, fp.minAge);
-            return (
-              <button key={fp.id} className="list-card inner" disabled={!ok} onClick={() => setPick(fp.id)} aria-label={`${NAME(fp.id)}. ${t(`free.${fp.id}` as Key)}`}>
-                <span className="grow" style={{ textAlign: "left" }}>
-                  <span className="bold block">
-                    {NAME(fp.id)}
-                    {fp.id === "gemini" && <span className="pill accent tiny-pill">{t("free.recommended")}</span>}
-                  </span>
-                  <span className="small muted block">{t(`free.${fp.id}` as Key)}</span>
-                  {!ok && <span className="small block warn-text">{t("free.from18")}</span>}
-                </span>
-                {ok && <ChevronRight size={20} className="muted" aria-hidden />}
+          {plan.primary.map((id, i) => card(id, i === 0))}
+          {plan.others.length > 0 && (
+            <>
+              <button className="btn ghost block small" aria-expanded={more} onClick={() => setMore((m) => !m)}>
+                {t("free.others")} <ChevronDown size={18} aria-hidden style={{ transform: more ? "rotate(180deg)" : undefined }} />
               </button>
-            );
-          })}
+              {more && plan.others.map((id) => card(id, false))}
+            </>
+          )}
+        </div>
+      )}
+    </Sheet>
+  );
+}
+
+const OR_ERRORS: Record<Extract<OrStatus, { stage: "error" }>["kind"], Key> = {
+  expired: "or.errExpired",
+  state: "or.errExpired",
+  denied: "or.errDenied",
+  network: "or.errNetwork",
+  key: "or.errKey",
+  unknown: "or.errUnknown",
+};
+
+/** OpenRouter in one tap: consent → sign in on openrouter.ai → the app comes back with the key. */
+export function OpenRouterConnectSheet({ onClose, onDone, onBack, onManual }: { onClose: () => void; onDone: () => void; onBack?: () => void; onManual: () => void }) {
+  const t = useT();
+  const profile = useProfile();
+  const fp = freeProvider("openrouter") as FreeProvider;
+  const { status, start, reset } = useOpenRouter();
+  const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => {
+    if (status.stage === "done") {
+      reset();
+      onDone();
+    }
+  }, [status.stage, reset, onDone]);
+  // a sign-in left over from an earlier visit is not this one
+  useEffect(() => {
+    if (useOpenRouter.getState().status.stage !== "connecting") reset();
+  }, [reset]);
+
+  if (!profile) return null;
+  const group = profile.ageGroup;
+  const go = () => void start().catch(() => toast(t("or.errUnknown")));
+
+  return (
+    <Sheet title={t("free.connectTitle", { name: "OpenRouter" })} onClose={onClose}>
+      {!group ? (
+        <AgeGate onDone={() => undefined} />
+      ) : !meetsMinAge(group, fp.minAge) ? (
+        <AgeBlocked onClose={onClose} />
+      ) : status.stage === "idle" || status.stage === "done" ? (
+        <div className="stack-lg">
+          <p className="muted">{t("or.lead")}</p>
+          <ul className="gemini-list small">
+            {(["or.what1", "or.what2", "or.limit"] as Key[]).map((k) => (
+              <li key={k}>
+                <Check size={16} aria-hidden /> <span>{t(k)}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="banner warn small" role="note">
+            <ShieldAlert size={18} aria-hidden />
+            <span className="grow">{t("free.trains", { name: "OpenRouter" })}</span>
+          </div>
+          <label className="check-row">
+            <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+            <span>
+              {t("free.agree", { name: "OpenRouter" })} <ExtLink href={fp.termsUrl}>{t("free.terms", { name: "OpenRouter" })}</ExtLink>
+            </span>
+          </label>
+          <button className="btn primary block" disabled={!agreed} onClick={go}>
+            <Sparkles size={20} /> {t("or.signIn")}
+          </button>
+          <button className="btn ghost block small" disabled={!agreed} onClick={onManual}>
+            <KeyRound size={18} /> {t("or.manual")}
+          </button>
+          {onBack && (
+            <button className="btn ghost block small" onClick={onBack}>
+              {t("common.back")}
+            </button>
+          )}
+        </div>
+      ) : status.stage === "waiting" ? (
+        <div className="stack-lg" role="status">
+          <p className="row" style={{ gap: 10, alignItems: "center" }}>
+            <Loader2 size={20} className="spin" aria-hidden /> <span className="grow">{t("or.waiting")}</span>
+          </p>
+          <button className="btn dark block" onClick={go}>
+            <ExternalLink size={20} /> {t("or.openAgain")}
+          </button>
+          <button className="btn ghost block small" onClick={onManual}>
+            <KeyRound size={18} /> {t("or.manual")}
+          </button>
+        </div>
+      ) : status.stage === "connecting" ? (
+        <div className="stack-lg" role="status">
+          <p className="row" style={{ gap: 10, alignItems: "center" }}>
+            <Loader2 size={20} className="spin" aria-hidden /> <span className="grow">{t("or.connecting")}</span>
+          </p>
+        </div>
+      ) : (
+        <div className="stack-lg">
+          <div className="error-box" role="alert">
+            {t(OR_ERRORS[status.kind])}
+          </div>
+          <button className="btn primary block" onClick={go}>
+            {t("common.retry")}
+          </button>
+          <button className="btn dark block" onClick={onManual}>
+            <KeyRound size={18} /> {t("or.manual")}
+          </button>
         </div>
       )}
     </Sheet>
@@ -215,7 +319,7 @@ export function FreeAiCard({ onClick }: { onClick: () => void }) {
       <Sparkles size={24} aria-hidden />
       <span className="grow">
         <b>{t("free.cta")}</b>
-        <span>{t(googleSignInAvailable() ? "free.ctaHintAuto" : "free.ctaHint")}</span>
+        <span>{t("free.ctaHint")}</span>
       </span>
     </button>
   );

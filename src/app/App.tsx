@@ -166,6 +166,30 @@ export function App() {
     };
   }, [ready]);
 
+  // deep links: the OpenRouter sign-in comes back as io.github.helgurkonungson.pes://oauth/openrouter?code=…
+  useEffect(() => {
+    if (!ready) return;
+    const handle = (url: string) => void import("../ai/openrouterConnect").then((m) => m.handleOpenRouterCallback(url));
+    const onEvent = (e: Event) => handle(String((e as CustomEvent<string>).detail));
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin === "https://chompbook.online" && (e.data as { type?: string } | null)?.type === "pes-oauth") handle(String((e.data as { url: unknown }).url));
+    };
+    window.addEventListener("pes:deeplink", onEvent);
+    window.addEventListener("message", onMessage);
+    if (!Capacitor.isNativePlatform())
+      return () => {
+        window.removeEventListener("pes:deeplink", onEvent);
+        window.removeEventListener("message", onMessage);
+      };
+    void CapApp.getLaunchUrl().then((r) => r?.url && handle(r.url)).catch(() => undefined);
+    const sub = CapApp.addListener("appUrlOpen", ({ url }) => handle(url));
+    return () => {
+      window.removeEventListener("pes:deeplink", onEvent);
+      window.removeEventListener("message", onMessage);
+      void sub.then((s) => s.remove());
+    };
+  }, [ready]);
+
   // the two other tabs are warmed up once the app is idle, so the first tap shows them at once
   useEffect(() => {
     if (!ready) return;

@@ -17,7 +17,17 @@ export const GEMINI_TERMS = "https://ai.google.dev/gemini-api/terms";
 export const CONSENT_VERSION = 1;
 
 export type SetupStep = "project" | "api" | "key" | "check";
-export type SetupFailure = "terms" | "denied" | "quota" | "config" | "network" | "unknown";
+export type SetupFailure = "terms" | "denied" | "quota" | "config" | "region" | "network" | "unknown";
+
+/** Google's answer from a country where the Gemini API isn't offered (Russia, Belarus, China…). */
+const REGION = /location is not supported|not (?:available|supported) in your (?:country|region)|unsupported_country|FAILED_PRECONDITION.*location/i;
+
+/** True when an error (a setup call or a key check) means "Gemini doesn't work from here". */
+export function isRegionBlocked(e: unknown): boolean {
+  if (e instanceof GeminiSetupError) return e.reason === "region";
+  if (e instanceof AiError) return REGION.test(`${e.message} ${e.detail ?? ""}`);
+  return e instanceof Error && REGION.test(e.message);
+}
 
 export class GeminiSetupError extends Error {
   constructor(
@@ -53,6 +63,7 @@ export function classifySetupError(status: number, data: unknown): GeminiSetupEr
   const msg = err?.message ?? `HTTP ${status}`;
   const reasons = (err?.details ?? []).map((d) => d.reason ?? "").join(" ");
   const text = `${msg} ${err?.status ?? ""} ${reasons}`;
+  if (REGION.test(text)) return new GeminiSetupError(msg, "region");
   if (/terms of service|tos|accept.*terms/i.test(text)) return new GeminiSetupError(msg, "terms");
   if (/SERVICE_DISABLED|has not been used in project|API .* is disabled|accessNotConfigured/i.test(text)) return new GeminiSetupError(msg, "config");
   if (/quota|limit|too many projects/i.test(text) || status === 429) return new GeminiSetupError(msg, "quota");
@@ -126,6 +137,8 @@ export async function createGeminiKey(accessToken: string, deps: SetupDeps): Pro
       return { key: keyString, projectId };
     } catch (e) {
       last = e;
+      // waiting won't help: no internet, no credits, or Gemini isn't offered in this country
+      if (isRegionBlocked(e)) throw new GeminiSetupError(e instanceof Error ? e.message : String(e), "region");
       if (e instanceof AiError && (e.kind === "network" || e.kind === "credits")) break;
       await sleep(5000);
     }

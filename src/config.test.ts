@@ -78,4 +78,12 @@ describe("branding", () => {
     for (const pkg of ["com.getcapacitor", "com.capacitorjs.plugins", "com.aparajita.capacitor", "ee.forgr.capacitor", "io.ionic.libs"]) expect(rules).toContain(`-keep class ${pkg}.`);
     expect(readFileSync(res("raw/keep.xml"), "utf8")).toContain("@drawable/ic_stat_notify");
   });
+  it("the OpenRouter sign-in can come back to the app (deep link + callback page)", () => {
+    const manifest = readFileSync(new URL("../android/app/src/main/AndroidManifest.xml", import.meta.url), "utf8");
+    expect(manifest).toMatch(/<data android:scheme="io\.github\.helgurkonungson\.pes" android:host="oauth" \/>/);
+    expect(manifest).toContain('android:launchMode="singleTask"');
+    const page = readFileSync(new URL("../site/public/oauth/openrouter/index.html", import.meta.url), "utf8");
+    expect(page).toContain("scheme=io.github.helgurkonungson.pes;package=io.github.helgurkonungson.pes");
+    expect(page).toContain("pes-oauth");
+  });
 });

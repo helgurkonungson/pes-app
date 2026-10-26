@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AiError } from "./client";
-import { classifySetupError, createGeminiKey, GeminiSetupError, geminiKeyIn, type Http } from "./geminiSetup";
+import { classifySetupError, createGeminiKey, GeminiSetupError, geminiKeyIn, type Http, isRegionBlocked } from "./geminiSetup";
 
 const KEY = "AIzaSyD-0123456789abcdefghijklmnopqrstu";
 
@@ -52,6 +52,16 @@ describe("Gemini key setup", () => {
     expect(classifySetupError(429, {}).reason).toBe("quota");
     expect(classifySetupError(403, { error: { message: "The caller does not have permission" } }).reason).toBe("denied");
     expect(classifySetupError(500, {})).toBeInstanceOf(GeminiSetupError);
+  });
+  it("stops at once when Gemini isn't offered in the learner's country", async () => {
+    const g = google({ existingProject: true, existingKey: true });
+    let tests = 0;
+    const blocked = new AiError("AI request failed (400): User location is not supported for the API use.", "api", 400, "User location is not supported for the API use.");
+    await expect(createGeminiKey("tok", { ...fast, http: g.http, testKey: async () => { tests++; throw blocked; } })).rejects.toMatchObject({ reason: "region" });
+    expect(tests).toBe(1); // no minute of retries
+    expect(isRegionBlocked(blocked)).toBe(true);
+    expect(isRegionBlocked(new AiError("Invalid key", "auth", 400))).toBe(false);
+    expect(classifySetupError(400, { error: { message: "User location is not supported for the API use.", status: "FAILED_PRECONDITION" } }).reason).toBe("region");
   });
   it("finds a Gemini key in copied text", () => {
     expect(geminiKeyIn(`key: ${KEY} `)).toBe(KEY);

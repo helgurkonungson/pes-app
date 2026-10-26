@@ -11,3 +11,4 @@ a { color: var(--accent); }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px 20px; margin: 16px 0; }
 ul { padding-left: 22px; }
 footer { margin-top: 48px; font-size: 14px; color: var(--muted); }
+.btn { display: inline-block; background: #ffc53a; color: #17181b; font-weight: 700; text-decoration: none; padding: 14px 22px; border-radius: 14px; }
