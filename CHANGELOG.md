@@ -2,12 +2,15 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.14.0 — 2026-10-26
+
+- **Free AI in one tap, also where Google isn't available:** "Connect a free AI" now recommends one service for you. OpenRouter is first everywhere: sign in on openrouter.ai with Google, GitHub or e-mail and the app comes back with the key by itself — nothing to copy (free models, about 8 lessons a day). Gemini is offered too where Google provides it; in Russia, Belarus, China and the EU/UK/Switzerland (no free tier) it moves to "Other services". If Google answers that Gemini isn't available in your country, the app says so at once (instead of a minute of retries) and offers OpenRouter.
+
 ## 0.13.0 — 2026-10-25
 
 - **Nine interface languages:** English, Russian, Ukrainian, Belarusian, Spanish, German, French, Chinese (Simplified) and Hindi. The app follows the phone's language; switch it on the first screen (🌐) or in Settings → Interface language. Lessons can be written in any of these languages too (or "as sources"), and "Listen" picks the right voice.
 - **Report this lesson:** a small flag in the lesson's top bar (and on saved lessons) lets you report harmful, offensive, wrong or confusing AI content without leaving the lesson. The text on screen is attached; keys and personal data never are. Reports are listed in Settings → Lesson reports; "Send to developer" opens your mail app with the report addressed to support@chompbook.online. AI lessons are labelled "Written by AI".
 - **Tutorial:** five short animated slides after the first start show how the app works. Skip it at any time — it's always in Settings → Watch the tutorial.
-- **Free AI in one tap, also where Google isn't available:** "Connect a free AI" now recommends one service for you. OpenRouter is first everywhere: sign in on openrouter.ai with Google, GitHub or e-mail and the app comes back with the key by itself — nothing to copy (free models, about 8 lessons a day). Gemini is offered too where Google provides it; in Russia, Belarus, China and the EU/UK/Switzerland (no free tier) it moves to "Other services". If Google answers that Gemini isn't available in your country, the app says so at once (instead of a minute of retries) and offers OpenRouter.
 - **Smaller and faster:** the APK drops ~3–4 MB (one OCR engine build instead of two, a shrunk native layer, WebP images), and rarely used screens and languages load on demand, so the app starts with ~20 % less script. Scans are still recognised offline.
 - Fixed: long button labels in sheets (e.g. "Send to developer") no longer run past the button on small phones.
 
