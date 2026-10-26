@@ -2,6 +2,10 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.16.0 — 2026-10-26
+
+- **A game while the lesson is written:** instead of the book animation you can play "worm vs birds" — tap to make the worm jump and dodge the birds (some of them swoop). It speeds up as your score grows and keeps your record. When the lesson is ready during a round, you finish the round first; if you aren't playing, the lesson opens at once as before. The same game appears while the next part of a lesson is still being written.
+
 ## 0.15.0 — 2026-10-26
 
 - **Energy ⚡:** a new balance next to your streak on Home. You earn it by learning — +5 for every finished lesson or test, +1 for each right answer in the review, +5 for a lesson without mistakes, +5/+15 for passed intermediate/final tests, +20/+50/+100 at 7/30/100-day streaks, +15 for a week without missed days and +10 for the first lesson after a break. The results screen shows what you earned. Progress → Energy lists how to earn more.

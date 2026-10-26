@@ -24,6 +24,11 @@
   --paper-line: #c8bea9;
   --ribbon: #ff5a4f;
   --leaf: #1fae74;
+  /* the waiting game (worm vs birds) */
+  --worm: #ff8fa3;
+  --worm-dark: #d9607a;
+  --soil: #6b4a2b;
+  --soil-dark: #4f3520;
   --accent-light: #ffe39b;
   --accent-strong: #f5a623;
   --accent-deep: #d98a00;
@@ -601,6 +606,17 @@ button.menu-row:active { opacity: .7; }
 .build-strip { margin: 8px 0 2px; }
 .pending-page { align-items: center; text-align: center; padding-top: 12px; }
 .pending-page .build-progress { max-width: 300px; }
+
+/* ---------- waiting game: worm vs birds (ADR-030) ---------- */
+.worm-game { width: min(100%, 340px, calc((100dvh - 330px) * 320 / 360)); min-width: 220px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.worm-canvas { position: relative; display: block; width: 100%; aspect-ratio: 320 / 360; padding: 0; border-radius: var(--r-lg); overflow: hidden; touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.worm-canvas:focus-visible { outline: 3px solid var(--accent-ink); outline-offset: 3px; }
+.worm-canvas canvas { display: block; width: 100%; height: 100%; }
+.worm-score { position: absolute; top: 10px; left: 0; right: 0; text-align: center; font-size: 34px; font-weight: 800; color: var(--ink); pointer-events: none; }
+.worm-hint { position: absolute; left: 14px; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: var(--r-md); background: var(--tabbar-bg); color: var(--ink); font-size: 15px; line-height: 1.3; pointer-events: none; }
+.worm-hint b { font-size: 17px; }
+.worm-hint.low { top: auto; bottom: 46px; transform: none; text-align: center; }
+.worm-ready { color: var(--accent-ink); font-weight: 700; text-align: center; }
 
 /* ---------- loading: the book eaten bite by bite ---------- */
 .book-bite { overflow: visible; display: block; }

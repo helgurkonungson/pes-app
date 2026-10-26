@@ -9,6 +9,7 @@ import { modelOf } from "../ai/providers";
 import { gradeAnswer } from "../ai/tutor";
 import { confirmDialog, ExtLink, toast } from "../components/ui";
 import { BookBite } from "../components/BookBite";
+import { WormGame } from "../components/WormGame";
 import { ReportButton } from "../components/ReportLesson";
 import { BuildProgress } from "../components/BuildProgress";
 import { BadgeIcon, Markdown, ScoreRing } from "../components/visuals";
@@ -84,6 +85,10 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
   const [count, setCount] = useState(3);
   const [attempt, setAttempt] = useState(0);
   const [forceOffline, setForceOffline] = useState(!!offline);
+  /** The lesson is prepared but the learner is still playing the waiting game: the phase to go to after the round. */
+  const [readyPhase, setReadyPhase] = useState<Phase | null>(null);
+  /** The page whose part arrived while a round of the waiting game was still on: it opens after the round. */
+  const [gamePage, setGamePage] = useState<number | null>(null);
   const [genSteps, setGenSteps] = useState<{ done: number; total: number } | null>(null);
   const [sectionOf, setSectionOf] = useState({ i: 1, n: 1 });
   const abortRef = useRef<AbortController | null>(null);
@@ -98,6 +103,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setPhase("loading");
+    setReadyPhase(null);
     setError(null);
     // keep the phone awake while an AI lesson is written; finished steps are saved either way
     const release = forceOffline ? () => undefined : keepScreenOn();
@@ -128,7 +134,8 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
         autoResumesRef.current = 0;
         setSession(s);
         setProgress(s.progress);
-        setPhase(s.status === "active" ? "run" : "countdown");
+        // the waiting game hands over when its round ends (at once if nobody is playing)
+        setReadyPhase(s.status === "active" ? "run" : "countdown");
       })
       .catch((e) => {
         if (ctrl.signal.aborted) return;
@@ -291,11 +298,15 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
         <div className="preparing">
           {phase === "loading" ? (
             <>
-              <BookBite size={220} />
-              <LoadingStatus stage={stage} stageText={stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)} steps={forceOffline ? null : genSteps} />
-              <p className="muted small" style={{ maxWidth: 300 }}>
-                {forceOffline ? t("session.offlineFast") : t("session.slowHint")}
-              </p>
+              <WormGame ready={readyPhase !== null} onDone={() => readyPhase && setPhase(readyPhase)} />
+              {readyPhase === null && (
+                <>
+                  <LoadingStatus stage={stage} stageText={stage === "session.stepSection" ? t(stage, sectionOf) : t(stage)} steps={forceOffline ? null : genSteps} />
+                  <p className="muted small" style={{ maxWidth: 300 }}>
+                    {forceOffline ? t("session.offlineFast") : t("session.slowHint")}
+                  </p>
+                </>
+              )}
             </>
           ) : (
             <>
@@ -453,19 +464,29 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             <CloudOff size={18} /> <span className="grow">{t(session.lesson.fallback === "credits" ? "session.fallback.credits" : session.lesson.fallback === "auth" ? "session.fallback.auth" : "session.fallback.noKey")}</span>
           </div>
         )}
-        <PageView
-          page={page}
-          session={session}
-          progress={progress}
-          update={updateProgress}
-          onSkipPlacement={async () => {
-            if (!(await confirmDialog(t("placement.skipConfirm"), { text: t("placement.skipConfirmText"), ok: t("placement.skip") }))) return;
-            await skipPlacement(session.skillsetId);
-            setSession(null);
-            setPhase("loading");
-            setAttempt((a) => a + 1); // prepare the first lesson instead
-          }}
-        />
+        {page.kind === "pending" || gamePage === pageIndex ? (
+          <PendingWait
+            session={session}
+            step={page.kind === "pending" ? page.step : undefined}
+            pending={page.kind === "pending"}
+            onPlay={() => setGamePage(pageIndex)}
+            onDone={() => setGamePage(null)}
+          />
+        ) : (
+          <PageView
+            page={page}
+            session={session}
+            progress={progress}
+            update={updateProgress}
+            onSkipPlacement={async () => {
+              if (!(await confirmDialog(t("placement.skipConfirm"), { text: t("placement.skipConfirmText"), ok: t("placement.skip") }))) return;
+              await skipPlacement(session.skillsetId);
+              setSession(null);
+              setPhase("loading");
+              setAttempt((a) => a + 1); // prepare the first lesson instead
+            }}
+          />
+        )}
       </div>
 
       <div className="cta-bar">
@@ -555,6 +576,30 @@ function stepLabel(page: Page, session: Session): Key {
 
 // ---------- page renderers ----------
 
+/** A part still being written: the waiting game, the writing progress, Retry if writing stopped. */
+function PendingWait({ session, step, pending, onPlay, onDone }: { session: Session; step?: string; pending: boolean; onPlay: () => void; onDone: () => void }) {
+  const t = useT();
+  const b = session.lesson?.building;
+  const failed = !!b?.error;
+  return (
+    <div className="stack-lg pending-page">
+      {pending && (
+        <h2 className="q-title" role="status">
+          {failed ? t("session.buildStopped") : t(step === "quiz" ? "session.buildingQuiz" : "session.buildingPart")}
+        </h2>
+      )}
+      <WormGame ready={!pending} onPlay={onPlay} onDone={onDone} />
+      {pending && b && <BuildProgress building={b} />}
+      {pending && <p className="muted small">{failed ? t("session.buildStoppedText") : t("session.buildingText")}</p>}
+      {pending && failed && (
+        <button className="btn primary block" onClick={() => void continueWriting(session.id).catch(() => undefined)}>
+          {t("common.retry")}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function PageView({ page, session, progress, update, onSkipPlacement }: { page: Page; session: Session; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void; onSkipPlacement?: () => void }) {
   const t = useT();
   switch (page.kind) {
@@ -581,25 +626,8 @@ function PageView({ page, session, progress, update, onSkipPlacement }: { page: 
           )}
         </div>
       );
-    case "pending": {
-      const b = session.lesson?.building;
-      const failed = !!b?.error;
-      return (
-        <div className="stack-lg pending-page">
-          <BookBite size={170} />
-          <h2 className="q-title" role="status">
-            {failed ? t("session.buildStopped") : t(page.step === "quiz" ? "session.buildingQuiz" : "session.buildingPart")}
-          </h2>
-          {b && <BuildProgress building={b} />}
-          <p className="muted small">{failed ? t("session.buildStoppedText") : t("session.buildingText")}</p>
-          {failed && (
-            <button className="btn primary block" onClick={() => void continueWriting(session.id).catch(() => undefined)}>
-              {t("common.retry")}
-            </button>
-          )}
-        </div>
-      );
-    }
+    case "pending":
+      return null; // drawn by PendingWait, so the waiting game survives the part's arrival
     case "recap":
       return (
         <div className="stack-lg">

@@ -440,6 +440,46 @@ test.describe("Gemini, Groq and a custom server", () => {
     await finishLesson(page);
   });
 
+  test("waiting for a part: the worm game keeps going after the part arrives, the part opens when the round ends", async ({ page }) => {
+    test.setTimeout(90_000);
+    await mockApis(page, "credits");
+    let releaseQuiz!: () => void;
+    const quizGate = new Promise<void>((r) => (releaseQuiz = r));
+    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+      const url = route.request().url();
+      if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+      const { compatRequest } = await import("./helpers");
+      const { tool } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
+      if (tool === "emit_quiz") await quizGate;
+      return lessonReply(route);
+    });
+    await geminiReady(page);
+    await btn(page, /Начать · 15 мин/).click();
+    await skipCountdown(page);
+    for (let i = 0; i < 10 && !(await page.getByText("Составляю тест…").isVisible()); i++) {
+      const option = page.locator(".option:not([disabled])").first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      await page.getByRole("button", { name: /^Далее/ }).click();
+    }
+    const game = page.locator(".pending-page").getByRole("button", { name: /червяк против птиц/ });
+    await expect(page.locator(".pending-page")).toContainText("уворачивайтесь от птиц", { ignoreCase: true });
+    await game.focus();
+    await page.keyboard.press("Space"); // a round starts
+    releaseQuiz();
+    // the quiz is ready, but the round goes on: keep the worm in the air for a moment
+    const banner = page.getByText("Урок готов — доиграйте раунд!");
+    for (let i = 0; i < 8 && !(await banner.isVisible()); i++) {
+      await page.keyboard.press("Space");
+      await page.waitForTimeout(250);
+    }
+    await expect(banner).toBeVisible();
+    await expect(page.locator(".option")).toHaveCount(0);
+    // no more taps: the worm falls or a bird gets it, then the quiz opens by itself
+    await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".option").first()).toBeVisible({ timeout: 5000 });
+    await finishLesson(page);
+  });
+
   test("background writing that stopped (phone asleep) continues from the saved steps when you come back", async ({ page }) => {
     test.setTimeout(90_000);
     await page.addInitScript(() => {
@@ -621,5 +661,45 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("OpenRouter");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("llama-3.3-70b-instruct:free");
+  });
+});
+
+test.describe("the waiting game while a lesson is prepared", () => {
+  test("untouched, the lesson opens as soon as it's ready; a crash while waiting restarts with the score and record; a round in progress is played to the end", async ({ page }) => {
+    test.setTimeout(90_000);
+    await mockApis(page, "ok");
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    await page.route("https://api.anthropic.com/v1/messages", async (route) => {
+      await gate;
+      await route.fallback();
+    });
+    await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
+    await createSkillsetWithText(page, undefined, { keepTest: true });
+    await btn(page, "Пройти входной тест").click();
+    const game = page.locator(".preparing").getByRole("button", { name: /червяк против птиц/ });
+    await expect(game).toBeVisible();
+    await expect(page.locator(".preparing")).toContainText("Нажимайте — червяк подпрыгнет");
+    await expect(page.getByRole("progressbar")).toBeVisible(); // the writing progress stays under the game
+    // a round while still waiting: one hop, then the worm falls to the ground
+    await game.focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/Счёт 0 · рекорд 0/)).toBeVisible();
+    await expect(page.getByText("Нажмите, чтобы сыграть ещё")).toBeVisible();
+    // another round; the lesson becomes ready mid-round
+    await page.waitForTimeout(600);
+    await page.keyboard.press("Space");
+    release();
+    const banner = page.getByText("Урок готов — доиграйте раунд!");
+    for (let i = 0; i < 8 && !(await banner.isVisible()); i++) {
+      await page.keyboard.press("Space");
+      await page.waitForTimeout(250);
+    }
+    await expect(banner).toBeVisible();
+    await expect(page.locator(".session-body")).toHaveCount(0);
+    await expect(page.getByText("Урок готов — открываем…")).toBeVisible({ timeout: 10_000 });
+    await skipCountdown(page);
+    await expect(page.locator(".session-body")).toBeVisible();
   });
 });
