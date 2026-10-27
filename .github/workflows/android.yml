@@ -1,6 +1,6 @@
 # Quality gates, then the Android APK. Every gate blocks the release (ADR-020).
 #   checks       — type-check, unit tests (Vitest), web build
-#   e2e          — Playwright on Chromium (Android WebView engine) device profiles
+#   e2e          — Playwright on Chromium (Android WebView engine) device profiles, 3 shards
 #   e2e-cross    — Playwright on WebKit (iOS engine) and Firefox
 #   build        — signed APK as a build artifact
 #   device-tests — smoke tests of that APK on Android emulators (API 33/34/36, small phone, tablet)
@@ -40,10 +40,15 @@ jobs:
         run: npm run build
 
   # Chromium = the Android WebView engine. Gates the APK release.
+  # Split into 3 parallel shards (0.17.0: one job no longer fit in 30 minutes).
   e2e:
-    name: E2E (chromium · Android profiles)
+    name: E2E (chromium · Android profiles ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,13 +59,13 @@ jobs:
       - name: Install browser
         run: npx playwright install --with-deps chromium
       - name: Playwright
-        run: npx playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome
+        run: npx playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome --shard=${{ matrix.shard }}/3
         env:
           CI: "1"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-chromium
+          name: playwright-report-chromium-${{ matrix.shard }}
           path: |
             playwright-report
             test-results
