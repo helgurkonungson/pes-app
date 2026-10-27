@@ -1,8 +1,9 @@
 import { BookOpen, FileUp, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAiState } from "../ai/status";
+import { BuiltinCourseList, useOpenBuiltin } from "../components/BuiltinCourses";
 import { useCourseImport } from "../components/FilePickers";
-import { Bar, Empty, PageTitle } from "../components/ui";
+import { Bar, PageTitle, SectionLabel } from "../components/ui";
 import { HeroBg } from "../components/visuals";
 import { pct } from "../core/scoring";
 import { useSkillsetSummaries } from "../data/hooks";
@@ -16,6 +17,7 @@ export function Skillsets() {
   const ai = useAiState();
   const push = useNav((s) => s.push);
   const course = useCourseImport();
+  const builtin = useOpenBuiltin();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
 
@@ -59,7 +61,7 @@ export function Skillsets() {
         </div>
         {course.input}
 
-        {list && list.length === 0 && <Empty icon={<BookOpen size={34} />} title={t("skillsets.empty.title")} text={t("skillsets.empty.text")} />}
+        {/* no skillsets yet: the free courses below fill the screen instead of an empty state */}
 
         <div className="stack">
           {shown.map((x) => {
@@ -88,6 +90,16 @@ export function Skillsets() {
           })}
           {list && list.length > 0 && shown.length === 0 && <p className="muted center small">{t("skillsets.nothingFound")}</p>}
         </div>
+
+        {!query.trim() && (
+          <section className="stack" data-testid="builtin-courses">
+            <SectionLabel>{t("courses.section")}</SectionLabel>
+            <p className="small muted" style={{ marginTop: -6 }}>
+              {t("courses.sectionHint")}
+            </p>
+            <BuiltinCourseList busy={builtin.busy} onPick={(slug) => void builtin.open(slug)} />
+          </section>
+        )}
       </div>
     </div>
   );

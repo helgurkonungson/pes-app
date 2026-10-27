@@ -26,6 +26,7 @@ import { useProfile } from "../data/hooks";
 import { exportBackup, setRestDays, wipeAll } from "../data/repo";
 import { clearSnapshots } from "../data/safety";
 import { locale, useT } from "../i18n";
+import { useSettingsIntent } from "../nav/intent";
 import { useNav } from "../nav/store";
 import { APP_REPO, APP_VERSION, checkForUpdate, installUpdateSafely } from "../update/updater";
 import { aiErrorDetail, aiErrorText } from "./Session";
@@ -56,6 +57,15 @@ export function Settings() {
   useEffect(() => {
     getApiKey(provider).then(setKey);
   }, [keyVersion, provider]);
+  // the tutorial's "My own key" opens Settings at the AI provider picker
+  const providerIntent = useSettingsIntent((s) => s.provider);
+  useEffect(() => {
+    if (!providerIntent || !profile) return;
+    useSettingsIntent.getState().clear();
+    document.getElementById("settings-ai")?.scrollIntoView({ block: "start" });
+    setProviderView("top");
+    setSheet("provider");
+  }, [providerIntent, profile]);
 
   if (!profile) return <div className="screen with-tabbar" />;
 
@@ -208,7 +218,7 @@ export function Settings() {
           />
         </section>
 
-        <section className="stack">
+        <section className="stack" id="settings-ai">
           <SectionLabel>{t("settings.ai")}</SectionLabel>
           <Segmented<AiMode>
             label={t("settings.aiMode")}

@@ -11,7 +11,8 @@ export type Route =
   | { name: "history"; id: string }
   | { name: "lesson"; sessionId: string }
   | { name: "logs" }
-  | { name: "reports" };
+  | { name: "reports" }
+  | { name: "pro" };
 
 interface NavState {
   tab: Tab;

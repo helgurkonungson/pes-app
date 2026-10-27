@@ -30,6 +30,7 @@ import { addDays, localDay } from "../core/dates";
 import { FREEZE_COST } from "../core/energy";
 import { OfflineError } from "../core/offline";
 import type { LessonContent, LessonDraft, Session } from "../core/types";
+import { findBuiltin, installBuiltinCourse } from "./builtinCourses";
 import { importCourse } from "./courses";
 import { db, DB_VERSION, getProfile, PesDb, updateProfile } from "./db";
 import { addSource, buyStreakFreeze, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, setRestDays, settleStreakNow, skipPlacement, wipeAll } from "./repo";
@@ -433,6 +434,39 @@ describe("AI lessons and fallback", () => {
     const ai = await prepareSession(s.id, 15);
     expect(ai.lesson?.mode).toBe("ai");
     expect(await db.sessions.get(offline.id)).toBeUndefined();
+  });
+});
+
+describe("built-in courses (ADR-031)", () => {
+  it("installs in the interface language, skips the placement test and opens lesson 1 without AI", async () => {
+    keyState.key = "sk-ant-test-key-123456789"; // even with AI available, courses don't call it
+    const r = await installBuiltinCourse("money", "fr");
+    expect(r.fresh).toBe(true);
+    expect(r.skillset.courseId).toBe("cb-money-fr");
+    expect(r.skillset.language).toBe("French");
+    expect(r.skillset.placementSkipped).toBe(true);
+    const s1 = await prepareSession(r.skillset.id, 7);
+    expect(s1.kind).toBe("lesson");
+    expect(s1.lesson?.courseLessonId).toBe("money-01");
+    expect(s1.lesson?.quiz).toHaveLength(4);
+    expect(tutor.generateLesson).not.toHaveBeenCalled();
+    await passSession(s1);
+    // the second lesson reviews the first one's recall questions
+    const s2 = await prepareSession(r.skillset.id, 7);
+    expect(s2.lesson?.courseLessonId).toBe("money-02");
+    expect(s2.lesson?.review.questions.length).toBeGreaterThan(0);
+  });
+
+  it("a second tap opens the same skillset instead of adding another; each language is its own course", async () => {
+    const a = await installBuiltinCourse("thinking", "ru");
+    const b = await installBuiltinCourse("thinking", "ru");
+    expect(b.fresh).toBe(false);
+    expect(b.skillset.id).toBe(a.skillset.id);
+    expect((await findBuiltin("thinking", "ru"))?.id).toBe(a.skillset.id);
+    expect(await findBuiltin("thinking", "en")).toBeUndefined();
+    const c = await installBuiltinCourse("thinking", "hi");
+    expect(c.skillset.id).not.toBe(a.skillset.id);
+    expect(await db.skillsets.count()).toBe(2);
   });
 });
 

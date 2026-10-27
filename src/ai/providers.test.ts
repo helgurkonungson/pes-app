@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isGeminiThinking, rateLimitWaitMs, retryPolicy } from "./compat";
-import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
+import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isDailyLimit, isGeminiThinking, rateLimitWaitMs, retryPolicy } from "./compat";
+import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, openRouterModels, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
 const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
@@ -335,5 +335,36 @@ describe("Mistral and OpenRouter", () => {
     expect(pickDefaultModel("mistral", ["magistral-medium-latest", "mistral-small-latest"])).toBe("mistral-small-latest");
     expect(pickDefaultModel("openrouter", ["openai/gpt-5", "google/gemma-3-27b-it:free", "deepseek/deepseek-chat-v3-0324:free"])).toBe("deepseek/deepseek-chat-v3-0324:free");
     expect(pickDefaultModel("openrouter", ["x/y:free"])).toBe("x/y:free");
+  });
+});
+
+describe("free OpenRouter models under load (ADR-032)", () => {
+  const ok = { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":1}' } }] }, finish_reason: "stop" }] };
+  const busy = { error: { code: 429, message: "deepseek/deepseek-chat-v3-0324:free is temporarily rate-limited upstream. Please retry shortly.", metadata: { provider_name: "Chutes" } } };
+  const daily = { error: { code: 429, message: "Rate limit exceeded: free-models-per-day. Add 10 credits to unlock 1000 free model requests per day" } };
+  const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: {} } };
+  const run = () => compatStructured("openrouter", "sk-or-v1-x", {}, { model: "deepseek/deepseek-chat-v3-0324:free", system: "s", prompt: "p", tool, maxTokens: 900 });
+  afterEach(() => {
+    retryPolicy.rateScale = 1;
+  });
+  it("a free model falls back to the free router; paid models are sent alone", () => {
+    expect(openRouterModels("deepseek/deepseek-chat-v3-0324:free")).toEqual(["deepseek/deepseek-chat-v3-0324:free", "openrouter/free"]);
+    expect(openRouterModels("openai/gpt-5")).toEqual(["openai/gpt-5"]);
+    expect(openRouterModels("openrouter/free")).toEqual(["openrouter/free"]);
+  });
+  it("sends the fallback list and backs off on an upstream 429 without a hint", async () => {
+    retryPolicy.rateScale = 0;
+    const f = mockReplies([200, { data: {} }], [429, busy], [200, ok]);
+    expect(await run()).toEqual({ a: 1 });
+    expect(bodyOf(f, 1).models).toEqual(["deepseek/deepseek-chat-v3-0324:free", "openrouter/free"]);
+    expect(f).toHaveBeenCalledTimes(3);
+  });
+  it("a daily cap is not waited out and is recognised as daily", async () => {
+    retryPolicy.rateScale = 0;
+    const f = mockReplies([200, { data: {} }], [429, daily]);
+    expect(isDailyLimit(daily)).toBe(true);
+    expect(isDailyLimit(busy)).toBe(false);
+    await expect(run()).rejects.toMatchObject({ kind: "rate", status: 429, provider: "openrouter" });
+    expect(f).toHaveBeenCalledTimes(2);
   });
 });

@@ -7,7 +7,7 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
 import type { Profile, ProviderId, TokenUsage } from "../core/types";
 import { AiError, type ModelInfo, noteUsage, type ToolDef } from "./client";
-import { baseUrl, chatModels, PROVIDERS, wireModel } from "./providers";
+import { baseUrl, chatModels, openRouterModels, PROVIDERS, wireModel } from "./providers";
 
 type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl">;
 
@@ -80,7 +80,12 @@ function errorMessage(data: unknown, status: number): string {
 const transient = (status: number) => status === 500 || status === 502 || status === 503 || status === 529;
 
 /** Pauses before each re-send of a transient failure. Tests set it to [0, 0]. */
-export const retryPolicy = { delaysMs: [2_000, 5_000], rateWaits: 2, maxRateWaitMs: 65_000, rateScale: 1 };
+export const retryPolicy = { delaysMs: [2_000, 5_000], rateWaits: 2, maxRateWaitMs: 65_000, rateScale: 1, busyWaitsMs: [8_000, 20_000] };
+
+/** A daily quota ("free-models-per-day", Google's "…PerDay…"): waiting a minute won't help. */
+export function isDailyLimit(data: unknown): boolean {
+  return /per[ _-]?day|PerDay|daily/i.test(JSON.stringify(data ?? ""));
+}
 
 /**
  * How long a 429 asks us to wait ("retry in 41.2s", Google's RetryInfo "retryDelay": "41s"),
@@ -88,7 +93,7 @@ export const retryPolicy = { delaysMs: [2_000, 5_000], rateWaits: 2, maxRateWait
  */
 export function rateLimitWaitMs(data: unknown): number | null {
   const text = JSON.stringify(data ?? "");
-  if (/per ?day|PerDay|daily/i.test(text)) return null;
+  if (isDailyLimit(data)) return null;
   const m = text.match(/retry (?:in|after) ([\d.]+) ?s/i) ?? text.match(/retryDelay\\?":\s*\\?"([\d.]+)s/i);
   if (!m) return null;
   const ms = Math.ceil(parseFloat(m[1]) * 1000) + 1000;
@@ -158,6 +163,8 @@ export async function compatStructured<T>(
   // models) are asked in words, and JSON in the text answer is accepted as a fallback
   const body: Record<string, unknown> = {
     model: wireModel(id, opts.model, cfg),
+    // free OpenRouter models are shared and often busy: let OpenRouter fall back by itself (ADR-032)
+    ...(id === "openrouter" && openRouterModels(opts.model).length > 1 ? { models: openRouterModels(opts.model) } : {}),
     messages: [
       { role: "system", content: `${opts.system}\nAlways return the result by calling the function ${opts.tool.name}. If you cannot call functions, reply with only a JSON object matching its parameters.` },
       { role: "user", content: opts.prompt },
@@ -182,7 +189,9 @@ export async function compatStructured<T>(
     }
     // per-minute limits (Gemini free tier: "Please retry in 41s"): wait it out, a lesson takes several requests
     for (let i = 0; i < retryPolicy.rateWaits && res.status === 429; i++) {
-      const wait = rateLimitWaitMs(res.data);
+      // a busy free OpenRouter model says no "retry in": back off a little anyway (not for a daily quota)
+      const busy = id === "openrouter" && !isDailyLimit(res.data) ? Math.round((retryPolicy.busyWaitsMs[i] ?? 0) * retryPolicy.rateScale) : null;
+      const wait = rateLimitWaitMs(res.data) ?? busy;
       if (wait === null) break;
       await pause(wait, opts.signal);
       res = await post();

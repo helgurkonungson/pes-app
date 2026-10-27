@@ -40,6 +40,7 @@ const History = named(() => import("../screens/History"), "History");
 const LessonView = named(() => import("../screens/History"), "LessonView");
 const Logs = named(() => import("../screens/Logs"), "Logs");
 const Reports = named(() => import("../screens/Reports"), "Reports");
+const Pro = named(() => import("../screens/Pro"), "Pro");
 const Tutorial = named(() => import("../components/Tutorial"), "Tutorial");
 import { UpdatePrompt } from "./UpdatePrompt";
 
@@ -76,6 +77,8 @@ function RouteView({ route }: { route: Route }) {
       return <Logs />;
     case "reports":
       return <Reports />;
+    case "pro":
+      return <Pro />;
   }
 }
 

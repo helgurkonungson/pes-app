@@ -27,12 +27,21 @@ test.describe("interface languages", () => {
       await page.locator(".onb-actions .btn.dark").click(); // continue without AI
       // tutorial in this language, then skipped
       await expect(page.locator(".tutorial")).toBeVisible();
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         await expectNoHorizontalOverflow(page, `${l.lang} tutorial ${i + 1}`);
         await page.locator(".tut-actions .btn.primary").click();
       }
-      await expectNoHorizontalOverflow(page, `${l.lang} tutorial 5`);
-      await page.locator(".tut-actions .btn.dark").click(); // back to slide 4, where "Skip" is
+      // last step: the five free courses and "create my own" (with its pages) fit too
+      await expect(page.locator(".tutorial [data-course]")).toHaveCount(5);
+      await expectNoHorizontalOverflow(page, `${l.lang} tutorial start`);
+      await page.getByTestId("tut-own").click();
+      await expectNoHorizontalOverflow(page, `${l.lang} own skill`);
+      await page.locator(".tut-actions .btn.primary").click();
+      await expectNoHorizontalOverflow(page, `${l.lang} connect AI`);
+      await page.getByTestId("own-free").click();
+      await expectNoHorizontalOverflow(page, `${l.lang} free AI catches`);
+      for (let i = 0; i < 3; i++) await page.locator(".tut-actions .btn.dark").click(); // up to the start step
+      await page.locator(".tut-actions .btn.dark").click(); // back to slide 5, where "Skip" is
       await page.locator(".tut-skip").click();
       await expect(page.locator(".tutorial")).toHaveCount(0);
       const tabs = page.getByRole("navigation").getByRole("button");

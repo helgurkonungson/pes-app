@@ -2,15 +2,17 @@ import { expect, test } from "@playwright/test";
 import { btn, createSkillsetWithText, mockApis, onboard, skipCountdown } from "./helpers";
 
 test.describe("first-run tutorial", () => {
-  test("shows after onboarding, walks through five slides and does not come back", async ({ page }) => {
+  test("shows after onboarding, walks through the slides to the start choice and does not come back", async ({ page }) => {
     await mockApis(page);
     await onboard(page, { tutorial: true });
     const tut = page.locator(".tutorial");
     await expect(tut).toBeVisible();
     await expect(tut.getByRole("heading", { name: "Учитесь по своим материалам" })).toBeVisible();
-    for (let i = 0; i < 4; i++) await tut.getByRole("button", { name: /^Далее/ }).click();
-    await expect(tut.getByRole("button", { name: "Пропустить" })).toHaveCount(0); // last slide
-    await tut.getByRole("button", { name: /Поехали/ }).click();
+    for (let i = 0; i < 5; i++) await tut.getByRole("button", { name: /^Далее/ }).click();
+    await expect(tut.getByRole("heading", { name: "С чего начнём?" })).toBeVisible(); // last step
+    await expect(tut.getByRole("button", { name: "Пропустить" })).toHaveCount(0);
+    await expect(tut.locator("[data-course]")).toHaveCount(5);
+    await tut.getByRole("button", { name: "Решу позже" }).click();
     await expect(tut).toHaveCount(0);
     await page.reload();
     await expect(page.getByRole("navigation")).toBeVisible();

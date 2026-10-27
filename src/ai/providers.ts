@@ -255,6 +255,15 @@ export function pickOpenAiModel(ids: string[]): string {
   return chat.find((m) => /^gpt-\d+(\.\d+)?-mini$/.test(m)) ?? chat.find((m) => /^gpt-\d/.test(m)) ?? chat[0] ?? "";
 }
 
+/**
+ * What to send as OpenRouter's `models` list: a free model gets the free-models router as a
+ * fallback, so a busy or retired free model doesn't fail the lesson (ADR-032).
+ */
+export function openRouterModels(model: string): string[] {
+  if (!model.endsWith(":free") || model.startsWith("openrouter/")) return [model];
+  return [model, "openrouter/free"];
+}
+
 /** OpenRouter: a free model (":free") from a known strong family, else any free one. */
 export function pickOpenRouterModel(ids: string[]): string {
   const free = ids.filter((m) => m.endsWith(":free"));

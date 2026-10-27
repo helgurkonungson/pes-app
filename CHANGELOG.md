@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.17.0 — 2026-10-27
+
+- **Five free courses, ready to go:** How to learn effectively, AI literacy, Data and spreadsheets, Financial literacy and Critical thinking — 8 short lessons each, in all nine interface languages. They work without AI and offline, with quizzes, review and self-checked open questions. Find them in Skillsets → Free courses.
+- **The tutorial ends with a choice:** start one of the free courses (its first lesson opens right away) or create your own skill. The "own skill" path explains how it works, why AI is recommended and how to connect it: free AI (with an honest list of its limits), Chompbook AI (Pro — coming soon) or your own key, with step-by-step instructions.
+- **Free AI is more reliable:** when a free OpenRouter model is busy, the app waits a little and switches to another free model by itself. If the free daily limit is reached, the error says so and when it resets.
+
 ## 0.16.0 — 2026-10-26
 
 - **A game while the lesson is written:** instead of the book animation you can play "worm vs birds" — tap to make the worm jump and dodge the birds (some of them swoop). It speeds up as your score grows and keeps your record. When the lesson is ready during a round, you finish the round first; if you aren't playing, the lesson opens at once as before. The same game appears while the next part of a lesson is still being written.

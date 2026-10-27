@@ -63,6 +63,8 @@ export function aiErrorDetail(e: unknown, t: T): string | null {
   if (e.detail && e.kind !== "aborted" && e.kind !== "network" && e.kind !== "no-key") lines.push(t("aiErr.detail", { text: e.detail.slice(0, 300) }));
   // a busy or confused model is often fine on another model of the same provider
   if (e.provider && e.provider !== "anthropic" && (e.kind === "overloaded" || e.kind === "bad-response")) lines.push(t("aiErr.otherModel"));
+  // free OpenRouter: a daily cap (50 requests without credits) or shared models busy at peak hours
+  if (e.provider === "openrouter" && e.kind === "rate") lines.push(t(e.detail && /per[ _-]?day/i.test(e.detail) ? "aiErr.orDaily" : "aiErr.orBusy"));
   return lines.length ? lines.join("\n") : null;
 }
 

@@ -798,3 +798,27 @@ button.menu-row:active { opacity: .7; }
 .tiny-pill { margin-left: 8px; height: 22px; padding: 0 8px; font-size: 11.5px; vertical-align: 2px; }
 .warn-text { color: var(--warn); margin-top: 2px; }
 .list-card:disabled { opacity: .6; }
+
+/* built-in courses (ADR-031): hue-tinted icon tiles, like the generated skillset covers */
+.course-icon { width: 44px; height: 44px; border-radius: 14px; flex: none; display: grid; place-items: center; background: hsl(var(--hue) 60% 55% / .18); color: hsl(var(--hue) 75% 68%); }
+:root[data-theme="light"] .course-icon { background: hsl(var(--hue) 60% 50% / .14); color: hsl(var(--hue) 65% 36%); }
+.course-card { gap: 12px; }
+.course-card[aria-busy="true"] { opacity: .6; }
+.course-card .tiny svg { vertical-align: -2px; }
+.course-list.compact { gap: 8px; }
+.course-list.compact .list-card { padding: 10px 12px; }
+.course-list.compact .course-icon { width: 38px; height: 38px; border-radius: 12px; }
+/* tutorial: the last step (choice) and the "own skill" pages scroll as one column */
+.tut-page-body { display: flex; flex-direction: column; gap: 14px; animation: tut-in .35s ease; }
+.tut-page-body .display { font-size: 26px; }
+.tut-own-card { border: 1.5px dashed var(--line); }
+.tut-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: s; }
+.tut-steps li { display: flex; gap: 12px; align-items: flex-start; line-height: 1.45; counter-increment: s; }
+.tut-steps li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); font-weight: 700; font-size: 13px; }
+.tut-pitfalls { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.tut-pitfalls li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+.tut-pitfalls li svg { flex: none; margin-top: 2px; color: var(--warn); }
+.pro-hero { display: grid; place-items: center; height: 150px; border-radius: var(--r-xl); background: var(--surface); color: var(--accent-ink); }
+/* sheets opened from the tutorial (free AI) sit above it */
+.tut-sheets > .scrim { z-index: 41; }
+.tut-sheets > .sheet { z-index: 42; }
