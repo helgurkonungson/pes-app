@@ -7,9 +7,7 @@ import { autoBatch, autoDue, logPayload, maxId, newest, type LogMeta } from "../
 import type { LogEntry } from "../core/types";
 import { useLang } from "../i18n";
 import { db, getProfile, updateProfile } from "./db";
-import { REPORT_URL } from "./endpoint";
-
-const APP_VERSION: string = __APP_VERSION__;
+import { APP_VERSION, REPORT_URL } from "../build";
 
 function meta(): LogMeta {
   let lang = "";

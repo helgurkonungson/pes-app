@@ -12,12 +12,10 @@ import { isUpdateCheckDue, pendingUpdate } from "../core/updateCheck";
 import { db } from "../data/db";
 import { saveExternalBackup, writeSnapshot } from "../data/safety";
 import { toast } from "../components/ui";
+import { APP_REPO, APP_VERSION, SELF_UPDATE_BUILD } from "../build";
 import { t } from "../i18n";
 
 export type { UpdateInfo };
-
-export const APP_VERSION: string = __APP_VERSION__;
-export const APP_REPO: string = __APP_REPO__;
 
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
   const res = await fetch(`https://api.github.com/repos/${APP_REPO}/releases/latest`, {
@@ -45,16 +43,13 @@ export async function installUpdate(u: UpdateInfo): Promise<void> {
   else window.open(url, "_blank", "noopener");
 }
 
-/** Google Play app id: store builds update there (ADR-034). */
-export const PLAY_URL = "https://play.google.com/store/apps/details?id=online.chompbook.app";
-
 /**
  * True in builds that update themselves from GitHub Releases (VITE_SELF_UPDATE=1 at build time).
  * Google Play builds never do (store rule): they update through Play. Test switch:
  * localStorage "pes.selfUpdate" = "1".
  */
 export function selfUpdateBuild(): boolean {
-  if (__SELF_UPDATE__) return true;
+  if (SELF_UPDATE_BUILD) return true;
   try {
     return localStorage.getItem("pes.selfUpdate") === "1";
   } catch {

@@ -19,6 +19,7 @@ import { SkillsetDetail } from "../screens/SkillsetDetail";
 import { Skillsets } from "../screens/Skillsets";
 import { autoUpdateCheckEnabled, dailyUpdateCheck, type UpdateInfo } from "../update/updater";
 import { TabBar } from "./TabBar";
+import { SITE_URL } from "../build";
 import { useTutorial } from "./tutorialStore";
 
 /**
@@ -178,7 +179,7 @@ export function App() {
     const handle = (url: string) => void import("../ai/openrouterConnect").then((m) => m.handleOpenRouterCallback(url));
     const onEvent = (e: Event) => handle(String((e as CustomEvent<string>).detail));
     const onMessage = (e: MessageEvent) => {
-      if (e.origin === "https://chompbook.online" && (e.data as { type?: string } | null)?.type === "pes-oauth") handle(String((e.data as { url: unknown }).url));
+      if (e.origin === SITE_URL && (e.data as { type?: string } | null)?.type === "pes-oauth") handle(String((e.data as { url: unknown }).url));
     };
     window.addEventListener("pes:deeplink", onEvent);
     window.addEventListener("message", onMessage);

@@ -13,6 +13,14 @@ describe("update safety", () => {
     const gradle = readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8");
     expect(gradle).toContain('applicationId "online.chompbook.app"');
   });
+  it("the emulator smoke test starts the real activity (its class keeps the Java namespace)", () => {
+    const gradle = readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8");
+    const namespace = gradle.match(/namespace\s*=?\s*"([^"]+)"/)?.[1];
+    const smoke = readFileSync(new URL("../scripts/android-smoke.sh", import.meta.url), "utf8");
+    expect(smoke).toContain(`PKG=${config.appId}`);
+    // "am start -n <app id>/.MainActivity" resolves against the app id, not the namespace → "Error type 3"
+    expect(smoke).toContain(`ACTIVITY=${namespace}.MainActivity`);
+  });
   it("keeps the default WebView origin (https://localhost) so IndexedDB survives updates", () => {
     const server = (config as { server?: Record<string, unknown> }).server ?? {};
     expect(server.hostname ?? "localhost").toBe("localhost");

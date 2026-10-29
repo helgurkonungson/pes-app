@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { birdSpeed, flap, FLAP_VY, GROUND, H, hits, newGame, step, W, WORM_R, WORM_X } from "./wormGame";
+import { birdSpeed, flap, FLAP_VY, GROUND, H, hits, newGame, outOfAir, SKY, step, W, WORM_R, WORM_X } from "./wormGame";
 
 const seq = (...v: number[]) => {
   let i = 0;
@@ -35,10 +35,38 @@ describe("worm vs birds", () => {
     expect(flap(s)).toBe(s); // a tap doesn't revive it
   });
 
-  it("can't fly off the top", () => {
+  it("flying into the sky ends the round like the ground; then the worm falls to the soil", () => {
     let s = flap(newGame());
-    for (let i = 0; i < 120; i++) s = step(flap(s), 1 / 60, () => 0.99);
-    expect(s.y).toBeGreaterThanOrEqual(WORM_R);
+    for (let i = 0; i < 120 && s.mode === "play"; i++) s = step(flap(s), 1 / 60, () => 0.99);
+    expect(s.mode).toBe("over");
+    expect(s.y).toBe(SKY + WORM_R);
+    expect(s.vy).toBeGreaterThanOrEqual(0); // no more climbing
+    for (let i = 0; i < 120; i++) s = step(s, 1 / 60);
+    expect(s.y).toBe(GROUND - WORM_R);
+    expect(outOfAir(H / 2)).toBe(false);
+    expect(outOfAir(SKY + WORM_R)).toBe(true);
+    expect(outOfAir(GROUND - WORM_R)).toBe(true);
+  });
+
+  it("steady taps keep the worm in the air: it hovers between the sky and the ground", () => {
+    // a tap whenever the worm sinks below the middle (birds far up/down: rnd 0 → top lane)
+    const s = run(flap(newGame()), 6, () => 0, (g) => g.y > H * 0.5 && g.vy > 0);
+    expect(s.mode).toBe("play");
+    expect(s.y).toBeGreaterThan(SKY + WORM_R);
+    expect(s.y).toBeLessThan(GROUND - WORM_R);
+  });
+
+  it("birds always fly between the sky and the ground", () => {
+    for (const r of [0, 0.5, 0.999]) {
+      let s = { ...flap(newGame()), score: 20 };
+      for (let i = 0; i < 6; i++) {
+        s = { ...s, mode: "play" as const, y: H / 2, vy: 0, birds: [], nextBirdIn: 0 };
+        s = step(s, 1 / 60, () => r);
+        const b = s.birds[0];
+        expect(b.baseY - b.amp).toBeGreaterThanOrEqual(SKY + 26);
+        expect(b.baseY + b.amp).toBeLessThanOrEqual(GROUND - 26);
+      }
+    }
   });
 
   it("birds fly in from the right and each one passed scores a point; a bird in the worm's way ends the round", () => {
@@ -53,6 +81,13 @@ describe("worm vs birds", () => {
     expect(hits(100, { x: WORM_X + 60, y: 100 })).toBe(false);
     const crash = step({ ...flap(newGame()), y: 150, vy: 0, birds: [{ id: 1, x: WORM_X + 2, baseY: 150, y: 150, amp: 0, freq: 0, phase: 0, passed: false }] }, 1 / 60);
     expect(crash.mode).toBe("over");
+  });
+
+  it("without birds (test switch) the sky stays empty", () => {
+    let s = flap(newGame());
+    for (let i = 0; i < 180; i++) s = step(s.y > H * 0.5 && s.vy > 0 ? flap(s) : s, 1 / 60, () => 0.5, { birds: false });
+    expect(s.mode).toBe("play");
+    expect(s.birds).toHaveLength(0);
   });
 
   it("gets harder with the score, up to a limit", () => {

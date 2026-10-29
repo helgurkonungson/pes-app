@@ -355,7 +355,7 @@ export const fr: Dict = {
   "session.grading": "Vérification…",
   "session.slowHint": "Les leçons avec IA sont écrites par parties. Les parties terminées sont enregistrées : si le téléphone se met en veille ou si vous quittez, la leçon reprend là où elle s'est arrêtée.",
   "game.aria": "Mini-jeu pendant l'écriture de la leçon : le ver contre les oiseaux. Appuyez pour sauter.",
-  "game.tap": "Touchez pour sauter : évitez les oiseaux !",
+  "game.tap": "Touchez pour sauter : évitez les oiseaux, les nuages et le sol !",
   "game.over": "Oups, partie terminée !",
   "game.result": "Score {score} · record {best}",
   "game.again": "Touchez pour rejouer",

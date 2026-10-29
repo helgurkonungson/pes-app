@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, chooseProvider, createSkillsetWithText, finishLesson, mockApis, onboard, skipCountdown, pickLang, skipTutorial } from "./helpers";
+import { btn, chooseProvider, createSkillsetWithText, calmWormGame, finishLesson, mockApis, onboard, skipCountdown, pickLang, skipTutorial, startWormPilot, stopWormPilot } from "./helpers";
 
 test.describe("AI lessons (mocked Claude API)", () => {
   test("placement test → AI lesson → AI-graded open answer", async ({ page }) => {
@@ -442,6 +442,7 @@ test.describe("Gemini, Groq and a custom server", () => {
 
   test("waiting for a part: the worm game keeps going after the part arrives, the part opens when the round ends", async ({ page }) => {
     test.setTimeout(90_000);
+    await calmWormGame(page); // no birds: the round lasts while the test keeps the worm flying
     await mockApis(page, "credits");
     let releaseQuiz!: () => void;
     const quizGate = new Promise<void>((r) => (releaseQuiz = r));
@@ -464,15 +465,12 @@ test.describe("Gemini, Groq and a custom server", () => {
     const game = page.locator(".pending-page").getByRole("button", { name: /червяк против птиц/ });
     await expect(page.locator(".pending-page")).toContainText("уворачивайтесь от птиц", { ignoreCase: true });
     await game.focus();
-    await page.keyboard.press("Space"); // a round starts
+    await startWormPilot(game); // a round starts, and the worm is kept in the air
     releaseQuiz();
-    // the quiz is ready, but the round goes on: keep the worm in the air for a moment
+    // the quiz is ready, but the round goes on
     const banner = page.getByText("Урок готов — доиграйте раунд!");
-    for (let i = 0; i < 8 && !(await banner.isVisible()); i++) {
-      await page.keyboard.press("Space");
-      await page.waitForTimeout(250);
-    }
-    await expect(banner).toBeVisible();
+    await expect(banner).toBeVisible({ timeout: 15_000 });
+    await stopWormPilot(page);
     await expect(page.locator(".option")).toHaveCount(0);
     // no more taps: the worm falls or a bird gets it, then the quiz opens by itself
     await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 10_000 });
@@ -667,6 +665,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
 test.describe("the waiting game while a lesson is prepared", () => {
   test("untouched, the lesson opens as soon as it's ready; a crash while waiting restarts with the score and record; a round in progress is played to the end", async ({ page }) => {
     test.setTimeout(90_000);
+    await calmWormGame(page); // no birds: the round lasts while the test keeps the worm flying
     await mockApis(page, "ok");
     let release!: () => void;
     const gate = new Promise<void>((r) => (release = r));
@@ -689,14 +688,11 @@ test.describe("the waiting game while a lesson is prepared", () => {
     await expect(page.getByText("Нажмите, чтобы сыграть ещё")).toBeVisible();
     // another round; the lesson becomes ready mid-round
     await page.waitForTimeout(600);
-    await page.keyboard.press("Space");
+    await startWormPilot(game); // its first tap starts the round
     release();
     const banner = page.getByText("Урок готов — доиграйте раунд!");
-    for (let i = 0; i < 8 && !(await banner.isVisible()); i++) {
-      await page.keyboard.press("Space");
-      await page.waitForTimeout(250);
-    }
-    await expect(banner).toBeVisible();
+    await expect(banner).toBeVisible({ timeout: 15_000 });
+    await stopWormPilot(page);
     await expect(page.locator(".session-body")).toHaveCount(0);
     await expect(page.getByText("Урок готов — открываем…")).toBeVisible({ timeout: 10_000 });
     await skipCountdown(page);

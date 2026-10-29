@@ -15,8 +15,7 @@ import { getProfile } from "../data/db";
 import { shareReports, submitReport } from "../data/reports";
 import { type Key, useT } from "../i18n";
 import { Sheet, toast } from "./ui";
-
-const APP_VERSION: string = __APP_VERSION__;
+import { APP_VERSION } from "../build";
 
 export function ReportButton({ session, page, text, className }: { session: Session; page?: Page; text?: string; className?: string }) {
   const t = useT();

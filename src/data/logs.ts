@@ -6,8 +6,7 @@
 import type { LogEntry } from "../core/types";
 import { db } from "./db";
 import { scheduleAutoSend } from "./logSend";
-
-const APP_VERSION: string = __APP_VERSION__;
+import { APP_VERSION } from "../build";
 
 const MAX = 200;
 /** Anything that looks like a secret is masked before it is written. */

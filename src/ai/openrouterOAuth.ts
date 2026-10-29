@@ -5,11 +5,13 @@
  * key. No developer secret is involved; the verifier never leaves the phone.
  * https://openrouter.ai/docs/use-cases/oauth-pkce
  */
+import { APP_ID, SITE_URL } from "../build";
+
 export const OPENROUTER_AUTH = "https://openrouter.ai/auth";
 export const OPENROUTER_KEYS = "https://openrouter.ai/api/v1/auth/keys";
-export const OPENROUTER_CALLBACK = "https://chompbook.online/oauth/openrouter/";
+export const OPENROUTER_CALLBACK = `${SITE_URL}/oauth/openrouter/`;
 /** The deep link the callback page opens: `<scheme>://oauth/openrouter?code=…&state=…`. */
-export const APP_SCHEME = "online.chompbook.app";
+export const APP_SCHEME = APP_ID;
 const PENDING_KEY = "pes.oauth.openrouter";
 /** OpenRouter's code lives 10 minutes; a sign-in older than that is not worth finishing. */
 export const PENDING_TTL_MS = 10 * 60_000;

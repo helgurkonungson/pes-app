@@ -3,17 +3,16 @@
  * silently to the report endpoint when the build has one (VITE_REPORT_URL), otherwise as a
  * ready e-mail to support@chompbook.online that the learner sends from their mail app.
  */
-import { Capacitor } from "@capacitor/core";
-import { Share } from "@capacitor/share";
 import { nowIso } from "../core/ids";
 import { DEFAULT_REPORT_EMAIL, reportMailto, reportsToText } from "../core/report";
 import type { LessonReport } from "../core/types";
+import { shareText } from "../native/share";
 import { db } from "./db";
-import { REPORT_URL } from "./endpoint";
+import { REPORT_EMAIL_OVERRIDE, REPORT_URL } from "../build";
 import { redact } from "./logs";
 
 export { REPORT_URL };
-export const REPORT_EMAIL: string = import.meta.env.VITE_REPORT_EMAIL || DEFAULT_REPORT_EMAIL;
+export const REPORT_EMAIL: string = REPORT_EMAIL_OVERRIDE || DEFAULT_REPORT_EMAIL;
 
 /** Saves the report and tries to deliver it. Returns whether it already reached the developer. */
 export async function submitReport(r: LessonReport): Promise<{ id: number; sent: boolean }> {
@@ -59,9 +58,7 @@ export async function shareReports(reports: LessonReport[], title: string): Prom
       window.location.href = reportMailto(REPORT_EMAIL, title, text);
       return;
     }
-    if (Capacitor.isNativePlatform()) await Share.share({ title, text, dialogTitle: title });
-    else if (navigator.share) await navigator.share({ title, text });
-    else await navigator.clipboard.writeText(text);
+    await shareText(title, text);
   } catch {
     /* no mail app / share sheet closed */
   }

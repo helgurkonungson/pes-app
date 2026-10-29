@@ -355,7 +355,7 @@ export const es: Dict = {
   "session.grading": "Comprobando…",
   "session.slowHint": "Las lecciones con IA se escriben por partes. Las partes terminadas se guardan: si el teléfono se bloquea o sales, la lección sigue desde ahí.",
   "game.aria": "Minijuego mientras se escribe la lección: gusano contra pájaros. Pulsa para saltar.",
-  "game.tap": "Toca para saltar: ¡esquiva los pájaros!",
+  "game.tap": "Toca para saltar: ¡esquiva los pájaros, las nubes y el suelo!",
   "game.over": "¡Uy, fin de la partida!",
   "game.result": "Puntos {score} · récord {best}",
   "game.again": "Toca para jugar otra vez",

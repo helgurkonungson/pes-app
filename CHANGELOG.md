@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.19.1 — 2026-10-30
+
+- **The waiting game has a sky:** a band of clouds now hangs over the worm vs birds game, and flying into it ends the round, just like falling to the ground. Keep the worm between the clouds and the soil! The hint under the game says so.
+- Under the hood: the lesson and Settings screens are split into smaller parts, build settings and sharing live in one place each — groundwork for Chompbook Pro and the next platforms. Nothing else changes for you.
+- This is the first published build with the Google Play id `online.chompbook.app` and includes everything from 0.19.0 (that build stopped at the automatic device tests: the test script started the app by a wrong activity name; the app itself was fine).
+
 ## 0.19.0 — 2026-10-29
 
 - **Chompbook moves to Google Play** as `online.chompbook.app`. This version is the first one built for the store: it no longer checks GitHub for updates — Google Play updates it. Settings → About shows the version and opens the Play page.

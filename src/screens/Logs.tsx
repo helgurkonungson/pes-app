@@ -1,6 +1,4 @@
 /** Settings → Error log: what went wrong on this phone, with a button to send it to the developer (ADR-033). */
-import { Capacitor } from "@capacitor/core";
-import { Share } from "@capacitor/share";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Bug, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -10,6 +8,7 @@ import { useProfile } from "../data/hooks";
 import { canSendLogs, sendLogsNow, setAutoReports } from "../data/logSend";
 import { logText } from "../data/logs";
 import { locale, useT } from "../i18n";
+import { shareText } from "../native/share";
 
 export function Logs() {
   const t = useT();
@@ -19,17 +18,7 @@ export function Logs() {
 
   /** Without an endpoint (or when it can't be reached) the journal goes through the share sheet. */
   const share = async () => {
-    const text = await logText();
-    try {
-      if (Capacitor.isNativePlatform()) await Share.share({ title: t("logs.title"), text, dialogTitle: t("logs.send") });
-      else if (navigator.share) await navigator.share({ title: t("logs.title"), text });
-      else {
-        await navigator.clipboard.writeText(text);
-        toast(t("logs.copied"));
-      }
-    } catch {
-      /* share sheet closed */
-    }
+    if ((await shareText(t("logs.title"), await logText())) === "copied") toast(t("logs.copied"));
   };
 
   const send = async () => {

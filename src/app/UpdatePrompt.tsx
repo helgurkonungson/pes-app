@@ -5,7 +5,8 @@ import { Markdown } from "../components/visuals";
 import { notesForLang, notesPreview } from "../core/updateCheck";
 import { useLang, useT } from "../i18n";
 import { useNav } from "../nav/store";
-import { APP_VERSION, installUpdateSafely } from "../update/updater";
+import { APP_VERSION } from "../build";
+import { installUpdateSafely } from "../update/updater";
 import { useUpdate } from "./App";
 
 export function UpdatePrompt() {

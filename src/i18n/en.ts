@@ -355,7 +355,7 @@ export const en = {
   "session.grading": "Checking…",
   "session.slowHint": "AI lessons are written in parts. Finished parts are saved — if the phone sleeps or you leave, the lesson continues from there.",
   "game.aria": "Mini-game while the lesson is written: worm vs birds. Press to jump.",
-  "game.tap": "Tap to jump — dodge the birds!",
+  "game.tap": "Tap to jump — dodge the birds, the clouds and the ground!",
   "game.over": "Oops — round over!",
   "game.result": "Score {score} · best {best}",
   "game.again": "Tap to play again",

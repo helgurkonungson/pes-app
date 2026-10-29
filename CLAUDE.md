@@ -5,6 +5,7 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 ## Essentials
 - Stack: React 19 + TypeScript + Vite, Capacitor 8 (Android now, iOS later), Dexie (IndexedDB), Claude API with the user's own key. Decisions: `docs/ARCHITECTURE.md` (ADRs).
 - Pure logic goes in `src/core/` and gets unit tests (`npm test`). UI never computes XP, streaks, plans or scores itself.
+- Module boundaries (ADR-036): build-time values only via `src/build.ts`; Capacitor plugins only via `src/native/`; AI error/provider wording in `src/screens/aiText.ts`; big screens keep their parts in a folder (`screens/session/`, `screens/settings/` — one section per area). Screens don't import other screens.
 - Data schema changes: add a new `this.version(n)` in `src/data/db.ts` with an upgrade; never edit an existing version. Never lose the user's history.
 - AI output is untrusted: always pass it through `src/core/normalize.ts`.
 - No developer secrets in the repo or app. The user's key lives only in secure storage.

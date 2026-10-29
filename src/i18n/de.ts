@@ -355,7 +355,7 @@ export const de: Dict = {
   "session.grading": "Wird geprüft…",
   "session.slowHint": "KI-Lektionen werden in Teilen geschrieben. Fertige Teile werden gespeichert – wenn das Telefon schläft oder du gehst, geht es dort weiter.",
   "game.aria": "Minispiel, während die Lektion geschrieben wird: Wurm gegen Vögel. Drücken zum Springen.",
-  "game.tap": "Tippe zum Springen – weich den Vögeln aus!",
+  "game.tap": "Tippe zum Springen – weich den Vögeln, den Wolken und dem Boden aus!",
   "game.over": "Hoppla – Runde vorbei!",
   "game.result": "Punkte {score} · Rekord {best}",
   "game.again": "Tippe für eine neue Runde",

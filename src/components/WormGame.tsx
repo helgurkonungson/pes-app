@@ -4,10 +4,18 @@
  * an untouched or finished game lets the lesson open at once. `onDone` is called then.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { flap, GROUND, H, newGame, step, W, WORM_X, type GameState } from "../core/wormGame";
+import { flap, GROUND, H, newGame, SKY, step, W, WORM_X, type GameState } from "../core/wormGame";
 import { useT } from "../i18n";
 
 const BEST_KEY = "pes.worm.best";
+/** Test switch: localStorage "pes.worm.calm" = "1" → no birds (e2e tests keep a round going for as long as they need). */
+const calm = () => {
+  try {
+    return localStorage.getItem("pes.worm.calm") === "1";
+  } catch {
+    return false;
+  }
+};
 const readBest = () => {
   try {
     return Number(localStorage.getItem(BEST_KEY)) || 0;
@@ -26,6 +34,8 @@ const saveBest = (n: number) => {
 interface Palette {
   sky: string;
   cloud: string;
+  storm: string;
+  stormDark: string;
   soil: string;
   soilDark: string;
   grass: string;
@@ -44,6 +54,8 @@ function palette(el: Element): Palette {
   return {
     sky: v("--surface-2"),
     cloud: v("--surface-3"),
+    storm: v("--storm"),
+    stormDark: v("--storm-dark"),
     soil: v("--soil"),
     soilDark: v("--soil-dark"),
     grass: v("--leaf"),
@@ -65,13 +77,32 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, p: Palette) {
   ctx.fillStyle = p.cloud;
   for (let i = 0; i < 3; i++) {
     const x = ((W + 80) - ((s.t * (12 + i * 5) + i * 140) % (W + 160))) - 40;
-    const y = 40 + i * 70;
+    const y = 78 + i * 66;
     ctx.beginPath();
     ctx.arc(x, y, 14, 0, Math.PI * 2);
     ctx.arc(x + 16, y - 6, 18, 0, Math.PI * 2);
     ctx.arc(x + 34, y, 13, 0, Math.PI * 2);
     ctx.fill();
   }
+  // the sky above: a band of heavy clouds — touching it ends the round, like the ground.
+  // Its puffy lower edge reaches down to SKY and drifts left while playing.
+  const drift = s.mode === "play" ? (s.t * 60) % 32 : 0;
+  ctx.fillStyle = p.stormDark;
+  ctx.fillRect(0, 0, W, SKY - 12);
+  for (let x = -drift - 16; x < W + 32; x += 32) {
+    ctx.beginPath();
+    ctx.arc(x + 16, SKY - 12, 12, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = p.storm;
+  ctx.fillRect(0, 0, W, SKY - 16);
+  for (let x = -drift - 16; x < W + 32; x += 32) {
+    ctx.beginPath();
+    ctx.arc(x + 16, SKY - 15, 11, 0, Math.PI * 2);
+    ctx.arc(x + 32, SKY - 20, 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   // soil with grass and pebbles moving left
   ctx.fillStyle = p.soil;
   ctx.fillRect(0, GROUND, W, H - GROUND);
@@ -182,13 +213,14 @@ export function WormGame({ ready = false, onDone, onPlay }: { ready?: boolean; o
     let pal = palette(c);
     const theme = new MutationObserver(() => (pal = palette(c)));
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const opts = { birds: !calm() };
     let raf = 0;
     let last = performance.now();
     const frame = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
       const prev = game.current;
-      const next = document.visibilityState === "visible" ? step(prev, dt) : prev;
+      const next = document.visibilityState === "visible" ? step(prev, dt, Math.random, opts) : prev;
       game.current = next;
       if (next.mode !== prev.mode) {
         if (next.mode === "over") overAt.current = now;
@@ -196,6 +228,7 @@ export function WormGame({ ready = false, onDone, onPlay }: { ready?: boolean; o
       }
       if (next.score !== prev.score) setScore(next.score);
       draw(ctx, next, pal);
+      c.dataset.y = String(Math.round(next.y)); // the worm's height, read by the e2e tests to keep it flying
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);

@@ -9,7 +9,7 @@ import { ExtLink, MinutesPicker, toast } from "../components/ui";
 import { HeroBg, Rings } from "../components/visuals";
 import { updateProfile } from "../data/db";
 import { useLang, useT } from "../i18n";
-import { aiErrorDetail, aiErrorText } from "./Session";
+import { aiErrorDetail, aiErrorText } from "./aiText";
 
 export function Onboarding() {
   const t = useT();

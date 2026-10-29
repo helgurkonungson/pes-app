@@ -74,17 +74,24 @@ New **public** repo `pes-app` (the app has no secrets thanks to BYOK; a public r
 ```
 pes-app/
   src/
-    app/          routing, layout, providers
-    screens/      Home, Skillsets, Skillset, Session, Stats, Rewards, Settings, Onboarding
-    components/   design-system pieces (Card, Ring, ProgressBar, TabBar, Button…)
-    core/         pure logic + tests (planner, scoring, xp, streak, levels, badges)
-    ai/           provider client, prompts, response schemas
-    data/         Dexie DB, repositories, export/import
+    build.ts      everything decided at build time: version, app id, Play URL, site, endpoints, flags (ADR-036)
+    app/          App shell, routing, theme, tab bar, update prompt
+    screens/      one file per screen; big screens keep their parts in a folder:
+      session/    lesson pages, loading status, result screen (Session.tsx = the flow)
+      settings/   Profile, AI, Data, About sections with their sheets (Settings.tsx = the page)
+      aiText.ts   how AI errors and providers are put into words (shared by screens)
+    components/   design-system pieces and shared widgets (ui, visuals, WormGame, FreeAi…)
+    core/         pure logic + tests (planner, scoring, xp, streak, energy, flow, game…)
+    ai/           provider registry and client, prompts, tool schemas, keys
+    data/         Dexie DB, repositories, session service, reports, logs, backups
+    native/       thin wrappers over Capacitor plugins (share, haptics, reminders, TTS, awake, Google sign-in)
     sources/      importers and chunking
-    update/       GitHub release checker
+    courses/      built-in courses (9 languages)
+    update/       GitHub release checker (self-update builds only)
+  site/           chompbook.online (static pages + report Worker)
   android/        Capacitor Android project
   .github/workflows/android.yml
-  docs/           brief, architecture, changelog
+  docs/           brief, architecture, store and legal notes
   CLAUDE.md       working rules for Claude
 ```
 
@@ -238,9 +245,15 @@ pes-app/
 
 ### ADR-033 — Report endpoint on chompbook.online; error reports by button or opt-in
 - **Context:** lesson reports (ADR-025) had no endpoint (`REPORT_URL` unset → e-mail), and the error journal (0.9.0) reached the developer only through the share sheet, so most problems were never seen.
-- **Decision:** the site's Worker (`site/`, Cloudflare Workers Builds) gets `site/src/worker.ts`: `POST /api/report` (the rest is still static assets; `run_worker_first: ["/api/*"]`). It accepts `{ app: "chompbook", reports?: LessonReport[], logs?: { version, platform, ua, lang, auto, entries[] } }` (≤ 256 KB, ≤ 20 reports, ≤ 200 entries), keeps only known fields, cuts them and redacts key-like strings again (`site/src/report.ts`, unit tested with the app's tests), answers CORS only for the app's origins (`https://localhost`, `capacitor://localhost`, local dev, the site), limits 20 requests/min per IP (Workers rate-limit binding `LIMIT`; IP not stored), stores one row per lesson report / journal in D1 `chompbook-reports` (table `reports`, created on first use; country from `cf.country`) and sends a short plain-text notice to Telegram (secret `TG_BOT_TOKEN`, var `TG_CHAT_ID` in `site/wrangler.jsonc`; a failed notice never fails the request). In the app, `src/data/endpoint.ts` holds `REPORT_URL` (GitHub Actions variable `REPORT_URL` = `https://chompbook.online/api/report`); Settings → Error log's button posts the newest 100 entries (`src/data/logSend.ts`, pure parts in `src/core/errorLog.ts`) and falls back to the share sheet when there is no endpoint or it fails. "Send error reports automatically" is **off by default** (`profile.autoErrorReports`); turning it on starts from that moment (`logsSentId`), then problems (never `info`) are posted 20 s after they are logged and at app start, at most 30 entries and once per 10 minutes (`logsAutoAt`). Privacy policy section 3 describes both.
+- **Decision:** the site's Worker (`site/`, Cloudflare Workers Builds) gets `site/src/worker.ts`: `POST /api/report` (the rest is still static assets; `run_worker_first: ["/api/*"]`). It accepts `{ app: "chompbook", reports?: LessonReport[], logs?: { version, platform, ua, lang, auto, entries[] } }` (≤ 256 KB, ≤ 20 reports, ≤ 200 entries), keeps only known fields, cuts them and redacts key-like strings again (`site/src/report.ts`, unit tested with the app's tests), answers CORS only for the app's origins (`https://localhost`, `capacitor://localhost`, local dev, the site), limits 20 requests/min per IP (Workers rate-limit binding `LIMIT`; IP not stored), stores one row per lesson report / journal in D1 `chompbook-reports` (table `reports`, created on first use; country from `cf.country`) and sends a short plain-text notice to Telegram (secret `TG_BOT_TOKEN`, var `TG_CHAT_ID` in `site/wrangler.jsonc`; a failed notice never fails the request). In the app, `REPORT_URL` comes from `src/build.ts` (ADR-036; first `src/data/endpoint.ts`) (GitHub Actions variable `REPORT_URL` = `https://chompbook.online/api/report`); Settings → Error log's button posts the newest 100 entries (`src/data/logSend.ts`, pure parts in `src/core/errorLog.ts`) and falls back to the share sheet when there is no endpoint or it fails. "Send error reports automatically" is **off by default** (`profile.autoErrorReports`); turning it on starts from that moment (`logsSentId`), then problems (never `info`) are posted 20 s after they are logged and at app start, at most 30 entries and once per 10 minutes (`logsAutoAt`). Privacy policy section 3 describes both.
 - **Consequences:** reading reports: Telegram notice, full rows in the Cloudflare dashboard (D1 → `chompbook-reports` → Console, e.g. `SELECT id, received_at, type, version, summary FROM reports ORDER BY id DESC LIMIT 50`). E2E builds have no endpoint, so Playwright covers the share-sheet path; the endpoint path is covered by unit tests (fake fetch / fake D1) and was checked once by hand against a build with `VITE_REPORT_URL`. Delete rows older than 12 months by hand until a scheduled cleanup exists.
 
 ### ADR-034 — Google Play: app id online.chompbook.app, no self-update, AAB
 - **Context:** the app goes to Google Play under the organisation account with the package `online.chompbook.app`; GitHub builds used `io.github.helgurkonungson.pes`. An installed app's id can't change. Oleg chose a single id (no parallel GitHub app).
 - **Decision:** `applicationId` and the Capacitor `appId` are `online.chompbook.app` (the Java package / namespace stay `io.github.helgurkonungson.pes` — code only). The OpenRouter deep-link scheme follows the id; the sign-in URL carries `app=online.chompbook.app`, and the callback page opens that app, or the old id for builds before 0.19. The GitHub self-updater is compiled out of the default build (`__SELF_UPDATE__` = `VITE_SELF_UPDATE=1`), because Play forbids updating outside Play; Settings shows the version and links to the Play listing. CI builds the APK (direct install, emulator smoke) and a signed **AAB** (`Chompbook-x.y.z-play.aab`), attached to each GitHub Release. Upload key = the existing release key (Play App Signing re-signs). Users of the old GitHub app move their data with Settings → Export backup → restore in the new app (the old app's updater offers v0.19 once; it installs as a separate app). ADR-009 is amended: from now on `online.chompbook.app` must never change.
+
+### ADR-036 — Module boundaries for the next features (0.19.1)
+- **Context:** the next steps are Chompbook Pro (a hosted AI with a subscription: a new provider, a paywall, store purchases, new error states), a RuStore build and iOS. Several Claude sessions work on the code in parallel. `Session.tsx` (1000 lines) and `Settings.tsx` (630 lines) were single components that every feature touched; build-time switches (`__APP_VERSION__`, `__SELF_UPDATE__`, `VITE_*`) were read in seven files; screens imported each other (Settings and Onboarding took AI error texts from the Session screen); Capacitor plugins (Share, Filesystem, Haptics) were called from screens.
+- **Decision:** (1) `src/build.ts` is the only place that reads build-time values (version, repo, app id `online.chompbook.app`, Play URL, site URL, self-update flag, report endpoint, Google client ids). New channels and services add their switches there. (2) `src/screens/aiText.ts` turns AI errors and provider ids into words for every screen. (3) Settings is a page of sections in `src/screens/settings/` — Profile (+ theme), AI, Data, About — each owning its state and sheets. (4) The lesson flow stays in `Session.tsx`; its parts live in `src/screens/session/` (`PageView` with theory/quiz/open/pending pages, `LoadingStatus`, `Congrats`). (5) `src/native/share.ts` (text and file sharing with web fallbacks) and `src/native/haptics.ts` wrap plugins, next to the existing reminders, TTS, keep-awake and Google sign-in wrappers.
+- **Consequences:** behaviour is unchanged (same unit and e2e tests). Pro plugs into `aiText.ts` (subscription errors), `settings/AiSection.tsx` (a provider row), `build.ts` (store keys, API URL); iOS differences go into `src/native/`. Rule for new code: screens don't import other screens' files except their own folder and `aiText.ts`; plugins are used only from `src/native/` (and the few platform-specific components that already do).
+

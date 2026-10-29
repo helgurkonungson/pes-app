@@ -31,7 +31,8 @@ ONB_NAME=${ONB_NAME:-Smoke}                                    # typed via `inpu
 # App and test settings
 # ---------------------------------------------------------------------------------------------
 PKG=online.chompbook.app
-ACTIVITY=.MainActivity
+# the activity class keeps the old Java package (namespace) — ADR-034; ".MainActivity" would mean online.chompbook.app.MainActivity
+ACTIVITY=io.github.helgurkonungson.pes.MainActivity
 BOOT_TIMEOUT=${BOOT_TIMEOUT:-300}      # s, wait for sys.boot_completed
 RENDER_TIMEOUT=${RENDER_TIMEOUT:-60}   # s, wait for the first web UI after launch
 STEP_TIMEOUT=${STEP_TIMEOUT:-30}       # s, default wait for a UI element

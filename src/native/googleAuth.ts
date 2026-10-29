@@ -5,9 +5,7 @@
  * is blocked by Google, so it is never used. Nothing is stored; we sign out right away.
  */
 import { Capacitor } from "@capacitor/core";
-
-const WEB_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ?? "";
-const IOS_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID ?? "";
+import { GOOGLE_IOS_CLIENT_ID as IOS_CLIENT_ID, GOOGLE_WEB_CLIENT_ID as WEB_CLIENT_ID } from "../build";
 
 /** True when the one-tap flow can run here (native app + OAuth client configured at build time). */
 export function googleSignInAvailable(): boolean {

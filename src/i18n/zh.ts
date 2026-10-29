@@ -355,7 +355,7 @@ export const zh: Dict = {
   "session.grading": "正在检查…",
   "session.slowHint": "AI 课程分部分编写。完成的部分会被保存——即使手机休眠或你离开，课程也会从中断处继续。",
   "game.aria": "课程生成时的小游戏：小虫躲飞鸟。按下即可跳起。",
-  "game.tap": "点击跳起，躲开飞鸟！",
+  "game.tap": "点击跳起，躲开飞鸟、云层和地面！",
   "game.over": "哎呀，本局结束！",
   "game.result": "得分 {score} · 最高 {best}",
   "game.again": "点击再玩一次",

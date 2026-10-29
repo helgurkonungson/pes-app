@@ -11,6 +11,7 @@ import { t } from "../i18n";
 import { http } from "./compat";
 import { adoptFreeKey } from "./freeKey";
 import { beginOpenRouterSignIn, type ExchangeFailure, finishOpenRouterSignIn, loadPending, OAuthError, parseCallback } from "./openrouterOAuth";
+import { SITE_URL } from "../build";
 
 export type OrStatus = { stage: "idle" } | { stage: "waiting" } | { stage: "connecting" } | { stage: "done" } | { stage: "error"; kind: ExchangeFailure | "key" };
 
@@ -65,4 +66,4 @@ export async function handleOpenRouterCallback(url: string): Promise<boolean> {
 export const openRouterPending = () => loadPending() !== null;
 
 /** Web only: the callback page on chompbook.online posts the URL back to the app window. */
-export const CALLBACK_ORIGIN = "https://chompbook.online";
+export const CALLBACK_ORIGIN = SITE_URL;
