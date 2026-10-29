@@ -13,6 +13,7 @@ import { nowIso } from "../core/ids";
 import { OfflineError } from "../core/offline";
 import type { Session, SessionProgress, SessionResult } from "../core/types";
 import { db, getProfile } from "../data/db";
+import { useProfile } from "../data/hooks";
 import { completeSession, skipPlacement } from "../data/repo";
 import { writeSnapshot } from "../data/safety";
 import { continueWriting, CourseFinishedError, isWriting, prefetchNext, prepareSession, restartReading } from "../data/sessionService";
@@ -30,6 +31,8 @@ type Phase = "loading" | "error" | "countdown" | "run" | "finishing" | "done";
 
 export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: string; minutes: number; offline?: boolean }) {
   const t = useT();
+  // a lapsed Pro is "renew Pro", not "top up your AI account" (ADR-037)
+  const proProvider = useProfile()?.provider === "chompbook";
   const { pop, push, setTab } = useNav();
   const [phase, setPhase] = useState<Phase>("loading");
   const [stage, setStage] = useState<Key>("session.preparing");
@@ -416,7 +419,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
         </div>
         {pageIndex === 0 && session.lesson?.mode === "offline" && session.lesson.fallback && session.lesson.fallback !== "offline-mode" && (
           <div className="banner warn small" style={{ marginBottom: 14 }}>
-            <CloudOff size={18} /> <span className="grow">{t(session.lesson.fallback === "credits" ? "session.fallback.credits" : session.lesson.fallback === "auth" ? "session.fallback.auth" : "session.fallback.noKey")}</span>
+            <CloudOff size={18} /> <span className="grow">{t(session.lesson.fallback === "credits" && proProvider ? "session.fallback.proInactive" : session.lesson.fallback === "credits" ? "session.fallback.credits" : session.lesson.fallback === "auth" ? "session.fallback.auth" : "session.fallback.noKey")}</span>
           </div>
         )}
         {page.kind === "pending" || gamePage === pageIndex ? (

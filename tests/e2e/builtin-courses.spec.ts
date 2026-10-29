@@ -75,7 +75,7 @@ test.describe("built-in courses (ADR-031)", () => {
 });
 
 test.describe("own skill path from the tutorial", () => {
-  test("how-to → connect AI → free AI with its catches; back works; Pro opens the placeholder", async ({ page }) => {
+  test("how-to → connect AI → free AI with its catches; back works; Pro says where it is sold", async ({ page }) => {
     await mockApis(page);
     await toStartStep(page);
     const tut = page.locator(".tutorial");
@@ -95,7 +95,8 @@ test.describe("own skill path from the tutorial", () => {
     await page.getByTestId("own-pro").click();
     await expect(page.locator(".tutorial")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Chompbook Pro" })).toBeVisible();
-    await expect(page.getByTestId("pro-soon")).toContainText("Скоро");
+    await expect(page.getByTestId("pro-play-only")).toContainText("Google Play"); // the web/GitHub build doesn't sell Pro
+    await expect(btn(page, "Открыть в Google Play")).toBeVisible();
   });
 
   test("own key explains the token and opens Settings at the provider picker", async ({ page }) => {

@@ -35,3 +35,7 @@
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,JavascriptInterface
 -keepclassmembers class * { @android.webkit.JavascriptInterface <methods>; }
 -dontwarn org.apache.cordova.**
+# RevenueCat (Chompbook Pro, ADR-034): the Capacitor plugin is found by reflection; the SDK and
+# Play Billing ship their own consumer rules.
+-keep class com.revenuecat.purchases.capacitor.** { *; }
+-keep class com.revenuecat.purchases.hybridcommon.** { *; }

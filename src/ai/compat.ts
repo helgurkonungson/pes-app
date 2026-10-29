@@ -9,7 +9,7 @@ import type { Profile, ProviderId, TokenUsage } from "../core/types";
 import { AiError, type ModelInfo, noteUsage, type ToolDef } from "./client";
 import { baseUrl, chatModels, openRouterModels, PROVIDERS, wireModel } from "./providers";
 
-type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl">;
+type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl"> & Partial<Pick<Profile, "ageGroup">>;
 
 interface HttpResult {
   status: number;
@@ -62,6 +62,8 @@ function headers(id: ProviderId, key: string, cfg: Cfg): Record<string, string> 
     h["HTTP-Referer"] = "https://github.com/helgurkonungson/pes-app";
     h["X-Title"] = "Chompbook";
   }
+  // Chompbook AI adds safety rules unless the learner said they are an adult (ADR-037)
+  if (id === "chompbook") h["x-chompbook-audience"] = cfg.ageGroup === "adult" ? "adult" : "teen";
   return h;
 }
 

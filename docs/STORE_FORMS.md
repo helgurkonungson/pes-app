@@ -81,6 +81,21 @@
 ### Сведения о разработчике (DSA, ЕС)
 Play попросит указать статус «трейдер / не трейдер» по закону ЕС о цифровых услугах (DSA). Трейдер — тот, кто зарабатывает на приложении. Для трейдера адрес, телефон и e-mail показываются публично. Пока приложение бесплатное и без монетизации, можно указать «не трейдер». С подпиской Pro — трейдер. Аккаунт организации (HW GROUP (CYPRUS) LIMITED) показывает данные компании.
 
+### С подпиской Chompbook Pro (с версии 0.20.0, ADR-037)
+Что меняется в ответах выше, когда в сборке есть Pro (переменная `REVENUECAT_ANDROID_KEY` задана):
+
+| Пункт | Ответ |
+|---|---|
+| **Что уходит с телефона (добавить)** | RevenueCat (США): анонимный идентификатор `$RCAnonymousID:…`, покупки в Google Play для этого приложения, версии приложения и Android, язык и валюта. Сервер Chompbook AI (`api.chompbook.online`, Cloudflare): содержимое урока для AI и анонимный идентификатор → OpenRouter → поставщик модели; хранит только статус подписки (до 30 дней без использования) и дневные счётчики токенов (90 дней), без текста уроков и журналов запросов |
+| **Data safety → Financial info → Purchase history** | Collected: **Yes**. Shared: **No** (RevenueCat — поставщик услуг). Required. Purpose: **App functionality** |
+| **Data safety → Device or other IDs** | Collected: **Yes** (анонимный id RevenueCat). Shared: **No**. Required. Purpose: **App functionality**, **Fraud prevention, security, and compliance** (дневной лимит) |
+| **Data safety → Other user-generated content** | Добавить: материалы урока для Chompbook AI — Collected, not shared, **processed ephemerally** (сервер их не хранит) |
+| **App access** | По-прежнему без особого доступа: Pro — обычная подписка Google Play. В комментарии для проверяющих: «Chompbook Pro is an optional Google Play subscription (Settings → Chompbook Pro); everything else works without it.» |
+| **IARC → Цифровые покупки** | **Yes** |
+| **DSA** | **Трейдер** (с подпиской появляется доход): адрес, телефон и e-mail ИП будут видны в карточке |
+| **Ads / Advertising ID** | Без изменений: No (RevenueCat не использует рекламный идентификатор) |
+| **Политика и условия** | https://chompbook.online/privacy/ (раздел 3) и https://chompbook.online/terms/ — ссылка на условия обязательна на экране оформления подписки (есть) |
+
 ---
 
 ## App Store Connect (когда будет iOS-сборка)

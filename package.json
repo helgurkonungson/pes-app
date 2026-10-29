@@ -1,7 +1,7 @@
 {
   "name": "pes-app",
   "private": true,
-  "version": "0.19.2",
+  "version": "0.20.0",
   "description": "PES — learn any skillset in daily portions, from your own sources.",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.e2e.json --noEmit && tsc -p api/tsconfig.json --noEmit",
     "sync": "npm run build && cap sync android",
     "e2e": "playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome",
     "e2e:all": "playwright test",
@@ -30,6 +30,7 @@
     "@capacitor/share": "^8.0.3",
     "@capgo/capacitor-social-login": "8.5.15",
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@revenuecat/purchases-capacitor": "13.7.6",
     "dexie": "^4.4.6",
     "dexie-react-hooks": "^4.4.0",
     "jszip": "^3.10.2",

@@ -41,13 +41,16 @@ export function progressLabel(x: SkillsetSummary, t: T): string {
   return t("progress.read", { p: Math.round(x.coverage * 100) });
 }
 
-function AiBanner({ state }: { state: AiState }) {
+function AiBanner({ state, pro }: { state: AiState; pro?: boolean }) {
   const t = useT();
   const setTab = useNav((s) => s.setTab);
+  const push = useNav((s) => s.push);
   if (state === "ok" || state === "off") return null;
-  const text = state === "credits" ? t("home.ai.credits") : state === "auth" ? t("home.ai.auth") : t("home.ai.noKey");
+  // Chompbook AI refuses when Pro lapsed (ADR-037): renewing beats "top up your account"
+  const proLapsed = pro && state === "credits";
+  const text = proLapsed ? t("home.ai.proInactive") : state === "credits" ? t("home.ai.credits") : state === "auth" ? t("home.ai.auth") : t("home.ai.noKey");
   return (
-    <button className={`banner${state === "no-key" ? "" : " warn"}`} onClick={() => setTab("settings")}>
+    <button className={`banner${state === "no-key" ? "" : " warn"}`} onClick={() => (proLapsed ? push({ name: "pro" }) : setTab("settings"))}>
       <span className="icon-dot">{state === "no-key" ? <KeyRound size={20} /> : <CloudOff size={20} />}</span>
       <span className="grow small">{text}</span>
       <Chevron />
@@ -235,7 +238,7 @@ export function Home() {
 
         <StreakNews profile={profile} due={list.reduce((a, x) => a + x.due, 0)} />
 
-        {ai && needsAiNote && <AiBanner state={ai} />}
+        {ai && needsAiNote && <AiBanner state={ai} pro={profile?.provider === "chompbook"} />}
 
         {current ? (
           <NextUp x={current} ai={ai} />

@@ -13,7 +13,8 @@ export type LessonMode = "ai" | "offline" | "course";
 /** Error kinds that make AI unusable until the learner fixes something. */
 export type AiBlock = "no-key" | "auth" | "credits";
 /** AI provider whose key the learner uses. */
-export type ProviderId = "anthropic" | "openai" | "gemini" | "yandex" | "qwen" | "groq" | "nvidia" | "mistral" | "openrouter" | "custom";
+/** "chompbook" = Chompbook AI, the hosted AI that comes with Pro (ADR-037). */
+export type ProviderId = "anthropic" | "openai" | "gemini" | "yandex" | "qwen" | "groq" | "nvidia" | "mistral" | "openrouter" | "custom" | "chompbook";
 
 export interface Skillset {
   id: string;
@@ -262,6 +263,8 @@ export interface Profile {
   reviewAsk?: { at: string; count: number };
   /** Colour theme; default "system". */
   theme?: "system" | "light" | "dark";
+  /** Chompbook Pro (ADR-037): mirrored from the store so the app knows it offline. */
+  pro?: { active: boolean; since: string; until?: string };
   /** Explicit consent to create a free Gemini key in the learner's Google account (ADR-021). */
   geminiConsent?: { version: number; at: string; auto: boolean };
   /** AI tokens used, per calendar month ("2026-10"). */
@@ -414,7 +417,7 @@ export interface LogEntry {
   id?: number;
   at: string;
   /** "error" (crash / unhandled), "ai" (AI request failed), "import" (file could not be read), "info". */
-  kind: "error" | "ai" | "import" | "info";
+  kind: "error" | "ai" | "import" | "info" | "pro";
   message: string;
   detail?: string;
   /** App version that logged it. */

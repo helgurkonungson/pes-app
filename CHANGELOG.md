@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.20.0 — 2026-10-30
+
+- **Chompbook Pro:** built-in AI with nothing to set up — lessons from any of your materials and feedback on your written answers, about 10 AI lessons a day. A monthly or yearly subscription through Google Play, with a 7-day free trial for new subscribers. Settings → Chompbook Pro shows the plans, today's allowance, "Restore purchases" and "Manage subscription"; Chompbook AI is also the first choice in Settings → AI provider. After the purchase lessons switch to Chompbook AI; you can go back to your own key at any time. If Pro ends or today's allowance is used up, lessons continue without AI, as always.
+- **Safer AI for teenagers:** unless you are 18 or older, Chompbook AI adds extra safety rules to every lesson request.
+- **Terms of use and an updated privacy policy** on chompbook.online: subscription terms, Chompbook AI, RevenueCat, what our server keeps and for how long.
+
 ## 0.19.2 — 2026-10-30
 
 - **What you missed comes back:** when AI checks your open answer, the points under "To improve" now return in your next AI lessons — a short re-explanation at the start ("Back to what you missed last time") and a chance to show in the open question that you've got it. A gap closes once you answer well (7/10 or more).

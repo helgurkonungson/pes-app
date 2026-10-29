@@ -3,7 +3,7 @@
  * free-AI sheet, this month's usage and the AI status. A new AI option (e.g. Chompbook AI with Pro)
  * plugs in here: a row in the provider picker and its own rows below.
  */
-import { Activity, BarChart3, Bot, Check, ChevronLeft, ChevronRight, Folder, KeyRound, Server, Sparkles } from "lucide-react";
+import { Activity, BarChart3, Bot, Check, ChevronLeft, ChevronRight, Crown, Folder, KeyRound, Server, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AiError, listModels, type ModelInfo, testKey } from "../../ai/client";
 import { freeProvider } from "../../ai/freeProviders";
@@ -17,6 +17,8 @@ import type { AiMode, Profile, ProviderId } from "../../core/types";
 import { updateProfile } from "../../data/db";
 import { locale, useT } from "../../i18n";
 import { useSettingsIntent } from "../../nav/intent";
+import { useNav } from "../../nav/store";
+import { usePro } from "../../pro/purchases";
 import { aiErrorDetail, aiErrorText, providerName } from "../aiText";
 
 type AiSheet = null | "key" | "model" | "folder" | "provider" | "server";
@@ -34,6 +36,8 @@ export function AiSection({ profile }: { profile: Profile }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [models, setModels] = useState<ModelInfo[] | null>(null);
+  const proStatusActive = usePro((s) => s.status.active);
+  const proActive = proStatusActive || !!profile.pro?.active;
 
   const provider = activeProvider(profile);
   const meta = PROVIDERS[provider];
@@ -106,6 +110,8 @@ export function AiSection({ profile }: { profile: Profile }) {
     }
   };
 
+  const openPro = () => useNav.getState().push({ name: "pro" });
+
   const chooseProvider = async (id: ProviderId) => {
     await updateProfile({ provider: id, aiBlock: undefined });
     keyChanged();
@@ -113,7 +119,7 @@ export function AiSection({ profile }: { profile: Profile }) {
   };
 
   const aiStatusText =
-    ai === "ok" ? t("settings.ai.ok") : ai === "off" ? t("settings.ai.off") : ai === "credits" ? t("settings.ai.credits") : ai === "auth" ? t("settings.ai.auth") : ai === "no-key" ? t("settings.ai.noKey") : "…";
+    ai === "ok" ? t("settings.ai.ok") : ai === "off" ? t("settings.ai.off") : ai === "credits" ? t(provider === "chompbook" ? "settings.ai.proInactive" : "settings.ai.credits") : ai === "auth" ? t("settings.ai.auth") : ai === "no-key" ? t("settings.ai.noKey") : "…";
   const keyLabel = meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) });
   const errorBox = err && (
     <div className="error-box" role="alert">
@@ -135,7 +141,10 @@ export function AiSection({ profile }: { profile: Profile }) {
           ]}
         />
         <p className="faint small">{(profile.aiMode ?? "auto") === "auto" ? t("settings.aiAutoHint") : t("settings.aiOfflineHint")}</p>
-        {!key && !meta.keyOptional && <FreeAiCard onClick={() => setFreeSheet("")} />}
+        <Group>
+          <MenuRow icon={<Crown size={20} />} label={t("settings.pro")} value={proActive ? t("settings.proActive") : t("settings.proOff")} onClick={openPro} />
+        </Group>
+        {!key && !meta.keyOptional && provider !== "chompbook" && <FreeAiCard onClick={() => setFreeSheet("")} />}
         <Group>
           <MenuRow icon={<Sparkles size={20} />} label={t("settings.provider")} value={providerName(provider, t)} onClick={() => (setProviderView("top"), setSheet("provider"))} />
           {provider === "custom" && (
@@ -150,8 +159,13 @@ export function AiSection({ profile }: { profile: Profile }) {
           {provider === "yandex" && (
             <MenuRow icon={<Folder size={20} />} label={t("settings.folder")} hint={t("settings.folderHint")} value={profile.yandexFolder || t("settings.keyNotSet")} onClick={() => (setDraft(profile.yandexFolder ?? ""), setSheet("folder"))} />
           )}
-          <MenuRow icon={<KeyRound size={20} />} label={keyLabel} value={key ? maskKey(key) : t("settings.keyNotSet")} onClick={() => (setDraft(""), setErr(null), setSheet("key"))} />
-          <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={modelOf(profile).replace(/^claude-/, "") || "—"} onClick={key || (meta.keyOptional && profile.customBaseUrl) ? openModels : undefined} />
+          {/* Chompbook AI needs no key and has one model chosen by the server (ADR-037) */}
+          {provider !== "chompbook" && (
+            <MenuRow icon={<KeyRound size={20} />} label={keyLabel} value={key ? maskKey(key) : t("settings.keyNotSet")} onClick={() => (setDraft(""), setErr(null), setSheet("key"))} />
+          )}
+          {provider !== "chompbook" && (
+            <MenuRow icon={<Bot size={20} />} label={t("settings.model")} value={modelOf(profile).replace(/^claude-/, "") || "—"} onClick={key || (meta.keyOptional && profile.customBaseUrl) ? openModels : undefined} />
+          )}
         </Group>
         {provider === "qwen" && (
           <Segmented<"intl" | "cn">
@@ -244,9 +258,10 @@ export function AiSection({ profile }: { profile: Profile }) {
             <div className="stack" role="radiogroup" aria-label={t("settings.provider")}>
               {(
                 [
+                  { id: "pro", name: t("provider.pro"), hint: proActive ? t("provider.proHint") : t("provider.proBuy"), on: provider === "chompbook" },
                   { id: "builtin", name: t("provider.builtin"), hint: t("provider.builtinHint"), on: provider === "gemini" },
                   { id: "custom", name: providerName("custom", t), hint: t("settings.customVendor"), on: provider === "custom" },
-                  { id: "other", name: t("provider.other"), hint: t("provider.otherHint"), on: provider !== "gemini" && provider !== "custom" },
+                  { id: "other", name: t("provider.other"), hint: t("provider.otherHint"), on: provider !== "gemini" && provider !== "custom" && provider !== "chompbook" },
                 ] as const
               ).map((o) => (
                 <button
@@ -256,6 +271,14 @@ export function AiSection({ profile }: { profile: Profile }) {
                   className={`list-card inner${o.on ? " selected" : ""}`}
                   onClick={async () => {
                     if (o.id === "other") return setProviderView("other");
+                    if (o.id === "pro") {
+                      // Chompbook AI works only with an active Pro: otherwise the Pro screen explains and sells it
+                      if (!proActive || !(await getApiKey("chompbook"))) {
+                        setSheet(null);
+                        return openPro();
+                      }
+                      return chooseProvider("chompbook");
+                    }
                     if (o.id === "builtin" && !(await getApiKey("gemini"))) {
                       setSheet(null);
                       return setFreeSheet("gemini-direct");

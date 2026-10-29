@@ -141,6 +141,10 @@ jobs:
           # reports shared by hand. Not secrets; empty = reports are shared through the share sheet.
           VITE_REPORT_URL: ${{ vars.REPORT_URL }}
           VITE_REPORT_EMAIL: ${{ vars.REPORT_EMAIL }}
+          # Chompbook Pro (ADR-037): RevenueCat public SDK key (public by design; empty = Pro can't be
+          # bought in this build) and, optionally, another Chompbook AI server URL.
+          VITE_REVENUECAT_ANDROID_KEY: ${{ vars.REVENUECAT_ANDROID_KEY }}
+          VITE_PRO_API: ${{ vars.PRO_API }}
 
       - name: Sync Capacitor
         run: npx cap sync android

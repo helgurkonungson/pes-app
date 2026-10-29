@@ -5,6 +5,7 @@
  * server (Ollama, LM Studio…) — uses OpenAI-compatible Chat Completions.
  */
 import type { Profile, ProviderId } from "../core/types";
+import { PRO_API } from "../build";
 
 export interface ProviderMeta {
   id: ProviderId;
@@ -118,6 +119,15 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     keyOptional: true,
     vendor: "Ollama, LM Studio, vLLM…",
   },
+  chompbook: {
+    id: "chompbook",
+    name: "Chompbook AI",
+    keyUrl: "",
+    keyPlaceholder: "",
+    defaultModel: "chompbook", // the server picks the real model (api/wrangler.jsonc)
+    webSearch: false,
+    vendor: "Chompbook Pro",
+  },
   qwen: {
     id: "qwen",
     name: "Qwen",
@@ -130,6 +140,10 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
   },
 };
 
+/** Chompbook AI server (Pro). The "key" is the learner's RevenueCat app user id (src/pro/purchases.ts). */
+export { PRO_API };
+
+/** Providers the learner picks with a key of their own (Chompbook AI comes with Pro, not with a key). */
 export const PROVIDER_IDS: ProviderId[] = ["anthropic", "openai", "gemini", "groq", "mistral", "openrouter", "yandex", "qwen", "nvidia", "custom"];
 
 export function activeProvider(p: Pick<Profile, "provider"> | undefined): ProviderId {
@@ -170,6 +184,8 @@ export function baseUrl(id: ProviderId, p: Pick<Profile, "qwenRegion" | "customB
       return "https://llm.api.cloud.yandex.net/v1";
     case "nvidia":
       return "https://integrate.api.nvidia.com/v1";
+    case "chompbook":
+      return PRO_API;
     case "qwen":
       return p.qwenRegion === "cn" ? "https://dashscope.aliyuncs.com/compatible-mode/v1" : "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
     default:

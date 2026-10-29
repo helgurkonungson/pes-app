@@ -1,0 +1,29 @@
+// Chompbook AI server (Pro) — api.chompbook.online. ADR-037, setup: docs/PRO_SETUP.md.
+// Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "api".
+// Secrets (dashboard → the Worker → Settings → Variables and secrets): OPENROUTER_KEY, REVENUECAT_SECRET.
+{
+  "name": "chompbook-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "routes": [{ "pattern": "api.chompbook.online", "custom_domain": true }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "chompbook-api",
+      // replace with the id shown after creating the D1 database "chompbook-api" (docs/PRO_SETUP.md, step 3)
+      "database_id": "00000000-0000-0000-0000-000000000000"
+    }
+  ],
+  "vars": {
+    // OpenRouter model for Pro lessons; change here (or in the dashboard) without an app update
+    "MODEL": "anthropic/claude-haiku-5.5",
+    "FALLBACK_MODELS": "deepseek/deepseek-v4.1-flash-1017",
+    // per learner per UTC day (prompt + answer tokens); ~60 000 per 15-minute AI lesson
+    "DAILY_TOKENS": "600000",
+    "ENTITLEMENT": "pro"
+  },
+  // daily clean-up: usage older than 90 days, cached subscription answers unused for 30 days
+  "triggers": { "crons": ["17 3 * * *"] },
+  // errors and our own console messages only: no per-request logs (they would hold IP addresses)
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } }
+}

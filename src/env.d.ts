@@ -9,4 +9,8 @@ interface ImportMetaEnv {
   readonly VITE_REPORT_URL?: string;
   /** Developer e-mail for reports shared by hand (pre-filled recipient). Not a secret. */
   readonly VITE_REPORT_EMAIL?: string;
+  /** RevenueCat public SDK key for Android (Pro purchases, ADR-037); public by design. Empty = Pro can't be bought in this build. */
+  readonly VITE_REVENUECAT_ANDROID_KEY?: string;
+  /** Chompbook AI server (Pro). Default https://api.chompbook.online/v1. */
+  readonly VITE_PRO_API?: string;
 }

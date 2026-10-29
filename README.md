@@ -40,6 +40,8 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 | `src/build.ts` | Build-time values in one place: version, app id, Play URL, endpoints, self-update flag (ADR-036) |
 | `src/native/` | Thin wrappers over Capacitor plugins: share, haptics, reminders, speech, keep-awake, Google sign-in |
 | `src/update/` | Self-update from GitHub Releases (only builds with `VITE_SELF_UPDATE=1`) |
+| `src/pro/` | Chompbook Pro purchases (RevenueCat over Google Play Billing, ADR-037) |
+| `api/` | Chompbook AI server: Cloudflare Worker + D1 (Pro entitlement, daily allowance, OpenRouter); setup in `docs/PRO_SETUP.md` |
 | `android/` | Capacitor Android project |
 | `.github/workflows/android.yml` | CI: tests → build → APK → Release on new version |
 | `docs/` | Brief, architecture and ADRs |

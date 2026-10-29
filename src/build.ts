@@ -28,6 +28,11 @@ export const REPORT_URL: string = import.meta.env.VITE_REPORT_URL ?? "";
 /** Recipient for reports shared by hand; empty = the default support address. */
 export const REPORT_EMAIL_OVERRIDE: string = import.meta.env.VITE_REPORT_EMAIL ?? "";
 
+/** RevenueCat public SDK key for Android (Chompbook Pro purchases, ADR-037); public by design. Empty = Pro can't be bought in this build. */
+export const REVENUECAT_ANDROID_KEY: string = import.meta.env.VITE_REVENUECAT_ANDROID_KEY ?? "";
+/** Chompbook AI server (Pro, ADR-037), OpenAI-compatible. */
+export const PRO_API: string = (import.meta.env.VITE_PRO_API || "https://api.chompbook.online/v1").replace(/\/+$/, "");
+
 /** Google OAuth client ids for the one-tap Gemini key (docs/GEMINI_SETUP.md); empty = the flow is off. */
 export const GOOGLE_WEB_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID ?? "";
 export const GOOGLE_IOS_CLIENT_ID: string = import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID ?? "";

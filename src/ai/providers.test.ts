@@ -3,7 +3,7 @@ import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS
 import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, openRouterModels, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
-const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
+const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom" | "chompbook", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
 
 function mockFetch(status: number, data: unknown) {
   const f = vi.fn(async () => new Response(JSON.stringify(data), { status }));
@@ -75,6 +75,20 @@ describe("compatStructured", () => {
     expect(r.body.max_completion_tokens).toBe(900);
     expect(r.body.max_tokens).toBeUndefined();
     expect(r.body.tools[0].function.parameters).toEqual(tool.input_schema);
+  });
+  it("Chompbook AI: our server, the Pro id as the key, teen safety unless the learner is an adult", async () => {
+    const reply = { choices: [{ message: { tool_calls: [{ function: { name: "emit_x", arguments: '{"a":3}' } }] } }] };
+    let f = mockFetch(200, reply);
+    expect(await call("chompbook")).toEqual({ a: 3 });
+    expect(sent(f).url).toBe("https://api.chompbook.online/v1/chat/completions");
+    expect(sent(f).headers.authorization).toBe("Bearer KEY");
+    expect(sent(f).headers["x-chompbook-audience"]).toBe("teen");
+    f = mockFetch(200, reply);
+    await call("chompbook", { ageGroup: "adult" });
+    expect(sent(f).headers["x-chompbook-audience"]).toBe("adult");
+    f = mockFetch(200, reply);
+    await call("openai", { ageGroup: "adult" });
+    expect(sent(f).headers["x-chompbook-audience"]).toBeUndefined();
   });
   it("Yandex: folder header, model URI, tool_choice auto, falls back to JSON in text", async () => {
     const f = mockFetch(200, { choices: [{ message: { content: 'Ответ: {"a":7}' } }] });

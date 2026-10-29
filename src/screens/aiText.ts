@@ -27,16 +27,27 @@ const AI_ERR: Record<AiErrorKind, Key> = {
 export function aiErrorDetail(e: unknown, t: T): string | null {
   if (!(e instanceof AiError)) return null;
   if (e.provider === "yandex" && e.status === 403 && e.detail && /permission/i.test(e.detail)) return t("aiErr.yandexPermission");
+  if (proProblem(e)) return null; // the main text already says it
   const lines: string[] = [];
   if (e.detail && e.kind !== "aborted" && e.kind !== "network" && e.kind !== "no-key") lines.push(t("aiErr.detail", { text: e.detail.slice(0, 300) }));
   // a busy or confused model is often fine on another model of the same provider
-  if (e.provider && e.provider !== "anthropic" && (e.kind === "overloaded" || e.kind === "bad-response")) lines.push(t("aiErr.otherModel"));
+  if (e.provider && e.provider !== "anthropic" && e.provider !== "chompbook" && (e.kind === "overloaded" || e.kind === "bad-response")) lines.push(t("aiErr.otherModel"));
   // free OpenRouter: a daily cap (50 requests without credits) or shared models busy at peak hours
   if (e.provider === "openrouter" && e.kind === "rate") lines.push(t(e.detail && /per[ _-]?day/i.test(e.detail) ? "aiErr.orDaily" : "aiErr.orBusy"));
   return lines.length ? lines.join("\n") : null;
 }
 
+/** Chompbook AI (Pro, ADR-037): the subscription lapsed (402), or today's allowance is used up (429 "per day"). */
+function proProblem(e: AiError): Key | null {
+  if (e.provider !== "chompbook") return null;
+  if (e.kind === "credits") return "proErr.inactive";
+  if (e.kind === "rate" && e.detail && /per day|daily/i.test(e.detail)) return "proErr.daily";
+  return null;
+}
+
 export function aiErrorText(e: unknown, t: T): string {
+  const pro = e instanceof AiError ? proProblem(e) : null;
+  if (pro) return t(pro);
   if (e instanceof AiError) return t(AI_ERR[e.kind] ?? "aiErr.api") + ((e.kind === "api" || e.kind === "overloaded" || e.kind === "rate") && e.status ? ` (${e.status})` : "");
   if (e instanceof OfflineError) return t(e.code === "no-sources" ? "offline.err.noSources" : "offline.err.finished");
   if (e instanceof CourseFinishedError) return t("course.finished");

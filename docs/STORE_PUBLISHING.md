@@ -74,8 +74,8 @@
 14. ⬜ 👤 Apple Developer Program ($99/год).
 15. ⬜ 👤 Анкеты App Store Connect по `docs/STORE_FORMS.md`: App Privacy, возрастной рейтинг, экспорт, заметки ревьюеру.
 
-### Если будет «Chompbook AI (Pro)»
-16. ⬜ Оплата только через Google Play Billing и Apple In-App Purchase, собственный сервер AI, условия использования (EULA). Статус «трейдер» по DSA с публичными адресом и телефоном. Пересмотреть Data safety.
+### Chompbook Pro (0.20.0, ADR-037)
+16. 🟡 Код готов: оплата через Google Play Billing (RevenueCat), сервер Chompbook AI (`api/`), экран Pro, условия использования (`/terms/`), политика (раздел 3). 👤 Осталось: OpenRouter, Cloudflare D1/Worker/секреты, RevenueCat, подписки в Play Console — по шагам в `docs/PRO_SETUP.md`; статус «трейдер» по DSA; Data safety — раздел «С подпиской Chompbook Pro» в `docs/STORE_FORMS.md`.
 
 ### Желательно
 17. ⬜ Проверка на реальных телефонах по `docs/TESTING.md` и независимый обзор кода.
