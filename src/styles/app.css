@@ -232,7 +232,8 @@ a { color: var(--accent-ink); }
   background: linear-gradient(to top, var(--bg) 60%, var(--bg-clear));
   display: flex; gap: 10px; z-index: 5;
 }
-.cta-bar .btn { flex: 1; }
+.cta-bar .btn { flex: 1; min-width: 0; white-space: normal; line-height: 1.15; text-align: center; } /* long labels wrap instead of pushing the page sideways */
+.cta-bar .btn svg { flex: none; }
 
 /* ---------- chips ---------- */
 .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }

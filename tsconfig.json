@@ -15,5 +15,5 @@
     "allowImportingTsExtensions": false,
     "types": ["vite/client"]
   },
-  "include": ["src", "vite.config.ts", "capacitor.config.ts"]
+  "include": ["src", "site/src", "vite.config.ts", "capacitor.config.ts"]
 }

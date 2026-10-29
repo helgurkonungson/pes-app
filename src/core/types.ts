@@ -272,6 +272,12 @@ export interface Profile {
   restDays?: number[];
   /** Monday of the last week that earned the "clean week" bonus. */
   cleanWeek?: string;
+  /** Send new error-log entries to the developer by themselves (opt-in, ADR-033). */
+  autoErrorReports?: boolean;
+  /** Highest error-log id already sent to the developer. */
+  logsSentId?: number;
+  /** Last automatic error report. */
+  logsAutoAt?: string;
 }
 
 export interface TokenUsage {

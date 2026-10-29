@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.18.0 — 2026-10-29
+
+- **Error reports reach the developer:** Settings → Error log → "Send to the developer" now sends the log straight to us (no e-mail or messenger needed; if there's no connection, the share sheet opens as before). Lesson reports are delivered the same way.
+- **Optional automatic error reports:** turn on "Send error reports automatically" in Settings → Error log and new errors are sent by themselves, at most once every 10 minutes. It is off by default; only log entries, the app version and the phone model are sent — never your lessons or keys.
+- Long button labels at the bottom of a screen now wrap instead of pushing the page sideways.
+
 ## 0.17.0 — 2026-10-27
 
 - **Five free courses, ready to go:** How to learn effectively, AI literacy, Data and spreadsheets, Financial literacy and Critical thinking — 8 short lessons each, in all nine interface languages. They work without AI and offline, with quizzes, review and self-checked open questions. Find them in Skillsets → Free courses.

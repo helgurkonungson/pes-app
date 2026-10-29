@@ -9,9 +9,10 @@ import { nowIso } from "../core/ids";
 import { DEFAULT_REPORT_EMAIL, reportMailto, reportsToText } from "../core/report";
 import type { LessonReport } from "../core/types";
 import { db } from "./db";
+import { REPORT_URL } from "./endpoint";
 import { redact } from "./logs";
 
-export const REPORT_URL: string = import.meta.env.VITE_REPORT_URL ?? "";
+export { REPORT_URL };
 export const REPORT_EMAIL: string = import.meta.env.VITE_REPORT_EMAIL || DEFAULT_REPORT_EMAIL;
 
 /** Saves the report and tries to deliver it. Returns whether it already reached the developer. */

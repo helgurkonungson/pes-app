@@ -1,11 +1,33 @@
-// Cloudflare Worker that only serves the static files in ./public (chompbook.online).
+// Cloudflare Worker for chompbook.online: the static files in ./public plus the report endpoint
+// POST /api/report (lesson reports + error journals → D1 + Telegram; ADR-033).
 // Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "site".
+// Secret (dashboard → chompbook-site → Settings → Variables and Secrets): TG_BOT_TOKEN. The chat id is not secret.
 {
   "name": "chompbook-site",
+  "main": "src/worker.ts",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./public",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
-  }
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "chompbook-reports",
+      "database_id": "c8b177ec-ca52-4862-a366-2f7b9f3eab26"
+    }
+  ],
+  // 20 requests a minute per IP address
+  "ratelimits": [
+    {
+      "name": "LIMIT",
+      "namespace_id": "1033",
+      "simple": { "limit": 20, "period": 60 }
+    }
+  ],
+  "vars": { "TG_CHAT_ID": "77673665" },
+  "observability": { "enabled": true }
 }

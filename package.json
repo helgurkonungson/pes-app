@@ -1,7 +1,7 @@
 {
   "name": "pes-app",
   "private": true,
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "PES — learn any skillset in daily portions, from your own sources.",
   "type": "module",
   "scripts": {

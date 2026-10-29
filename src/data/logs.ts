@@ -1,9 +1,11 @@
 /**
  * Local error journal (Settings → Error log). Keeps the last 200 entries on the phone;
- * the learner can send it to the developer through the share sheet. Never stores keys.
+ * the learner sends it to the developer (endpoint or share sheet; automatically only if allowed,
+ * ADR-033). Never stores keys.
  */
 import type { LogEntry } from "../core/types";
 import { db } from "./db";
+import { scheduleAutoSend } from "./logSend";
 
 const APP_VERSION: string = __APP_VERSION__;
 
@@ -23,6 +25,7 @@ export async function logEvent(kind: LogEntry["kind"], message: string, detail?:
       const old = await db.logs.orderBy("id").limit(n - MAX).primaryKeys();
       await db.logs.bulkDelete(old);
     }
+    if (kind !== "info") scheduleAutoSend();
   } catch {
     /* the journal must never break the app */
   }

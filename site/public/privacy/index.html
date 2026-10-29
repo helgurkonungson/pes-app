@@ -9,9 +9,9 @@
 <body><main>
 <a class="lang" href="/privacy/ru/">Русский</a>
 <h1>Privacy policy</h1>
-<p class="muted">Chompbook (in Russian: «Грызи») · Effective 26 October 2026</p>
+<p class="muted">Chompbook (in Russian: «Грызи») · Effective 29 October 2026</p>
 
-<p>Chompbook is a learning app made by Oleg Tsarkov ("we"). In short: <strong>your learning data stays on your phone</strong>. We run no accounts, no analytics and no ads. Text leaves the phone only to go to the AI service <em>you</em> choose, to us when <em>you</em> report a lesson, or to a web page <em>you</em> ask the app to read.</p>
+<p>Chompbook is a learning app made by Oleg Tsarkov ("we"). In short: <strong>your learning data stays on your phone</strong>. We run no accounts, no analytics and no ads. Text leaves the phone only to go to the AI service <em>you</em> choose, to us when <em>you</em> report a lesson or send an error report, or to a web page <em>you</em> ask the app to read.</p>
 
 <h2>1. Data kept only on your device</h2>
 <ul>
@@ -30,8 +30,10 @@
 
 <p><strong>OpenRouter sign-in</strong> (only to get a free OpenRouter key for you): you sign in on openrouter.ai; OpenRouter then sends a one-time code to <code>chompbook.online/oauth/openrouter/</code>, a page that only passes it on to the app on your phone and keeps nothing. The app exchanges the code for your key directly with OpenRouter. We never see your OpenRouter account or key.</p>
 
-<h2>3. Lesson reports</h2>
-<p>When you tap the flag to report a lesson, the report contains: the reason you picked, your optional comment, the text that was on the screen, the lesson title, which AI service and model wrote it, and the app version. Anything that looks like an API key is removed. Reports are saved on your phone; when you tap "Send to developer", your mail app opens with the report filled in, addressed to <a href="mailto:support@chompbook.online">support@chompbook.online</a>, and it is sent only when you press Send. We use reports only to review the content and improve the app. We keep reports for up to 12 months.</p>
+<h2>3. Lesson reports and error reports</h2>
+<p><strong>Lesson reports.</strong> When you tap the flag to report a lesson, the report contains: the reason you picked, your optional comment, the text that was on the screen, the lesson title, which AI service and model wrote it, and the app version. It is saved on your phone and sent to us when you file it (if there is no connection, the app tries again later); in builds without our report server your mail app opens with a ready e-mail to <a href="mailto:support@chompbook.online">support@chompbook.online</a> instead.</p>
+<p><strong>Error reports.</strong> The error log (Settings → Error log) is sent to us when you tap "Send to the developer". Automatic sending is <strong>off by default</strong>; if you turn on "Send error reports automatically", new log entries are sent by themselves, at most once every 10 minutes. An error report contains the log entries (error messages and technical details), the app version, the platform, the interface language and your browser/WebView description, which includes the phone model.</p>
+<p>In both cases anything that looks like an API key is removed, on the phone and again on our server. Reports go over HTTPS to <code>chompbook.online/api/report</code>, a server run for us by Cloudflare, Inc.; we store them in a Cloudflare database together with the country the request came from. Your IP address is used only for a moment to limit how many requests one device can send and is not stored. We receive a short notice about each report through Telegram. We use reports only to review content and fix the app, and keep them for up to 12 months.</p>
 
 <h2>4. Other network requests</h2>
 <ul>
@@ -42,7 +44,7 @@
 
 <h2>5. What we don't do</h2>
 <ul>
-<li>No accounts, no tracking, no advertising, no analytics or crash-reporting SDKs.</li>
+<li>No accounts, no tracking, no advertising, no analytics or crash-reporting SDKs. Error reports reach us only as described in section 3.</li>
 <li>We don't sell or share your data.</li>
 </ul>
 
@@ -52,7 +54,8 @@
 <li>Remove an AI key at any time in Settings.</li>
 <li>Delete everything: Settings → Delete all data, or uninstall the app.</li>
 <li>Export your data: Settings → Export backup.</li>
-<li>To have a lesson report deleted, write to us.</li>
+<li>Turn automatic error reports on or off at any time: Settings → Error log.</li>
+<li>To have a lesson or error report deleted, write to us.</li>
 </ul>
 
 <h2>7. Children</h2>

@@ -1,4 +1,5 @@
 import { applyTheme } from "./theme";
+import { autoSendLogs } from "../data/logSend";
 import { retryUnsent } from "../data/reports";
 import { scheduleReminders } from "../native/reminders";
 import { settleStreakNow } from "../data/repo";
@@ -97,6 +98,7 @@ function useBoot(): boolean {
       if (alive) setReady(true);
       requestPersistentStorage();
       void retryUnsent(); // lesson reports that could not be delivered last time
+      void autoSendLogs().catch(() => undefined); // problems from the last run, if the learner allowed it
       // refresh the automatic snapshot a little after start, off the critical path
       setTimeout(() => writeSnapshot(), 8000);
     })();

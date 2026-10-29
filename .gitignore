@@ -22,3 +22,7 @@ playwright-report/
 test-results/
 blob-report/
 public/ocr/
+
+# local Cloudflare Worker state; Vite config temp files
+site/.wrangler/
+vite.config.ts.timestamp-*
