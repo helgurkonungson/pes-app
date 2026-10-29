@@ -9,7 +9,7 @@ export const OPENROUTER_AUTH = "https://openrouter.ai/auth";
 export const OPENROUTER_KEYS = "https://openrouter.ai/api/v1/auth/keys";
 export const OPENROUTER_CALLBACK = "https://chompbook.online/oauth/openrouter/";
 /** The deep link the callback page opens: `<scheme>://oauth/openrouter?code=…&state=…`. */
-export const APP_SCHEME = "io.github.helgurkonungson.pes";
+export const APP_SCHEME = "online.chompbook.app";
 const PENDING_KEY = "pes.oauth.openrouter";
 /** OpenRouter's code lives 10 minutes; a sign-in older than that is not worth finishing. */
 export const PENDING_TTL_MS = 10 * 60_000;
@@ -35,6 +35,7 @@ export async function challengeFor(verifier: string): Promise<string> {
 export function authUrl(o: { challenge: string; state: string; callback?: string }): string {
   const cb = new URL(o.callback ?? OPENROUTER_CALLBACK);
   cb.searchParams.set("state", o.state); // OpenRouter keeps the callback's query and adds `code`
+  cb.searchParams.set("app", APP_SCHEME); // which app the callback page opens (builds before 0.19 used another id)
   const u = new URL(OPENROUTER_AUTH);
   u.searchParams.set("callback_url", cb.toString());
   u.searchParams.set("code_challenge", o.challenge);

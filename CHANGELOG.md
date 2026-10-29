@@ -2,6 +2,13 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.19.0 — 2026-10-29
+
+- **Chompbook moves to Google Play** as `online.chompbook.app`. This version is the first one built for the store: it no longer checks GitHub for updates — Google Play updates it. Settings → About shows the version and opens the Play page.
+- **Using the old GitHub version?** It's a separate app for Android. Move your progress: in the old app, Settings → Export backup; then install Chompbook from Google Play and use Settings → Restore from backup. After that the old app can be removed.
+- The OpenRouter sign-in returns to the right app (new or old).
+- Builds now also produce the Google Play bundle (AAB).
+
 ## 0.18.0 — 2026-10-29
 
 - **Error reports reach the developer:** Settings → Error log → "Send to the developer" now sends the log straight to us (no e-mail or messenger needed; if there's no connection, the share sheet opens as before). Lesson reports are delivered the same way.

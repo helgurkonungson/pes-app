@@ -172,7 +172,7 @@ export function App() {
     };
   }, [ready]);
 
-  // deep links: the OpenRouter sign-in comes back as io.github.helgurkonungson.pes://oauth/openrouter?code=…
+  // deep links: the OpenRouter sign-in comes back as online.chompbook.app://oauth/openrouter?code=…
   useEffect(() => {
     if (!ready) return;
     const handle = (url: string) => void import("../ai/openrouterConnect").then((m) => m.handleOpenRouterCallback(url));

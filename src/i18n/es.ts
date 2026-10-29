@@ -639,6 +639,8 @@ export const es: Dict = {
   "settings.wipeOk": "Borrar todo",
   "settings.about": "Acerca de",
   "settings.checkUpdates": "Buscar actualizaciones",
+  "settings.version": "Versión",
+  "settings.updatesPlay": "Las actualizaciones llegan por Google Play",
   "settings.install": "Instalar {v}",
   "settings.installHint": "Antes se guarda una copia en Documents/PES",
   "settings.updateAvailable": "Está disponible la versión {v}",

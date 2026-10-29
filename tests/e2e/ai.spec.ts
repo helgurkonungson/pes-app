@@ -646,7 +646,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     expect(callback.origin + callback.pathname).toBe("https://chompbook.online/oauth/openrouter/");
     await expect(dialog.getByText(/Завершите вход на странице OpenRouter/)).toBeVisible();
     // a link with a foreign state is refused
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: "io.github.helgurkonungson.pes://oauth/openrouter?code=evil&state=forged" })));
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: "online.chompbook.app://oauth/openrouter?code=evil&state=forged" })));
     await expect(dialog.getByRole("alert")).toContainText("Попробуйте ещё раз");
     expect(exchanged).toBeNull();
     // the real sign-in: the callback page opens the app with the code and our state
@@ -654,7 +654,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     await dialog.getByRole("button", { name: "Повторить" }).click();
     const auth2 = new URL((await popup2P).url());
     const state = new URL(auth2.searchParams.get("callback_url") ?? "").searchParams.get("state");
-    await page.evaluate((s) => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: `io.github.helgurkonungson.pes://oauth/openrouter?state=${s}&code=one-time-code` })), state);
+    await page.evaluate((s) => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: `online.chompbook.app://oauth/openrouter?state=${s}&code=one-time-code` })), state);
     await expect(page.getByText("OpenRouter подключён — уроки будут с AI")).toBeVisible();
     expect(exchanged).toMatchObject({ code: "one-time-code", code_challenge_method: "S256" });
     expect(String((exchanged as unknown as { code_verifier: string }).code_verifier)).toMatch(/^[A-Za-z0-9_-]{43,128}$/);

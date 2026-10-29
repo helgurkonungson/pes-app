@@ -9,6 +9,27 @@ const release = (tag: string) => ({
   assets: [{ name: `PES-${tag.slice(1)}.apk`, browser_download_url: `https://github.com/x/PES-${tag.slice(1)}.apk` }],
 });
 
+// The GitHub self-updater exists only in builds made with VITE_SELF_UPDATE=1; the switch below turns it on for these tests.
+test.beforeEach(async ({ page }, info) => {
+  if (!info.title.startsWith("Google Play build")) await page.addInitScript(() => localStorage.setItem("pes.selfUpdate", "1"));
+});
+
+test("Google Play build: no update check at all — Settings shows the version and points to Google Play", async ({ page }) => {
+  let githubCalls = 0;
+  await mockApis(page);
+  await page.route("https://api.github.com/**", (r) => {
+    githubCalls++;
+    return r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(release("v9.9.9")) });
+  });
+  await page.addInitScript(() => localStorage.setItem("pes.autoUpdateCheck", "1")); // even the dev switch can't turn it on
+  await onboard(page);
+  await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+  await expect(page.getByRole("button", { name: /Проверить обновления/ })).toHaveCount(0);
+  await expect(page.locator(".menu-row", { hasText: "Версия" })).toContainText("Обновления приходят через Google Play");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  expect(githubCalls).toBe(0);
+});
+
 test.describe("check for updates", () => {
   test("no newer release → says so right in the row", async ({ page }) => {
     await mockApis(page);

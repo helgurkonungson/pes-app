@@ -9,9 +9,9 @@ import { DB_VERSION, PesDb } from "./data/db";
 
 describe("update safety", () => {
   it("keeps the application id", () => {
-    expect(config.appId).toBe("io.github.helgurkonungson.pes");
+    expect(config.appId).toBe("online.chompbook.app");
     const gradle = readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8");
-    expect(gradle).toContain('applicationId "io.github.helgurkonungson.pes"');
+    expect(gradle).toContain('applicationId "online.chompbook.app"');
   });
   it("keeps the default WebView origin (https://localhost) so IndexedDB survives updates", () => {
     const server = (config as { server?: Record<string, unknown> }).server ?? {};
@@ -80,10 +80,11 @@ describe("branding", () => {
   });
   it("the OpenRouter sign-in can come back to the app (deep link + callback page)", () => {
     const manifest = readFileSync(new URL("../android/app/src/main/AndroidManifest.xml", import.meta.url), "utf8");
-    expect(manifest).toMatch(/<data android:scheme="io\.github\.helgurkonungson\.pes" android:host="oauth" \/>/);
+    expect(manifest).toMatch(/<data android:scheme="online\.chompbook\.app" android:host="oauth" \/>/);
     expect(manifest).toContain('android:launchMode="singleTask"');
     const page = readFileSync(new URL("../site/public/oauth/openrouter/index.html", import.meta.url), "utf8");
-    expect(page).toContain("scheme=io.github.helgurkonungson.pes;package=io.github.helgurkonungson.pes");
+    expect(page).toContain('"#Intent;scheme=" + id + ";package=" + id + ";end"');
+    expect(page).toContain('"online.chompbook.app" : "io.github.helgurkonungson.pes"');
     expect(page).toContain("pes-oauth");
   });
 });

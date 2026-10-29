@@ -1,4 +1,4 @@
-declare const __APP_VERSION__: string; declare const __APP_REPO__: string;
+declare const __APP_VERSION__: string; declare const __APP_REPO__: string; declare const __SELF_UPDATE__: boolean;
 
 interface ImportMetaEnv {
   /** Google OAuth "Web application" client id (Android sign-in); not a secret. See docs/GEMINI_SETUP.md. */

@@ -639,6 +639,8 @@ export const zh: Dict = {
   "settings.wipeOk": "全部删除",
   "settings.about": "关于",
   "settings.checkUpdates": "检查更新",
+  "settings.version": "版本",
+  "settings.updatesPlay": "通过 Google Play 获取更新",
   "settings.install": "安装 {v}",
   "settings.installHint": "会先将备份保存到 Documents/PES",
   "settings.updateAvailable": "有新版本 {v}",

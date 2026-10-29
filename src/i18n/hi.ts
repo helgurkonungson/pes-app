@@ -639,6 +639,8 @@ export const hi: Dict = {
   "settings.wipeOk": "सब कुछ हटाएँ",
   "settings.about": "ऐप के बारे में",
   "settings.checkUpdates": "अपडेट जाँचें",
+  "settings.version": "वर्शन",
+  "settings.updatesPlay": "अपडेट Google Play से आते हैं",
   "settings.install": "{v} इंस्टॉल करें",
   "settings.installHint": "पहले Documents/PES में बैकअप सहेजा जाता है",
   "settings.updateAvailable": "संस्करण {v} उपलब्ध है",

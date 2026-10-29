@@ -639,6 +639,8 @@ export const en = {
   "settings.wipeOk": "Delete everything",
   "settings.about": "About",
   "settings.checkUpdates": "Check for updates",
+  "settings.version": "Version",
+  "settings.updatesPlay": "Updates come from Google Play",
   "settings.install": "Install {v}",
   "settings.installHint": "A backup is saved to Documents/PES first",
   "settings.updateAvailable": "Version {v} is available",

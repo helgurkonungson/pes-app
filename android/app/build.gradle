@@ -9,7 +9,8 @@ android {
     namespace = "io.github.helgurkonungson.pes"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.github.helgurkonungson.pes"
+        // ADR-034: the Google Play id. The Java package / namespace stay io.github.helgurkonungson.pes (code only, not user-visible).
+        applicationId "online.chompbook.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // CI passes these; local builds fall back to 1 / package.json version

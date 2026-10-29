@@ -13,7 +13,7 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - AI-generated screens keep the "Report this lesson" flag (store rules, ADR-025); a new flow after onboarding must not break the first-run tutorial (ADR-026) or the emulator smoke test (`scripts/android-smoke.sh`).
 - Android release builds are shrunk by R8: a new Capacitor plugin package needs a keep rule in `android/app/proguard-rules.pro`; Android images are WebP.
 - Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.
-- Never break update safety (ADR-009): don't change the app id, signing key, WebView origin or existing Dexie versions.
+- Never break update safety (ADR-009, ADR-034): don't change the app id (`online.chompbook.app`, Google Play), the upload/signing key, the WebView origin or existing Dexie versions. Store builds never update themselves (`VITE_SELF_UPDATE` stays off).
 - Tests: `npm run typecheck && npm test && npm run e2e` before every release (see `docs/TESTING.md`). New logic → unit test; new screen or flow → Playwright test.
 - Before a release: bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK after the CI gates pass.
 - Oleg's private course files (e.g. the CDO test course) never go into this public repo.

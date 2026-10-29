@@ -175,16 +175,26 @@ jobs:
           PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          # APK for direct install and the emulator smoke tests; AAB for Google Play (ADR-034)
+          ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
 
-      - name: Collect APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk "PES-${{ steps.v.outputs.name }}.apk"
+      - name: Collect APK and AAB
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk "PES-${{ steps.v.outputs.name }}.apk"
+          cp android/app/build/outputs/bundle/release/app-release.aab "Chompbook-${{ steps.v.outputs.name }}-play.aab"
 
       - uses: actions/upload-artifact@v4
         with:
           name: PES-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}
           path: PES-*.apk
           retention-days: 14
+
+      # the Google Play upload: signed with the upload key (Play App Signing re-signs it)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chompbook-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}-play-aab
+          path: Chompbook-*-play.aab
+          retention-days: 30
 
       - name: Signed?
         id: signed
@@ -306,7 +316,7 @@ jobs:
       - uses: actions/download-artifact@v4
         if: needs.build.outputs.signed == 'true'
         with:
-          pattern: PES-*
+          pattern: "*-build*"
           merge-multiple: true
 
       - name: Publish release (new versions only)
@@ -320,5 +330,5 @@ jobs:
             echo "Release $TAG already exists — only the build artifact was updated."
           else
             node tools/release-notes.mjs "$VERSION" > notes.md
-            gh release create "$TAG" "PES-$VERSION.apk" --title "Chompbook $TAG" --notes-file notes.md
+            gh release create "$TAG" "PES-$VERSION.apk" "Chompbook-$VERSION-play.aab" --title "Chompbook $TAG" --notes-file notes.md
           fi

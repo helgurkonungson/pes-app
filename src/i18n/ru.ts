@@ -649,6 +649,8 @@ export const ru: Dict = {
   "settings.wipeOk": "Удалить всё",
   "settings.about": "О приложении",
   "settings.checkUpdates": "Проверить обновления",
+  "settings.version": "Версия",
+  "settings.updatesPlay": "Обновления приходят через Google Play",
   "settings.install": "Установить {v}",
   "settings.installHint": "Сначала копия сохранится в Documents/PES",
   "settings.updateAvailable": "Доступна версия {v}",

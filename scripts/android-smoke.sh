@@ -30,7 +30,7 @@ ONB_NAME=${ONB_NAME:-Smoke}                                    # typed via `inpu
 # ---------------------------------------------------------------------------------------------
 # App and test settings
 # ---------------------------------------------------------------------------------------------
-PKG=io.github.helgurkonungson.pes
+PKG=online.chompbook.app
 ACTIVITY=.MainActivity
 BOOT_TIMEOUT=${BOOT_TIMEOUT:-300}      # s, wait for sys.boot_completed
 RENDER_TIMEOUT=${RENDER_TIMEOUT:-60}   # s, wait for the first web UI after launch

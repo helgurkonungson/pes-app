@@ -14,6 +14,8 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __APP_REPO__: JSON.stringify("helgurkonungson/pes-app"),
+    // ADR-034: builds update through Google Play; the GitHub self-updater only with VITE_SELF_UPDATE=1
+    __SELF_UPDATE__: JSON.stringify(process.env.VITE_SELF_UPDATE === "1"),
   },
   build: {
     target: "es2022",

@@ -19,7 +19,7 @@
 4. **Data access → Add scopes**: `https://www.googleapis.com/auth/cloud-platform` (плюс `openid`, `email`, `profile` — их просит плагин). Этот доступ считается чувствительным: для режима *In production* Google требует **проверку приложения** (описание, зачем нужен доступ, видео с демонстрацией, политика конфиденциальности на своём домене). До проверки пользователи увидят «Google hasn't verified this app», и работает только список тестовых пользователей.
 5. **Clients → Create client**:
    - *Web application*: его Client ID и есть `GOOGLE_WEB_CLIENT_ID`.
-   - *Android*: package `io.github.helgurkonungson.pes`, SHA-1 релизного ключа (снят с PES-0.9.0.apk): `2F:F3:49:4C:53:52:42:41:78:C0:07:4C:EC:D6:02:95:66:E5:84:EF`. Для Google Play добавьте ещё один Android-клиент с SHA-1 ключа *Play App Signing* (Play Console → App integrity).
+   - *Android*: package `online.chompbook.app` (с 0.19, ADR-034), SHA-1 ключа загрузки (снят с PES-0.9.0.apk): `2F:F3:49:4C:53:52:42:41:78:C0:07:4C:EC:D6:02:95:66:E5:84:EF`. Для сборок из Google Play обязательно добавьте ещё один Android-клиент с SHA-1 ключа *Play App Signing* (Play Console → Test and release → App integrity).
    - *iOS* (когда появится iOS-приложение): Bundle ID → `GOOGLE_IOS_CLIENT_ID`. В `Info.plist` нужно добавить URL scheme (reversed client id) — по инструкции плагина `@capgo/capacitor-social-login`.
 6. **GitHub → Settings → Secrets and variables → Actions → Variables**: `GOOGLE_WEB_CLIENT_ID` (и позже `GOOGLE_IOS_CLIENT_ID`). Это не секреты: client id и так виден внутри приложения.
 

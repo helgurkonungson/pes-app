@@ -639,6 +639,8 @@ export const be: Dict = {
   "settings.wipeOk": "Выдаліць усё",
   "settings.about": "Пра праграму",
   "settings.checkUpdates": "Праверыць абнаўленні",
+  "settings.version": "Версія",
+  "settings.updatesPlay": "Абнаўленні прыходзяць праз Google Play",
   "settings.install": "Усталяваць {v}",
   "settings.installHint": "Спачатку рэзервовая копія захоўваецца ў Documents/PES",
   "settings.updateAvailable": "Даступная версія {v}",

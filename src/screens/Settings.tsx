@@ -28,7 +28,7 @@ import { clearSnapshots } from "../data/safety";
 import { locale, useT } from "../i18n";
 import { useSettingsIntent } from "../nav/intent";
 import { useNav } from "../nav/store";
-import { APP_REPO, APP_VERSION, checkForUpdate, installUpdateSafely } from "../update/updater";
+import { APP_REPO, APP_VERSION, checkForUpdate, installUpdateSafely, PLAY_URL, selfUpdateBuild } from "../update/updater";
 import { aiErrorDetail, aiErrorText } from "./Session";
 
 export function Settings() {
@@ -305,8 +305,12 @@ export function Settings() {
         <section className="stack">
           <SectionLabel>{t("settings.about")}</SectionLabel>
           <Group>
-            <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
-            {update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
+            {selfUpdateBuild() ? (
+              <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
+            ) : (
+              <MenuRow icon={<RefreshCw size={20} />} label={t("settings.version")} hint={t("settings.updatesPlay")} value={`v${APP_VERSION}`} onClick={() => openExternal(PLAY_URL)} />
+            )}
+            {selfUpdateBuild() && update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
             <MenuRow icon={<GraduationCap size={20} />} label={t("settings.tutorial")} onClick={() => useTutorial.getState().show()} />
             <MenuRow icon={<Flag size={20} />} label={t("settings.reports")} onClick={() => useNav.getState().push({ name: "reports" })} />
             <MenuRow icon={<Bug size={20} />} label={t("settings.logs")} onClick={() => useNav.getState().push({ name: "logs" })} />

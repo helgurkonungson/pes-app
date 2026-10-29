@@ -1,7 +1,7 @@
 /**
  * Self-update for builds installed outside the stores: checks the latest GitHub
- * Release of the app repo and offers the APK. Store builds will update through
- * the stores instead.
+ * Release of the app repo and offers the APK. Off in Google Play builds (the default):
+ * they update through Play (ADR-034).
  */
 import { Browser } from "@capacitor/browser";
 import { Capacitor } from "@capacitor/core";
@@ -45,13 +45,31 @@ export async function installUpdate(u: UpdateInfo): Promise<void> {
   else window.open(url, "_blank", "noopener");
 }
 
-export const canSelfUpdate = () => Capacitor.getPlatform() === "android";
+/** Google Play app id: store builds update there (ADR-034). */
+export const PLAY_URL = "https://play.google.com/store/apps/details?id=online.chompbook.app";
+
+/**
+ * True in builds that update themselves from GitHub Releases (VITE_SELF_UPDATE=1 at build time).
+ * Google Play builds never do (store rule): they update through Play. Test switch:
+ * localStorage "pes.selfUpdate" = "1".
+ */
+export function selfUpdateBuild(): boolean {
+  if (__SELF_UPDATE__) return true;
+  try {
+    return localStorage.getItem("pes.selfUpdate") === "1";
+  } catch {
+    return false;
+  }
+}
+
+export const canSelfUpdate = () => selfUpdateBuild() && Capacitor.getPlatform() === "android";
 
 /** Test/dev switch: localStorage "pes.autoUpdateCheck" = "1" turns the daily check on in a browser. */
 const AUTO_CHECK_FLAG = "pes.autoUpdateCheck";
 
 /** The daily check runs where the app updates itself from GitHub (the Android APK). */
 export function autoUpdateCheckEnabled(): boolean {
+  if (!selfUpdateBuild()) return false;
   if (canSelfUpdate()) return true;
   try {
     return localStorage.getItem(AUTO_CHECK_FLAG) === "1";

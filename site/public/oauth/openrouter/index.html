@@ -25,8 +25,10 @@
     document.getElementById("open").textContent = "Открыть Грызи";
   }
   var q = location.search;
-  var app = "io.github.helgurkonungson.pes://oauth/openrouter" + q;
-  var intent = "intent://oauth/openrouter" + q + "#Intent;scheme=io.github.helgurkonungson.pes;package=io.github.helgurkonungson.pes;end";
+  // 0.19+ (Google Play, online.chompbook.app) says which app to open; earlier GitHub builds used io.github.helgurkonungson.pes
+  var id = /[?&]app=online\.chompbook\.app(&|$)/.test(q) ? "online.chompbook.app" : "io.github.helgurkonungson.pes";
+  var app = id + "://oauth/openrouter" + q;
+  var intent = "intent://oauth/openrouter" + q + "#Intent;scheme=" + id + ";package=" + id + ";end";
   var android = /Android/i.test(navigator.userAgent);
   var link = android ? intent : app;
   document.getElementById("open").href = link;

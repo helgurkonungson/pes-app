@@ -639,6 +639,8 @@ export const uk: Dict = {
   "settings.wipeOk": "Видалити все",
   "settings.about": "Про застосунок",
   "settings.checkUpdates": "Перевірити оновлення",
+  "settings.version": "Версія",
+  "settings.updatesPlay": "Оновлення надходять через Google Play",
   "settings.install": "Встановити {v}",
   "settings.installHint": "Спочатку резервна копія зберігається в Documents/PES",
   "settings.updateAvailable": "Доступна версія {v}",

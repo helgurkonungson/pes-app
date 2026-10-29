@@ -11,15 +11,15 @@ describe("OpenRouter OAuth (PKCE)", () => {
   it("builds the sign-in URL with our callback and state", () => {
     const u = new URL(authUrl({ challenge: "abc", state: "s1" }));
     expect(u.origin + u.pathname).toBe("https://openrouter.ai/auth");
-    expect(u.searchParams.get("callback_url")).toBe("https://chompbook.online/oauth/openrouter/?state=s1");
+    expect(u.searchParams.get("callback_url")).toBe("https://chompbook.online/oauth/openrouter/?state=s1&app=online.chompbook.app"); // the callback page opens this app
     expect(u.searchParams.get("code_challenge_method")).toBe("S256");
     expect(u.searchParams.get("key_label")).toBe("Chompbook");
   });
 
   it("reads the deep link and the web callback, ignores other links", () => {
-    expect(parseCallback("io.github.helgurkonungson.pes://oauth/openrouter?code=C&state=S")).toEqual({ code: "C", state: "S", error: undefined });
+    expect(parseCallback("online.chompbook.app://oauth/openrouter?code=C&state=S")).toEqual({ code: "C", state: "S", error: undefined });
     expect(parseCallback("https://chompbook.online/oauth/openrouter/?state=S&code=C")).toMatchObject({ code: "C", state: "S" });
-    expect(parseCallback("io.github.helgurkonungson.pes://other?code=C")).toBeNull();
+    expect(parseCallback("online.chompbook.app://other?code=C")).toBeNull();
     expect(parseCallback("https://example.com/?code=C")).toBeNull();
     expect(parseCallback("not a url")).toBeNull();
   });
