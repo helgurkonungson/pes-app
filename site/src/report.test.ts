@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { allowedOrigin, logsNotice, parseBody } from "./report";
-import worker, { handleReport, type Env } from "./worker";
+import worker, { handleReport, KEEP_DAYS, purgeOld, type Env } from "./worker";
 
 const lesson = { at: "2026-10-29T10:00:00Z", reason: "wrong", where: "lesson · theory 2/3", excerpt: "Text", lessonTitle: "Data quality", version: "0.18.0", sessionId: "s1", skillsetId: "k1" };
 const logs = { version: "0.18.0", platform: "android", lang: "ru", auto: true, entries: [{ at: "2026-10-29T10:00:00Z", kind: "error", message: "boom with sk-ant-api03-secretsecret", detail: "stack", version: "0.18.0" }] };
@@ -95,5 +95,21 @@ describe("report endpoint: worker", () => {
     const env: Env = { ASSETS: { fetch: async () => new Response("site") } };
     expect(await (await worker.fetch(new Request("https://chompbook.online/privacy/"), env, ctx())).text()).toBe("site");
     expect((await worker.fetch(new Request("https://chompbook.online/api/other"), env, ctx())).status).toBe(404);
+  });
+});
+
+describe("report retention", () => {
+  it("the daily job deletes reports older than 12 months", async () => {
+    const calls: { sql: string; args: unknown[] }[] = [];
+    const db = {
+      prepare: (sql: string) => {
+        const st = { args: [] as unknown[], bind: (...a: unknown[]) => ((st.args = a), st), run: async () => (calls.push({ sql, args: st.args }), {}) };
+        return st;
+      },
+    };
+    await purgeOld(db, new Date("2027-10-29T00:00:00Z"));
+    const del = calls.find((c) => c.sql.startsWith("DELETE"));
+    expect(KEEP_DAYS).toBe(365);
+    expect(del?.args).toEqual(["2026-10-29T00:00:00.000Z"]);
   });
 });

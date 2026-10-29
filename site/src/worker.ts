@@ -108,7 +108,23 @@ export async function handleReport(request: Request, env: Env, ctx: Ctx, fetcher
   return json({ ok: true, ids }, 200, origin);
 }
 
+/** Reports are kept for up to 12 months (privacy policy §3): the daily cron deletes older rows. */
+export const KEEP_DAYS = 365;
+
+export async function purgeOld(db: D1 | undefined, now = new Date()): Promise<void> {
+  if (!db) return;
+  if (!schemaReady) {
+    await db.prepare(SCHEMA).run();
+    schemaReady = true;
+  }
+  const cutoff = new Date(now.getTime() - KEEP_DAYS * 86_400_000).toISOString();
+  await db.prepare("DELETE FROM reports WHERE received_at < ?").bind(cutoff).run();
+}
+
 export default {
+  async scheduled(_event: unknown, env: Env, ctx: Ctx): Promise<void> {
+    ctx.waitUntil(purgeOld(env.DB));
+  },
   async fetch(request: Request, env: Env, ctx: Ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/report") return handleReport(request, env, ctx);

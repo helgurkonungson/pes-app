@@ -29,5 +29,7 @@
     }
   ],
   "vars": { "TG_CHAT_ID": "77673665" },
+  // daily clean-up: reports older than 12 months are deleted (privacy policy §3)
+  "triggers": { "crons": ["17 3 * * *"] },
   "observability": { "enabled": true }
 }
