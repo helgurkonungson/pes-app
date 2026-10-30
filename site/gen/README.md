@@ -20,3 +20,5 @@ node site/gen/build.mjs --check  # what the test runs
 | Styles / scripts | `site/public/style.css`, `site/public/site.js` (hand-written) |
 
 Store forms: privacy `https://chompbook.online/privacy/`, terms `/terms/`, support `/support/`, data deletion `/delete-data/`; RuStore — `/cis/privacy/`, `/cis/terms/`, `/cis/offer/`.
+
+Deploy: Cloudflare Workers Builds for the Worker `chompbook-site` — repository `helgurkonungson/pes-app`, branch `main`, root directory `site`, build command empty, deploy command `npx wrangler deploy`. A push to `main` publishes the site (a newly connected repository builds only from the next push).
