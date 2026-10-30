@@ -114,7 +114,31 @@ function footer(lang) {
 </div></footer>`;
 }
 
-const page = (o) => `${head(o)}
+// Typography: a line never ends with a short preposition, conjunction or article — it moves to the next
+// line together with the following word (non-breaking space). Also no line starts with a dash.
+const SHORT = {
+  ru: "а|в|во|и|к|ко|о|об|обо|от|ото|с|со|у|по|до|из|за|на|над|под|при|про|для|без|не|ни|но|да|или|что|как|из-за|чем",
+  uk: "а|в|у|і|й|з|зі|із|о|об|від|по|до|за|на|над|під|при|про|для|без|не|ні|але|та|чи|що|як",
+  be: "а|в|ва|у|і|й|з|са|ад|аб|па|да|за|на|над|пад|пры|пра|для|без|не|ні|але|ці|што|як",
+  en: "a|an|the|of|to|in|on|at|by|for|and|or|but|with|from|into",
+  es: "a|al|de|del|el|la|las|los|un|una|y|o|en|con|por|para|que|sin",
+  de: "a|an|am|auf|aus|bei|das|dem|den|der|des|die|ein|eine|einen|im|in|mit|und|oder|von|vor|zu|zum|zur|für",
+  fr: "a|à|au|aux|de|des|du|en|et|la|le|les|ou|par|sur|un|une",
+};
+function typo(lang, html) {
+  const list = SHORT[lang];
+  if (!list) return html;
+  const re = new RegExp(`(^|[\\s\u00a0(«„"“—–-])(${list}) +(?=[^\\s<])`, "giu");
+  // only text between tags, never inside <script>, <style>, <code> or tag attributes
+  return html.replace(/(<(script|style|code)\b[\s\S]*?<\/\2>)|(<[^>]+>)|([^<]+)/g, (m, block, _t, tag, text) => {
+    if (block || tag) return m;
+    let out = text.replace(re, (_, pre, w) => `${pre}${w}\u00a0`);
+    out = out.replace(re, (_, pre, w) => `${pre}${w}\u00a0`); // second pass for "и в", "не на" …
+    return out.replace(/ ([—–]) /g, "\u00a0$1 ");
+  });
+}
+
+const page = (o) => typo(o.lang, `${head(o)}
 <body${o.bodyClass ? ` class="${o.bodyClass}"` : ""}>
 <a class="skip" href="#main">${T[o.lang].skip}</a>
 ${header(o.lang, o.alternates, o.homeHref)}
@@ -125,7 +149,7 @@ ${footer(o.lang)}
 <script src="/site.js" defer></script>
 </body>
 </html>
-`;
+`);
 
 const docHref = (lang, id) => `${pre(lang)}/${id}/`;
 
@@ -183,7 +207,6 @@ function aiSection(lang) {
 </div>
 <div class="fb good">${I.check}<div><b>${esc(L.worked)}</b><p>${esc(t.worked)}</p></div></div>
 <div class="fb warn">${I.target}<div><b>${esc(L.improve)}</b><p>${esc(t.improve)}</p></div></div>
-<button type="button" class="replay" data-replay>${I.repeat}${esc(t.replay)}</button>
 </div>
 </div></section>`;
 }
@@ -248,13 +271,12 @@ ${t.features.items.map((f, i) => `<div class="feat reveal" style="--d:${(i % 3) 
 <div class="shots" data-shots tabindex="0">
 ${caps.map((c, i) => `<figure class="shot reveal" style="--d:${i * 0.07}s"><div class="frame"><img src="/img/shots/${lang}/${i + 1}.webp" alt="${esc(c)}" width="600" height="1140" loading="lazy" decoding="async"></div><figcaption>${esc(c)}</figcaption></figure>`).join("\n")}
 </div>
-<div class="arrows"><button type="button" data-dir="-1" aria-label="${esc(t.gallery.prev)}">${I.left}</button><button type="button" data-dir="1" aria-label="${esc(t.gallery.next)}">${I.right}</button></div>
 </div></section>
 
 <section id="courses"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.courses.kicker)}</span><h2>${esc(t.courses.h2)}</h2><p>${esc(t.courses.p)}</p></div>
 <div class="courses">
-${t.courses.items.map((c, i) => `<div class="course reveal" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p><p>${esc(t.courses.lessons)}</p></div>`).join("\n")}
+${t.courses.items.map((c, i) => `<div class="course reveal" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></div>`).join("\n")}
 </div>
 </div></section>
 

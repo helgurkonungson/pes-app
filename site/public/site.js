@@ -62,7 +62,7 @@
   // AI answer check demo: type the answer, "check" it, show the score and the feedback.
   var demo = document.querySelector("[data-demo]");
   if (demo && !reduce && "IntersectionObserver" in window) {
-    var typed = demo.querySelector(".typed"), full = typed.getAttribute("data-text"), num = demo.querySelector("[data-score]");
+    var typed = demo.querySelector(".typed"), full = typed.textContent, num = demo.querySelector("[data-score]");
     var timers = [];
     var at = function (ms, fn) { timers.push(setTimeout(fn, ms)); };
     var set = function (cls) { demo.className = "demo reveal in js " + cls; };
@@ -83,10 +83,17 @@
         at(2200, function () { set("s-scored s-good s-warn s-done"); });
       });
     };
-    demo.classList.add("js"); demo.classList.add("s-typing"); typed.textContent = "";
-    var dio = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { dio.disconnect(); at(500, play); } }, { threshold: 0.45 });
+    var reset = function () { timers.forEach(clearTimeout); timers = []; set("s-typing"); typed.textContent = ""; num.textContent = "0"; };
+    demo.classList.add("js"); reset();
+    // plays every time the block comes into view; once it has left the screen completely it is reset,
+    // so scrolling away and back shows the check again (a small scroll inside the block doesn't restart it)
+    var shown = false;
+    var dio = new IntersectionObserver(function (en) {
+      var e = en[0];
+      if (!shown && e.intersectionRatio >= 0.45) { shown = true; at(400, play); }
+      else if (shown && !e.isIntersecting) { shown = false; reset(); }
+    }, { threshold: [0, 0.45] });
     dio.observe(demo);
-    demo.querySelector("[data-replay]").addEventListener("click", play);
   }
 
   // "Pick your minutes" chips.
@@ -111,14 +118,39 @@
     }
   }
 
-  // Screenshot gallery arrows.
+  // Screenshot gallery: drifts slowly from right to left in an endless loop; stops while the pointer is over it,
+  // while it is touched or has keyboard focus, and when the tab is hidden. Swiping/scrolling by hand still works.
   var shots = document.querySelector("[data-shots]");
-  document.querySelectorAll("[data-dir]").forEach(function (b) {
-    b.addEventListener("click", function () {
-      var w = shots.querySelector(".shot").getBoundingClientRect().width + 22;
-      shots.scrollBy({ left: Number(b.getAttribute("data-dir")) * w * 2, behavior: reduce ? "auto" : "smooth" });
+  if (shots && !reduce) {
+    var originals = Array.prototype.slice.call(shots.children);
+    originals.forEach(function (f) {
+      var c = f.cloneNode(true); c.setAttribute("aria-hidden", "true"); c.classList.remove("reveal"); c.classList.add("in");
+      c.querySelectorAll("img").forEach(function (im) { im.alt = ""; });
+      shots.appendChild(c);
     });
-  });
+    shots.classList.add("auto");
+    var paused = false, last = 0, pos = shots.scrollLeft, speed = 32; // px per second
+    var hold = function () { paused = true; };
+    var go = function () { paused = false; pos = shots.scrollLeft; last = 0; };
+    shots.addEventListener("mouseenter", hold); shots.addEventListener("mouseleave", go);
+    shots.addEventListener("touchstart", hold, { passive: true }); shots.addEventListener("touchend", function () { setTimeout(go, 1500); });
+    shots.addEventListener("focusin", hold); shots.addEventListener("focusout", go);
+    var visible = true;
+    if ("IntersectionObserver" in window) new IntersectionObserver(function (en) { visible = en[0].isIntersecting; last = 0; }).observe(shots);
+    (function frame(ts) {
+      if (!paused && visible && !document.hidden) {
+        if (last) {
+          // one loop = the distance from a screenshot to its copy, so the wrap is invisible
+          var period = shots.children[originals.length].offsetLeft - shots.children[0].offsetLeft;
+          pos += speed * (ts - last) / 1000;
+          if (pos >= period) pos -= period;
+          shots.scrollLeft = pos;
+        }
+        last = ts;
+      } else last = 0;
+      requestAnimationFrame(frame);
+    })(0);
+  }
 
   // Documents: highlight the current section in the table of contents.
   var toc = document.querySelectorAll(".toc a");
