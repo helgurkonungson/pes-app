@@ -2,6 +2,17 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 0.19.2 — 2026-10-30
+
+- **What you missed comes back:** when AI checks your open answer, the points under "To improve" now return in your next AI lessons — a short re-explanation at the start ("Back to what you missed last time") and a chance to show in the open question that you've got it. A gap closes once you answer well (7/10 or more).
+- **The AI check is one tap away:** without AI, the open question now offers to connect a free AI right there, so it can score your answer and show what to improve. Your own answer stays on screen above the AI's verdict. Answers in Chinese can be checked by AI too (they used to count as one word).
+- **Home-screen widget:** your day streak, the minutes left to today's goal and a Study button. Long-press the home screen → Widgets → Chompbook.
+- **Language in Android settings:** on Android 13+ you can pick Chompbook's language in Android Settings → Apps → Chompbook → Language; it stays in step with the language chosen in the app.
+- **Smoother Back:** on Android 13+ the system "back to home" animation works on the main screen.
+- **Rating in Google Play:** after a lesson you nailed, the app may show Google Play's rating card — at most three times, months apart.
+- Course cards show the number of lessons under the title, apart from the description. Russian texts no longer use the letter «ё»; the Russian, Ukrainian and Belarusian interface says ИИ/ШІ instead of "AI".
+- Store pages and chompbook.online now lead with the main feature: you answer in your own words and AI checks whether you understood.
+
 ## 0.19.1 — 2026-10-30
 
 - **The waiting game has a sky:** a band of clouds now hangs over the worm vs birds game, and flying into it ends the round, just like falling to the ground. Keep the worm between the clouds and the soil! The hint under the game says so.
