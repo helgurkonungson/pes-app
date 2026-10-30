@@ -1,4 +1,4 @@
-# PES — learn anything in daily portions
+#  PES — learn anything in daily portions
 
 PES (Personal Education System) turns your own books, articles and notes — plus the internet — into a daily learning routine sized to the time you have: 5, 15, 30 or 60 minutes, or a custom portion. You can learn several skillsets at once. Each session:
 
