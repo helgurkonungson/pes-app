@@ -46,7 +46,7 @@ test.describe("progress survives restarts and updates", () => {
     await btn(page, /Сохранить резервную копию/).click();
     const file = await (await download).path();
     await btn(page, /Удалить все данные/).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Удалить всё" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Удалить все" }).click();
     await expect(page.getByRole("heading", { name: /Учитесь чему угодно/ })).toBeVisible();
     await page.setInputFiles('[data-testid="backup-file"]', file!);
     await page.getByRole("dialog").getByRole("button", { name: "Восстановить" }).click();

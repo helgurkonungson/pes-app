@@ -50,7 +50,7 @@ test.describe("energy, freezes and rest days (ADR-029)", () => {
 
     await chip.click();
     await expect(page.getByRole("region", { name: "Энергия" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Ещё \d+ энергии до заморозки/ })).toBeDisabled();
+    await expect(page.getByRole("button", { name: /Еще \d+ энергии до заморозки/ })).toBeDisabled();
     await page.getByText("Как получить энергию").click();
     await expect(page.getByText(/Неделя без пропусков: \+15/)).toBeVisible();
 
@@ -93,7 +93,7 @@ test.describe("energy, freezes and rest days (ADR-029)", () => {
       await finishLesson(page);
       if (i === 2) await expect(page.getByText("Серия вернулась: 7 дней!")).toBeVisible();
       await btn(page, "Закрыть").click();
-      if (i === 1) await expect(page.getByText("Ещё один урок сегодня — и серия вернётся.")).toBeVisible();
+      if (i === 1) await expect(page.getByText("Еще один урок сегодня — и серия вернется.")).toBeVisible();
     }
     await expect(page.getByRole("button", { name: "Серия: 7 дней" })).toBeVisible();
   });

@@ -453,6 +453,10 @@ export const zh: Dict = {
   "open.improve": "可以改进",
   "open.covered": "已涵盖",
   "open.missed": "遗漏",
+  "session.revisitTitle": "回顾上次没掌握的内容",
+  "open.revisitHint": "答好这一题，也能补上之前的漏洞。",
+  "open.aiCta": "让 AI 检查你的回答：按 10 分制打分，并指出哪里可以改进。轻点几下即可连接免费 AI。",
+  "open.aiCtaBtn": "连接免费 AI",
 
   // offline lessons
   "offline.title": "阅读：{title}",

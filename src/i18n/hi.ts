@@ -453,6 +453,10 @@ export const hi: Dict = {
   "open.improve": "क्या सुधारें",
   "open.covered": "कवर किया",
   "open.missed": "छूट गया",
+  "session.revisitTitle": "पिछली बार जो छूट गया था, उस पर फिर से",
+  "open.revisitHint": "यहाँ अच्छा जवाब पिछली कमियाँ भी पूरी करेगा।",
+  "open.aiCta": "AI से अपना जवाब जँचवाएँ: वह 10 में से अंक देगा और बताएगा कि क्या सुधारें। कुछ टैप में मुफ़्त AI जोड़ें।",
+  "open.aiCtaBtn": "मुफ़्त AI जोड़ें",
 
   // offline lessons
   "offline.title": "पढ़ाई: {title}",

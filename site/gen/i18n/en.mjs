@@ -1,7 +1,7 @@
 export default {
   "brand": "Chompbook",
-  "title": "Chompbook — learn anything, bite by bite",
-  "desc": "Chompbook turns your books, PDFs and notes into short daily lessons. Answer in your own words and AI checks whether you understood. Five free courses, no ads, no tracking.",
+  "title": "Chompbook — AI study tutor that checks your answers",
+  "desc": "Answer in your own words — AI checks if you really understood. Chompbook turns your books, PDFs and notes into short daily lessons with quizzes. Five free courses, no ads.",
   "nav": {
     "how": "How it works",
     "features": "Features",
@@ -12,13 +12,13 @@ export default {
   "langLabel": "Language",
   "skip": "Skip to content",
   "hero": {
-    "eyebrow": "Free · AI checks your answers · works offline",
-    "h1": "Learn anything, {bite by bite}",
-    "lead": "Your books and articles become short lessons sized to the minutes you have today. Answer in your own words — AI checks whether you really understood. Five free courses inside.",
+    "eyebrow": "Free · AI checks your answers · no accounts or ads",
+    "h1": "Explain it in your words. {AI checks} if you got it.",
+    "lead": "Every lesson ends with an open question. Answer in your own words, and AI checks whether you really understood: a score out of 10, what to improve and a model answer. Lessons come from your own books, PDFs and notes, sized to the minutes you have today.",
     "ticks": [
-      "Answers in your own words",
-      "No accounts or ads",
-      "Works offline"
+      "Open answers checked by AI",
+      "Lessons from your books and PDFs",
+      "No accounts or ads"
     ],
     "apk": "Android, not in the store yet?",
     "apkLink": "Download the APK from GitHub"
@@ -52,18 +52,18 @@ export default {
       },
       {
         "t": "Chomp a bite a day",
-        "p": "Theory, questions and a quiz. Mistakes come back later, so they stick."
+        "p": "Theory, a quiz and an open question checked by AI. Mistakes come back later, so they stick."
       }
     ]
   },
   "ai": {
     "kicker": "The main thing",
     "h2": "AI checks what you understood, not what you guessed",
-    "p": "A quiz shows whether you recognise the right option. Understanding shows when you explain it yourself. Every Chompbook lesson ends with an open question: you answer in your own words, and AI checks it against your source — like a tutor would.",
+    "p": "Flashcards and multiple choice test recognition — you can spot or guess the right option. Understanding shows when you explain it yourself. Every Chompbook lesson ends with an open question: you answer in your own words, and AI checks it against your source, like a tutor would.",
     "points": [
       "Answer in free form — nothing to guess from",
-      "A score out of 10 and specific feedback: what worked and what to improve",
-      "Gaps come back in the next lessons until they are closed"
+      "A score out of 10, what worked, what to improve and how, plus a model answer",
+      "AI remembers what you missed and brings it back in the next lessons until you get it right"
     ],
     "q": "Why does rereading feel effective but help less than trying to recall?",
     "a": "When we reread, the text feels familiar, so it seems we already know it. Recalling makes the brain pull the information out on its own, and that is what strengthens memory.",
@@ -93,12 +93,12 @@ export default {
         "p": "Your phone reads lessons aloud — study on a walk or on the go."
       },
       {
-        "t": "AI if you want it",
-        "p": "Connect a free AI service in a few taps, use your own key, or Chompbook Pro."
+        "t": "AI your way",
+        "p": "Connect a free AI in a couple of taps, use your own key, or Chompbook Pro."
       },
       {
-        "t": "Works offline",
-        "p": "Lessons from your materials and the built-in courses work without AI and without internet."
+        "t": "Works without AI too",
+        "p": "Lessons from your materials and the five courses work without AI and without internet."
       }
     ]
   },
@@ -173,15 +173,15 @@ export default {
       },
       {
         "q": "How does AI check my answers?",
-        "a": "At the end of each lesson you answer an open question in your own words. AI compares it with the lesson's source and key ideas, gives a score out of 10 and explains what worked and what to improve. Without AI you can compare your answer with the model answer yourself."
+        "a": "At the end of each lesson you answer an open question in your own words. AI compares your answer with the lesson's source and key ideas, gives a score out of 10, says what worked and what to improve and how, and shows a model answer. What you missed comes back in the next AI lessons until you get it right."
       },
       {
         "q": "Do I need AI or the internet?",
-        "a": "No. Lessons from your own materials and the built-in courses work fully without AI, even offline. AI makes explanations and quizzes richer and checks open answers."
+        "a": "Not for learning: lessons from your own materials and the five courses work fully without AI, even offline, and you compare your open answer with the model answer yourself. To have AI check your answers and write lessons, connect a free AI in a couple of taps or use your own key."
       },
       {
         "q": "Which files can I add?",
-        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, web links and pasted text. Files from Google Drive, Dropbox or OneDrive can be picked in the phone's file chooser."
+        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, web links, pasted text, and photos or scans of pages (the text is recognised on the phone). Files from Google Drive, Dropbox or OneDrive can be picked in the phone's file chooser."
       },
       {
         "q": "Where is my data?",

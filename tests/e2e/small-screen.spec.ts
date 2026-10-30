@@ -16,9 +16,9 @@ for (const size of [
     await page.locator("#name").fill("Олег");
     await expect(btn(page, /Продолжить/)).toBeInViewport({ ratio: 1 });
     await btn(page, /Продолжить/).click();
-    await expect(btn(page, "Продолжить без AI")).toBeInViewport({ ratio: 1 });
+    await expect(btn(page, "Продолжить без ИИ")).toBeInViewport({ ratio: 1 });
     await expect(btn(page, /Сохранить и начать/)).toBeInViewport({ ratio: 1 });
-    await btn(page, "Продолжить без AI").click();
+    await btn(page, "Продолжить без ИИ").click();
     await expect(page.getByRole("navigation")).toBeVisible();
     await ctx.close();
   });

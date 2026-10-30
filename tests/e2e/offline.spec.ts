@@ -66,10 +66,10 @@ test.describe("lessons without AI", () => {
     await mockApis(page);
     await onboard(page);
     await createSkillsetWithText(page);
-    await expect(page.locator(".hero .pill").first()).toHaveText("Без AI");
+    await expect(page.locator(".hero .pill").first()).toHaveText("Без ИИ");
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Ключа AI нет, поэтому урок собран из вашего источника.")).toBeVisible();
+    await expect(page.getByText("Ключа ИИ нет, поэтому урок собран из вашего источника.")).toBeVisible();
     await expect(page.getByText(/Чтение · часть 1 из/)).toBeVisible();
     await finishLesson(page);
     await btn(page, "Закрыть").click();
@@ -130,15 +130,15 @@ test.describe("lessons without AI", () => {
     await btn(page, "Закрыть").click();
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Кредиты AI закончились, поэтому этот урок собран из вашего источника без AI.")).toBeVisible();
+    await expect(page.getByText("Кредиты ИИ закончились, поэтому этот урок собран из вашего источника без ИИ.")).toBeVisible();
     expect(api.calls.some((c) => c.includes("/v1/messages"))).toBe(true);
     await finishLesson(page);
     await btn(page, "Закрыть").click();
     await btn(page, "Назад").click();
     await page.getByRole("navigation").getByRole("button", { name: "Главная" }).click();
-    await expect(page.getByText(/Кредиты AI закончились — уроки строятся/)).toBeVisible();
+    await expect(page.getByText(/Кредиты ИИ закончились — уроки строятся/)).toBeVisible();
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await expect(page.getByText("Кредиты закончились — уроки без AI")).toBeVisible();
+    await expect(page.getByText("Кредиты закончились — уроки без ИИ")).toBeVisible();
     // the next lesson doesn't hit the API again
     const before = api.calls.filter((c) => c.includes("/v1/messages")).length;
     await page.getByRole("navigation").getByRole("button", { name: "Главная" }).click();
@@ -156,8 +156,8 @@ test.describe("lessons without AI", () => {
     await page.route("https://api.anthropic.com/**", (r) => r.abort("internetdisconnected"));
     await createSkillsetWithText(page);
     await btn(page, /Начать · 15 мин/).click();
-    await expect(page.getByRole("alert")).toContainText("Нет связи с сервисом AI");
-    await btn(page, "Заниматься без AI").click();
+    await expect(page.getByRole("alert")).toContainText("Нет связи с сервисом ИИ");
+    await btn(page, "Заниматься без ИИ").click();
     await skipCountdown(page);
     await expect(page.getByText(/Чтение · часть 1 из/)).toBeVisible();
   });
@@ -166,7 +166,7 @@ test.describe("lessons without AI", () => {
     const api = await mockApis(page, "ok");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await page.getByRole("radio", { name: "Всегда без AI" }).click();
+    await page.getByRole("radio", { name: "Всегда без ИИ" }).click();
     await createSkillsetWithText(page);
     const before = api.calls.length;
     await btn(page, /Начать · 15 мин/).click();

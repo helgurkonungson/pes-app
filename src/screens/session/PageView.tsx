@@ -1,9 +1,10 @@
 /** Lesson pages: theory with Listen, multiple choice, the open question and the waiting page for a part still being written (split out of Session.tsx, ADR-036). */
-import { Check, ExternalLink, Lightbulb, Sparkles, Square, Volume2, X } from "lucide-react";
+import { Check, ExternalLink, Lightbulb, RotateCcw, Sparkles, Square, Volume2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { reportAiError, reportAiOk, useAiState } from "../../ai/status";
 import { modelOf } from "../../ai/providers";
 import { gradeAnswer } from "../../ai/tutor";
+import { FreeAiSheet } from "../../components/FreeAi";
 import { ExtLink, toast } from "../../components/ui";
 import { WormGame } from "../../components/WormGame";
 import { BuildProgress } from "../../components/BuildProgress";
@@ -135,6 +136,18 @@ export function PageView({ page, session, progress, update, onSkipPlacement }: {
             </h2>
           </div>
           <ListenButton key={`${session.id}-${page.index}`} text={`${page.section.heading}.\n${speakable(page.section.body)}${page.keyPoints?.length ? `\n${page.keyPoints.join("\n")}` : ""}`} />
+          {page.index === 0 && !!session.lesson?.revisit?.length && (
+            <div className="revisit" data-testid="revisit">
+              <h3>
+                <RotateCcw size={14} style={{ verticalAlign: -2 }} /> {t("session.revisitTitle")}
+              </h3>
+              <ul>
+                {session.lesson.revisit.map((g, i) => (
+                  <li key={i}>{g}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <Markdown text={page.section.body} />
           {page.keyPoints && page.keyPoints.length > 0 && (
             <div className="keypoints">
@@ -220,7 +233,9 @@ function McqView({ page, progress, update, allowDontKnow, checkpoint, test }: { 
 
 function OpenView({ session, progress, update }: { session: Session; progress: SessionProgress; update: (p: Partial<SessionProgress>) => void }) {
   const t = useT();
-  const ai = useAiState();
+  const [keyVersion, setKeyVersion] = useState(0);
+  const [freeAi, setFreeAi] = useState(false);
+  const ai = useAiState(keyVersion);
   const lesson = session.lesson!;
   const [text, setText] = useState(progress.openAnswer && progress.openAnswer !== "__skipped__" ? progress.openAnswer : "");
   const [busy, setBusy] = useState(false);
@@ -276,6 +291,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
         <h2 className="q-title selectable" style={{ marginBottom: 0 }}>
           {lesson.open.q}
         </h2>
+        {!!lesson.revisit?.length && !grade && <p className="faint small" style={{ marginTop: 6 }}>{t("open.revisitHint")}</p>}
       </div>
       {!grade && !skipped && (
         <>
@@ -303,6 +319,17 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
                 <Check size={18} /> {t("open.selfCheck")}
               </button>
               {!canAi && <p className="faint small center">{t("open.noAiHint")}</p>}
+              {/* the main feature is AI checking open answers: offer it right here when no AI is connected */}
+              {ai === "no-key" && (
+                <div className="card flat tight stack" data-testid="open-ai-cta">
+                  <p className="small">
+                    <Sparkles size={14} style={{ verticalAlign: -2 }} /> {t("open.aiCta")}
+                  </p>
+                  <button className="btn dark block" onClick={() => setFreeAi(true)} disabled={busy}>
+                    {t("open.aiCtaBtn")}
+                  </button>
+                </div>
+              )}
               <button className="btn ghost block" onClick={() => update({ openAnswer: "__skipped__" })} disabled={busy}>
                 {t("open.skip")}
               </button>
@@ -335,6 +362,15 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
         </>
       )}
       {skipped && <p className="muted">{t("open.skipped")}</p>}
+      {freeAi && (
+        <FreeAiSheet
+          onClose={() => setFreeAi(false)}
+          onDone={() => {
+            setFreeAi(false);
+            setKeyVersion((v) => v + 1);
+          }}
+        />
+      )}
       {grade && (
         <>
           <div className="card row" style={{ gap: 16 }}>

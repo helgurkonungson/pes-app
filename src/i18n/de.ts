@@ -453,6 +453,10 @@ export const de: Dict = {
   "open.improve": "Verbesserungen",
   "open.covered": "Abgedeckt",
   "open.missed": "Gefehlt",
+  "session.revisitTitle": "Zurück zu dem, was beim letzten Mal gefehlt hat",
+  "open.revisitHint": "Eine gute Antwort hier schließt auch frühere Lücken.",
+  "open.aiCta": "Lass die KI deine Antwort prüfen: Sie gibt bis zu 10 Punkte und zeigt, was du verbessern kannst. Verbinde eine kostenlose KI mit wenigen Tipps.",
+  "open.aiCtaBtn": "Kostenlose KI verbinden",
 
   // offline lessons
   "offline.title": "Lesen: {title}",

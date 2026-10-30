@@ -74,7 +74,7 @@ test("light theme: chosen in Settings, kept after a restart, readable (AA contra
   await btn(page, "Выйти из урока").click();
   await page.getByRole("dialog").getByRole("button", { name: "Выйти" }).click();
   await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-  await page.getByRole("radio", { name: "Тёмная" }).click();
+  await page.getByRole("radio", { name: "Темная" }).click();
   await expect(page.locator("html")).not.toHaveAttribute("data-theme", "light");
 });
 

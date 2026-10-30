@@ -23,8 +23,18 @@ test.describe("built-in courses (ADR-031)", () => {
     await expect(page.locator(".tutorial")).toHaveCount(0);
     await skipCountdown(page);
     await expect(page.locator(".mode-tag.course")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Сначала — учёт" })).toBeVisible(); // lesson 1, theory part 1
-    await finishLesson(page);
+    await expect(page.getByRole("heading", { name: "Сначала — учет" })).toBeVisible(); // lesson 1, theory part 1
+    await finishLesson(page, {
+      // no AI yet: the open question offers to connect a free AI (the main feature) — right there
+      atOpenQuestion: async () => {
+        const cta = page.getByTestId("open-ai-cta");
+        await expect(cta).toContainText("Пусть ИИ проверит ответ");
+        await cta.getByRole("button", { name: "Подключить бесплатный ИИ" }).click();
+        await expect(page.getByRole("dialog", { name: "Бесплатный ИИ" })).toBeVisible();
+        await page.getByRole("dialog", { name: "Бесплатный ИИ" }).getByRole("button", { name: "Закрыть" }).click();
+        await expect(page.getByRole("dialog")).toHaveCount(0);
+      },
+    });
     await btn(page, "Закрыть").click();
     await expect(page.getByRole("heading", { name: "Финансовая грамотность" })).toBeVisible();
     await expect(page.locator(".syllabus-row")).toHaveCount(8);
@@ -72,15 +82,15 @@ test.describe("own skill path from the tutorial", () => {
     await page.getByTestId("tut-own").click();
     await expect(tut.getByRole("heading", { name: "Свой навык в три шага" })).toBeVisible();
     await expect(tut.getByText(/желательно подключить/)).toBeVisible();
-    await tut.getByRole("button", { name: /Дальше: подключить AI/ }).click();
-    await expect(tut.getByText(/ключ \(его ещё называют токеном\)/)).toBeVisible();
+    await tut.getByRole("button", { name: /Дальше: подключить ИИ/ }).click();
+    await expect(tut.getByText(/ключ \(его еще называют токеном\)/)).toBeVisible();
     await page.getByTestId("own-free").click();
-    await expect(tut.getByRole("heading", { name: "Бесплатный AI: что важно знать" })).toBeVisible();
+    await expect(tut.getByRole("heading", { name: "Бесплатный ИИ: что важно знать" })).toBeVisible();
     await expect(tut.getByText(/50 запросов в день/)).toBeVisible();
     await expect(tut.getByText(/ошибка 429/)).toBeVisible();
-    await tut.getByRole("button", { name: /Получить бесплатный AI/ }).click();
-    await expect(page.getByRole("dialog", { name: "Бесплатный AI" })).toBeVisible(); // the free-AI sheet, above the tutorial
-    await page.getByRole("dialog", { name: "Бесплатный AI" }).getByRole("button", { name: "Закрыть" }).click();
+    await tut.getByRole("button", { name: /Получить бесплатный ИИ/ }).click();
+    await expect(page.getByRole("dialog", { name: "Бесплатный ИИ" })).toBeVisible(); // the free-AI sheet, above the tutorial
+    await page.getByRole("dialog", { name: "Бесплатный ИИ" }).getByRole("button", { name: "Закрыть" }).click();
     await tut.getByRole("button", { name: "Назад" }).click();
     await page.getByTestId("own-pro").click();
     await expect(page.locator(".tutorial")).toHaveCount(0);
@@ -95,16 +105,16 @@ test.describe("own skill path from the tutorial", () => {
     await page.locator(".tutorial .tut-actions .btn.primary").click();
     await page.getByTestId("own-key").click();
     await expect(page.locator(".tutorial").getByText(/console\.anthropic\.com/)).toBeVisible();
-    await btn(page, /Открыть настройки AI/).click();
+    await btn(page, /Открыть настройки ИИ/).click();
     await expect(page.locator(".tutorial")).toHaveCount(0);
-    await expect(page.getByRole("dialog", { name: "Провайдер AI" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Провайдер ИИ" })).toBeVisible();
   });
 
   test("without AI goes straight to creating the skill", async ({ page }) => {
     await mockApis(page);
     await toStartStep(page);
     await page.getByTestId("tut-own").click();
-    await btn(page, "Продолжить без AI").click();
+    await btn(page, "Продолжить без ИИ").click();
     await expect(page.locator(".tutorial")).toHaveCount(0);
     await expect(page.locator("#sk-name")).toBeVisible();
   });
@@ -116,7 +126,7 @@ test.describe("own skill path from the tutorial", () => {
     for (let i = 0; i < 5; i++) await tut.locator(".tut-actions .btn.primary").click();
     await page.getByTestId("tut-own").click();
     await tut.locator(".tut-actions .btn.primary").click();
-    await expect(tut.getByText(/AI уже подключён: Claude/)).toBeVisible();
+    await expect(tut.getByText(/ИИ уже подключен: Claude/)).toBeVisible();
     await tut.getByRole("button", { name: /Создать навык/ }).click();
     await expect(page.locator("#sk-name")).toBeVisible();
   });

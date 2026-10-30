@@ -1,7 +1,7 @@
 export default {
   "brand": "Chompbook",
-  "title": "Chompbook — apprends tout, bouchée par bouchée",
-  "desc": "Chompbook transforme tes livres, PDF et notes en courtes leçons quotidiennes. Réponds avec tes mots et l'IA vérifie si tu as compris. Cinq cours gratuits, sans pub ni pistage.",
+  "title": "Chompbook — réviser avec l'IA qui corrige tes réponses",
+  "desc": "Réponds avec tes mots : l'IA vérifie si tu as vraiment compris. Chompbook transforme tes livres, PDF et notes en courtes leçons avec quiz. Cinq cours gratuits, sans pub.",
   "nav": {
     "how": "Comment ça marche",
     "features": "Fonctions",
@@ -12,13 +12,13 @@ export default {
   "langLabel": "Langue",
   "skip": "Aller au contenu",
   "hero": {
-    "eyebrow": "Gratuit · l'IA corrige tes réponses · fonctionne hors ligne",
-    "h1": "Apprends tout, {bouchée par bouchée}",
-    "lead": "Tes livres et articles deviennent de courtes leçons à la mesure des minutes dont tu disposes aujourd'hui. Réponds avec tes propres mots : l'IA vérifie si tu as vraiment compris. Cinq cours gratuits inclus.",
+    "eyebrow": "Gratuit · l'IA corrige tes réponses · sans compte ni pub",
+    "h1": "Explique avec tes mots. {L'IA vérifie} si tu as compris.",
+    "lead": "Chaque leçon se termine par une question ouverte. Réponds avec tes propres mots et l'IA vérifie si tu as vraiment compris : une note sur 10, quoi améliorer et une réponse modèle. Les leçons viennent de tes livres, PDF et notes, à la mesure des minutes dont tu disposes aujourd'hui.",
     "ticks": [
-      "Réponses avec tes mots",
-      "Sans compte ni pub",
-      "Fonctionne hors ligne"
+      "Réponses ouvertes corrigées par l'IA",
+      "Leçons tirées de tes livres et PDF",
+      "Sans compte ni pub"
     ],
     "apk": "Sur Android, mais pas encore dans le store ?",
     "apkLink": "Télécharge l'APK depuis GitHub"
@@ -52,18 +52,18 @@ export default {
       },
       {
         "t": "Une bouchée par jour",
-        "p": "Théorie, questions et quiz. Les erreurs reviennent plus tard pour mieux s'ancrer."
+        "p": "Théorie, quiz et une question ouverte corrigée par l'IA. Les erreurs reviennent plus tard pour mieux s'ancrer."
       }
     ]
   },
   "ai": {
     "kicker": "L'essentiel",
     "h2": "L'IA vérifie ce que tu as compris, pas ce que tu as deviné",
-    "p": "Un quiz montre si tu reconnais la bonne option. La compréhension se voit quand tu expliques toi-même. Chaque leçon de Chompbook se termine par une question ouverte : tu réponds avec tes mots et l'IA corrige ta réponse d'après ta source, comme le ferait un tuteur.",
+    "p": "Les fiches et les QCM testent la reconnaissance : on peut repérer ou deviner la bonne option. La compréhension se voit quand tu expliques toi-même. Chaque leçon de Chompbook se termine par une question ouverte : tu réponds avec tes mots et l'IA corrige ta réponse d'après ta source, comme le ferait un tuteur.",
     "points": [
       "Réponse libre : rien à deviner",
-      "Une note sur 10 et des retours précis : ce qui va et ce qu'il faut améliorer",
-      "Les lacunes reviennent dans les leçons suivantes jusqu'à être comblées"
+      "Une note sur 10, ce qui va, quoi améliorer et comment, plus une réponse modèle",
+      "L'IA retient ce qui t'a échappé et le ramène dans les leçons suivantes jusqu'à ce que ce soit acquis"
     ],
     "q": "Pourquoi relire paraît efficace mais aide moins qu'essayer de se souvenir ?",
     "a": "Quand on relit, le texte paraît familier et on a l'impression de déjà le savoir. Quand on se souvient, le cerveau doit retrouver l'information tout seul, et c'est ce qui renforce la mémoire.",
@@ -93,12 +93,12 @@ export default {
         "p": "Ton téléphone lit les leçons à voix haute : apprends en marchant ou en route."
       },
       {
-        "t": "L'IA si tu veux",
-        "p": "Connecte un service d'IA gratuit en quelques gestes, utilise ta propre clé ou Chompbook Pro."
+        "t": "L'IA à ta façon",
+        "p": "Connecte une IA gratuite en quelques touches, utilise ta propre clé ou Chompbook Pro."
       },
       {
-        "t": "Fonctionne hors ligne",
-        "p": "Les leçons tirées de tes supports et les cours intégrés marchent sans IA ni internet."
+        "t": "Aussi sans IA",
+        "p": "Les leçons tirées de tes supports et les cinq cours marchent sans IA ni internet."
       }
     ]
   },
@@ -173,15 +173,15 @@ export default {
       },
       {
         "q": "Comment l'IA corrige-t-elle mes réponses ?",
-        "a": "À la fin de chaque leçon, tu réponds à une question ouverte avec tes mots. L'IA la compare à la source et aux idées clés de la leçon, donne une note sur 10 et explique ce qui va et ce qu'il faut améliorer. Sans IA, tu compares toi-même ta réponse avec la réponse modèle."
+        "a": "À la fin de chaque leçon, tu réponds à une question ouverte avec tes propres mots. L'IA compare ta réponse à la source et aux idées clés de la leçon, donne une note sur 10, explique ce qui va, quoi améliorer et comment, et montre une réponse modèle. Ce qui t'a échappé revient dans les leçons IA suivantes jusqu'à ce que ce soit acquis."
       },
       {
         "q": "Ai-je besoin d'IA ou d'internet ?",
-        "a": "Non. Les leçons tirées de tes supports et les cours intégrés fonctionnent entièrement sans IA, même hors ligne. L'IA enrichit les explications et les quiz et corrige les réponses ouvertes."
+        "a": "Pas pour apprendre : les leçons tirées de tes supports et les cinq cours fonctionnent entièrement sans IA, même hors ligne, et tu compares toi-même ta réponse à la réponse modèle. Pour que l'IA corrige tes réponses et rédige des leçons, connecte une IA gratuite en quelques touches ou utilise ta propre clé."
       },
       {
         "q": "Quels fichiers puis-je ajouter ?",
-        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, liens web et texte collé. Les fichiers de Google Drive, Dropbox ou OneDrive se choisissent dans le sélecteur de fichiers du téléphone."
+        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, liens web, texte collé, ainsi que photos et scans de pages (le texte est reconnu sur le téléphone). Les fichiers de Google Drive, Dropbox ou OneDrive se choisissent dans le sélecteur de fichiers du téléphone."
       },
       {
         "q": "Où sont mes données ?",

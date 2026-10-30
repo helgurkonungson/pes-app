@@ -79,8 +79,8 @@ test.describe("onboarding & language", () => {
     await btn(page, /Продолжить/).click();
     await page.locator("#key").fill("sk-ant-wrong-0123456789abcdef");
     await btn(page, /Сохранить и начать/).click();
-    await expect(page.getByRole("alert")).toContainText("Ключ API отклонён");
-    await btn(page, "Продолжить без AI").click();
+    await expect(page.getByRole("alert")).toContainText("Ключ API отклонен");
+    await btn(page, "Продолжить без ИИ").click();
     await expect(page.getByRole("navigation")).toBeVisible();
   });
 });

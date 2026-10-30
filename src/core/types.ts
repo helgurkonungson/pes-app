@@ -115,6 +115,8 @@ export interface LessonContent {
   theory: { sections: TheorySection[]; keyPoints: string[] };
   quiz: Mcq[];
   open: OpenQuestion;
+  /** Gaps from earlier open answers this lesson was asked to revisit (core/gaps.ts). */
+  revisit?: string[];
   links?: { title: string; url: string }[];
   /** Missing in lessons made before v0.2 — those were all AI lessons. */
   mode?: LessonMode;
@@ -399,6 +401,8 @@ export interface LessonDraft {
   sections: (string | null)[];
   review?: { recap: string[]; questions: unknown[] };
   quiz?: unknown[];
+  /** Gaps from earlier open answers the plan was asked to revisit. */
+  revisit?: string[];
   /** AI tokens spent on this lesson so far. */
   usage?: TokenUsage;
 }

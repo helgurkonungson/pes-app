@@ -1,7 +1,7 @@
 export default {
   "brand": "Chompbook",
-  "title": "Chompbook — lerne alles, Happen für Happen",
-  "desc": "Chompbook macht aus deinen Büchern, PDFs und Notizen kurze tägliche Lektionen. Antworte in eigenen Worten, und die KI prüft, ob du es verstanden hast. Fünf kostenlose Kurse, keine Werbung, kein Tracking.",
+  "title": "Chompbook — KI-Lernhilfe, die deine Antworten prüft",
+  "desc": "Antworte in eigenen Worten – die KI prüft, ob du es wirklich verstanden hast. Chompbook macht aus Büchern, PDFs und Notizen kurze Lektionen mit Quiz. Fünf kostenlose Kurse, keine Werbung.",
   "nav": {
     "how": "So funktioniert's",
     "features": "Funktionen",
@@ -12,13 +12,13 @@ export default {
   "langLabel": "Sprache",
   "skip": "Zum Inhalt",
   "hero": {
-    "eyebrow": "Kostenlos · KI prüft deine Antworten · funktioniert offline",
-    "h1": "Lerne alles – {Happen für Happen}",
-    "lead": "Deine Bücher und Artikel werden zu kurzen Lektionen – passend zu den Minuten, die du heute hast. Antworte in eigenen Worten, und die KI prüft, ob du es wirklich verstanden hast. Fünf kostenlose Kurse inklusive.",
+    "eyebrow": "Kostenlos · KI prüft deine Antworten · keine Konten, keine Werbung",
+    "h1": "Erklär's in eigenen Worten. {Die KI prüft}, ob's sitzt.",
+    "lead": "Jede Lektion endet mit einer offenen Frage. Antworte in eigenen Worten, und die KI prüft, ob du es wirklich verstanden hast: Bewertung von 0 bis 10, Tipps zum Verbessern und eine Musterantwort. Die Lektionen entstehen aus deinen Büchern, PDFs und Notizen – passend zu den Minuten, die du heute hast.",
     "ticks": [
-      "Antworten in eigenen Worten",
-      "Keine Konten, keine Werbung",
-      "Funktioniert offline"
+      "Offene Antworten, von der KI geprüft",
+      "Lektionen aus Büchern und PDFs",
+      "Keine Konten, keine Werbung"
     ],
     "apk": "Android, aber noch nicht im Store?",
     "apkLink": "Lade die APK von GitHub herunter"
@@ -52,18 +52,18 @@ export default {
       },
       {
         "t": "Jeden Tag ein Happen",
-        "p": "Theorie, Fragen und ein Quiz. Fehler kommen später wieder – so bleiben sie hängen."
+        "p": "Theorie, ein Quiz und eine offene Frage, die die KI prüft. Fehler kommen später wieder – so bleiben sie hängen."
       }
     ]
   },
   "ai": {
     "kicker": "Das Wichtigste",
     "h2": "Die KI prüft, was du verstanden hast – nicht, was du geraten hast",
-    "p": "Ein Quiz zeigt, ob du die richtige Option erkennst. Verständnis zeigt sich, wenn du es selbst erklärst. Jede Lektion in Chompbook endet mit einer offenen Frage: Du antwortest in eigenen Worten, und die KI prüft die Antwort anhand deiner Quelle – wie ein Tutor.",
+    "p": "Karteikarten und Multiple Choice prüfen das Wiedererkennen – die richtige Option kann man erkennen oder raten. Verständnis zeigt sich, wenn du es selbst erklärst. Jede Lektion in Chompbook endet mit einer offenen Frage: Du antwortest in eigenen Worten, und die KI prüft die Antwort anhand deiner Quelle – wie eine gute Nachhilfe.",
     "points": [
       "Freie Antwort – nichts zum Raten",
-      "Note von 10 und konkretes Feedback: was gut war und was du verbessern kannst",
-      "Lücken kommen in den nächsten Lektionen wieder, bis sie geschlossen sind"
+      "Bewertung von 0 bis 10, was gut war, was du wie verbessern kannst, und eine Musterantwort",
+      "Die KI merkt sich, was du übersehen hast, und bringt es in den nächsten Lektionen wieder, bis es sitzt"
     ],
     "q": "Warum fühlt sich erneutes Lesen wirksam an, hilft aber weniger als der Versuch, sich zu erinnern?",
     "a": "Beim erneuten Lesen wirkt der Text vertraut, und es fühlt sich an, als wüsste man ihn schon. Beim Erinnern muss das Gehirn die Information selbst abrufen – genau das stärkt das Gedächtnis.",
@@ -93,12 +93,12 @@ export default {
         "p": "Dein Handy liest Lektionen vor – lerne beim Spazieren oder unterwegs."
       },
       {
-        "t": "KI, wenn du willst",
-        "p": "Verbinde mit wenigen Tipps einen kostenlosen KI-Dienst, nutze deinen eigenen Schlüssel oder Chompbook Pro."
+        "t": "KI, wie du sie willst",
+        "p": "Verbinde mit wenigen Tipps eine kostenlose KI, nutze deinen eigenen Schlüssel oder Chompbook Pro."
       },
       {
-        "t": "Funktioniert offline",
-        "p": "Lektionen aus deinen Materialien und die eingebauten Kurse laufen ohne KI und ohne Internet."
+        "t": "Auch ohne KI",
+        "p": "Lektionen aus deinen Materialien und die fünf Kurse laufen ohne KI und ohne Internet."
       }
     ]
   },
@@ -173,15 +173,15 @@ export default {
       },
       {
         "q": "Wie prüft die KI meine Antworten?",
-        "a": "Am Ende jeder Lektion beantwortest du eine offene Frage in eigenen Worten. Die KI vergleicht sie mit der Quelle und den Kernideen der Lektion, vergibt eine Note von 10 und erklärt, was gut war und was du verbessern kannst. Ohne KI vergleichst du deine Antwort selbst mit der Musterantwort."
+        "a": "Am Ende jeder Lektion beantwortest du eine offene Frage in eigenen Worten. Die KI vergleicht sie mit der Quelle und den Kernideen der Lektion, vergibt bis zu 10 Punkte, sagt, was gut war und was du wie verbessern kannst, und zeigt eine Musterantwort. Was du übersehen hast, kommt in den nächsten KI-Lektionen wieder, bis es sitzt."
       },
       {
         "q": "Brauche ich KI oder Internet?",
-        "a": "Nein. Lektionen aus deinen Materialien und die eingebauten Kurse funktionieren komplett ohne KI, sogar offline. KI macht Erklärungen und Quiz reichhaltiger und prüft offene Antworten."
+        "a": "Zum Lernen nicht: Lektionen aus deinen Materialien und die fünf Kurse funktionieren komplett ohne KI, sogar offline – deine offene Antwort vergleichst du dann selbst mit der Musterantwort. Damit die KI deine Antworten prüft und Lektionen schreibt, verbindest du mit wenigen Tipps eine kostenlose KI oder nutzt deinen eigenen Schlüssel."
       },
       {
         "q": "Welche Dateien kann ich hinzufügen?",
-        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, Weblinks und eingefügten Text. Dateien aus Google Drive, Dropbox oder OneDrive wählst du in der Dateiauswahl des Handys."
+        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, Weblinks, eingefügten Text sowie Fotos und Scans von Seiten (der Text wird auf dem Handy erkannt). Dateien aus Google Drive, Dropbox oder OneDrive wählst du in der Dateiauswahl des Handys."
       },
       {
         "q": "Wo sind meine Daten?",

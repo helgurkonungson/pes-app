@@ -1,73 +1,105 @@
 # Deutsch — тексты для магазинов
 
-Google Play: язык `de-DE` · App Store: German. Источник: `de.json` (здесь — та же информация для копирования).
+Google Play: язык `de-DE` · App Store: German. Источник: `de.json` (здесь — та же информация для копирования). Файл создается командой `node tools/store/listing-md.mjs` — правьте JSON, не этот файл.
 
 ## Google Play
-**Название (≤30, 27):**
+**Название (≤30, 30):**
 ```
-Chompbook: Lernen in Happen
+Chompbook: KI-Lernhilfe & Quiz
 ```
-**Краткое описание (≤80, 79):**
+**Краткое описание (≤80, 80):**
 ```
-Bücher, PDFs und Notizen werden zu kurzen Tageslektionen mit Quiz. KI optional.
+Antworte in eigenen Worten – KI prüft dein Verständnis. Lerne aus Büchern & PDFs
 ```
-**Полное описание (≤4000, 1723):**
+**Полное описание (≤4000, 3888):**
 ```
-Chompbook macht aus allem, was du lernen willst, kurze tägliche Lektionen – ein ganzes Buch, Happen für Happen.
+Antworte in eigenen Worten – und die KI prüft, ob du es wirklich verstanden hast. Chompbook ist deine Lernhilfe für Bücher, PDFs und Notizen: kurze Lektionen, die in deinen Tag passen.
+Jede Lektion endet mit einer offenen Frage. Du bekommst eine Bewertung von 0 bis 10, Feedback, was gut war und was du wie verbessern kannst, und eine Musterantwort.
 
-LERNE MIT DEINEN EIGENEN MATERIALIEN
-• Füge PDF-, EPUB-, Word- und Textdateien, Webseiten oder deine Notizen hinzu. Gescannte Seiten werden direkt auf dem Handy erkannt.
-• Chompbook teilt sie in kleine Teile und baut für jeden Tag eine Lektion: Theorie, Fragen und ein kurzes Quiz.
-• Wähle, wie viele Minuten pro Tag du lernen möchtest – 5, 15, 30 oder mehr.
+WARUM IN EIGENEN WORTEN
+Karteikarten und Multiple Choice prüfen nur das Wiedererkennen: Die richtige Option kann man erkennen oder raten, ohne das Thema zu verstehen. Wer etwas in eigenen Worten erklären kann, hat es wirklich verstanden. Das ist aktives Abrufen (Active Recall) und die Feynman-Methode – und genau so endet jede Lektion in Chompbook.
+• Du schreibst frei, es gibt also nichts zu raten.
+• Die KI vergibt bis zu 10 Punkte und sagt, was gut war, was fehlt und wie du es besser machst.
+• Eine Musterantwort zeigt, wie eine vollständige Erklärung aussieht.
+• Die KI merkt sich, was du übersehen hast, und bringt es in den nächsten Lektionen wieder, bis es sitzt.
 
-CLEVER LERNEN
+SO FUNKTIONIERT'S
+1. Füge hinzu, was du lernen willst: Lehrbuch, PDF, Vorlesungsskript oder Webseite.
+2. Wähle deine Minuten pro Tag – 5, 15, 30 oder 60+. Jede Lektion wird passend zugeschnitten.
+3. Kurze Theorie, ein schnelles Quiz, dann erklärst du den Kerngedanken in eigenen Worten und bekommst Feedback.
+
+LERNE AUS ALLEM
+• PDF-, EPUB-, Word-, Text- und Markdown-Dateien
+• Webseiten per Link oder eigene Notizen
+• Fotos und Scans von Buchseiten – der Text wird direkt auf dem Handy erkannt
+• Dateien aus Google Drive über die normale Dateiauswahl
+Die Lektionen folgen deinem Material Teil für Teil – bis das Buch geschafft ist.
+
+FÜR WEN
+• Prüfungsvorbereitung mit deinen eigenen Lehrbüchern und Notizen
+• Studierende in der Klausurenphase
+• Weiterbildungen und Zertifizierungen im Job
+• Sachbuch-Leser, die behalten wollen, was sie lesen
+• Autodidakten, die jeden Tag ein Stück weiterkommen wollen
+
+CLEVERER LERNEN
 • Ein Einstufungstest überspringt, was du schon kannst.
-• Verteilte Wiederholung holt deine Fehler zur richtigen Zeit zurück.
-• Jede 5. Lektion beginnt mit einem kurzen Check, ein Abschlusstest schließt das Thema ab.
-• Lass dir Lektionen mit der Stimme deines Handys vorlesen.
+• Verteilte Wiederholung bringt Fehler aus dem Quiz zur richtigen Zeit zurück.
+• Jede 5. Lektion beginnt mit einem kurzen Check, ein Abschlusstest schließt jedes Thema ab.
+• Lektionen anhören: Dein Handy liest sie vor.
 
-KI, WENN DU WILLST
-• Verbinde mit wenigen Tipps einen kostenlosen KI-Dienst oder nutze deinen eigenen Schlüssel (Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter und mehr).
-• Die KI schreibt verständliche Erklärungen und Quizfragen aus deinen Quellen und prüft deine offenen Antworten.
-• Ohne KI? Lektionen aus deinen Materialien und die eingebauten Kurse funktionieren komplett ohne – sogar offline.
+KI, WIE DU SIE WILLST
+• Verbinde mit wenigen Tipps eine kostenlose KI: Mit Google anmelden und einen kostenlosen Gemini-Schlüssel erstellen – oder kostenlos bei OpenRouter anmelden.
+• Oder nutze deinen eigenen Schlüssel: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA – oder deinen eigenen Server wie Ollama oder LM Studio.
+• Sie schreibt Lektionen aus deinen Materialien und prüft deine offenen Antworten wie eine gute Nachhilfe.
 
-FÜNF KOSTENLOSE KURSE INKLUSIVE
-Effektiv lernen, KI-Kompetenz, Daten und Tabellen, Finanzwissen und kritisches Denken – je 8 Lektionen, in 9 Sprachen.
+FÜNF KOSTENLOSE KURSE
+Je 8 Lektionen, sofort startklar:
+• Effektiv lernen – Gedächtnis, verteilte Wiederholung und Gewohnheiten
+• KI-Kompetenz – wie Chatbots funktionieren und wie man sie sicher nutzt
+• Daten und Tabellen – Formeln, Verweise und ehrliche Diagramme
+• Finanzwissen – Budget, Notgroschen, Schulden, Zinsen, Betrug
+• Kritisches Denken – Argumente, Denkfehler und Behauptungen prüfen
 
-BLEIB MOTIVIERT
-Tagesziel, Serien, XP, Abzeichen und freundliche Erinnerungen.
+MOTIVIERT BLEIBEN
+• Tagesziel, Serien mit Ruhetagen, XP, Abzeichen und sanfte Erinnerungen.
+• Ein Widget auf dem Startbildschirm zeigt deine Serie und den Fortschritt von heute.
+• Ein Mini-Spiel, während deine nächste Lektion entsteht.
 
-PRIVAT VON GRUND AUF
-Keine Konten, keine Werbung, kein Tracking. Deine Materialien und dein Fortschritt bleiben auf deinem Handy; Text geht nur an den KI-Dienst, den du wählst.
+PRIVAT VON ANFANG AN
+Keine Konten, keine Werbung, kein Tracking. Materialien und Fortschritt bleiben auf deinem Handy; Text geht nur an den KI-Dienst, den du wählst. Jede generierte Lektion kannst du mit einem Tipp melden.
 
-Available in English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська and Беларуская. Helles und dunkles Design, Handys und Tablets.
+FUNKTIONIERT AUCH OHNE KI
+Lektionen aus deinen eigenen Materialien und die fünf Kurse laufen komplett ohne sie, sogar offline. Deine Antwort vergleichst du dann selbst mit der Musterantwort und den Kernpunkten.
+
+Deutsch, English, Español, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Helles und dunkles Design, für Smartphones und Tablets.
 ```
 
 ## App Store
 **Название (≤30):**
 ```
-Chompbook: Lernen in Happen
+Chompbook: KI-Lernhilfe & Quiz
 ```
-**Подзаголовок (≤30, 27):**
+**Подзаголовок (≤30, 25):**
 ```
-Kurze Lektionen aus Büchern
+KI prüft dein Verständnis
 ```
-**Рекламный текст (≤170, 159):**
+**Рекламный текст (≤170, 161):**
 ```
-Lerne alles in wenigen Minuten am Tag: Deine Bücher und Artikel werden zu kurzen Lektionen mit Quiz und cleverer Wiederholung. Fünf kostenlose Kurse inklusive.
+Jede Lektion endet mit einer offenen Frage: Antworte in eigenen Worten, und die KI prüft, ob du es wirklich verstanden hast. Lerne aus Büchern, PDFs und Notizen.
 ```
-**Ключевые слова (≤100, 92):**
+**Ключевые слова (≤100, 98):**
 ```
-lernen,lernkarten,quiz,wiederholung,bücher,pdf,lektionen,selbststudium,lern app,karteikarten
+lernen,nachhilfe,prüfung,klausur,test,karteikarte,pdf,buch,notiz,lektion,kurs,wiederholung,studium
 ```
 **Описание:** то же, что полное описание Google Play.
 
 ## Подписи на скриншотах (1–6) и картинке 1024×500
-1. Lerne alles – Happen für Happen
-2. Aus Büchern werden Lektionen
-3. Kurze Lektionen jeden Tag
-4. Quiz und clevere Wiederholung
-5. Kostenlose Kurse inklusive
-6. Bleib am Ball
+1. Antworte in eigenen Worten – KI prüft, ob's sitzt _(проверка ответа ИИ)_
+2. Bücher, PDFs und Notizen werden zu Lektionen _(источники)_
+3. Kurze Lektionen, die in deinen Tag passen _(урок)_
+4. Fehler kommen wieder, bis sie sitzen _(тест)_
+5. Fünf kostenlose Kurse inklusive _(курсы)_
+6. Deine Serie hält dich am Ball _(главная с серией)_
 
-Картинка: «Lerne alles – Happen für Happen»
+Картинка: «Erklär's in eigenen Worten. Die KI prüft, ob's sitzt.»

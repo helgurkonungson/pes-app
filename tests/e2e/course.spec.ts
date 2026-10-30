@@ -26,7 +26,7 @@ test.describe("imported courses", () => {
     await btn(page, "Назад").click();
     await page.getByRole("navigation").getByRole("button", { name: "Навыки" }).click();
     await page.setInputFiles('[data-testid="course-file"]', COURSE_V2);
-    await expect(page.getByText(/обновлён · 1 новый урок · прогресс сохранён/)).toBeVisible();
+    await expect(page.getByText(/обновлен · 1 новый урок · прогресс сохранен/)).toBeVisible();
     await expect(page.locator(".syllabus-row")).toHaveCount(4);
     await expect(page.locator(".syllabus-row").first().locator(".status.done")).toBeVisible();
     await expect(page.locator(".syllabus-row.next")).toContainText("Inserted");

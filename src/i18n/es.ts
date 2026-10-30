@@ -453,6 +453,10 @@ export const es: Dict = {
   "open.improve": "Para mejorar",
   "open.covered": "Cubierto",
   "open.missed": "Faltó",
+  "session.revisitTitle": "Volvemos a lo que se te escapó la última vez",
+  "open.revisitHint": "Una buena respuesta aquí también cierra lo que te faltó antes.",
+  "open.aiCta": "Deja que la IA revise tu respuesta: la puntúa sobre 10 y te dice qué mejorar. Conecta una IA gratis en un par de toques.",
+  "open.aiCtaBtn": "Conectar IA gratis",
 
   // offline lessons
   "offline.title": "Lectura: {title}",

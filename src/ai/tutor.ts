@@ -244,6 +244,7 @@ export function assembleLesson(draft: LessonDraft, total: number, done: number, 
     open: { id: "open", q: plan.open.q, rubric: plan.open.rubric.slice(0, 6) },
   };
   if (draft.usage) lesson.usage = draft.usage;
+  if (draft.revisit?.length) lesson.revisit = draft.revisit;
   if (final) {
     if (!sections.length || sections.length < plan.sections.length || !quiz.length) throw new AiError("The lesson came back incomplete.", "bad-response");
   } else {
@@ -261,6 +262,8 @@ export async function generateLesson(opts: {
   sourceTitles: Map<string, string>;
   lastLesson?: LessonContent;
   mistakes: Mcq[];
+  /** What the learner missed in earlier open answers (core/gaps.ts): the plan revisits it. */
+  gaps?: string[];
   previousTitles: string[];
   onProgress?: Progress;
   signal?: AbortSignal;
@@ -339,9 +342,12 @@ export async function generateLesson(opts: {
   // 2. plan
   if (!draft.plan) {
     report("writing", "plan");
+    const gaps = (opts.gaps ?? []).filter(isStr).slice(0, 3);
+    if (gaps.length) draft.revisit = gaps;
     const prompt = [
       header,
       opts.previousTitles.length ? `EARLIER LESSONS: ${opts.previousTitles.slice(-8).join("; ")}` : "",
+      gaps.length ? `GAPS TO CLOSE — what the learner missed in earlier open answers:\n${gaps.map((g) => `- ${g}`).join("\n")}` : "",
       "",
       material(),
       web ? `\n${web}` : "",
@@ -350,6 +356,9 @@ export async function generateLesson(opts: {
       `- sections: exactly ${plan.theorySections}, in teaching order, about ${Math.round(plan.theoryWords / plan.theorySections)} words each when written. For each: heading, focus (what exactly it teaches, 1–2 sentences) and excerpts (numbers of the source excerpts it uses).`,
       "- keyPoints: 3–6 takeaways of today's theory.",
       "- open: one open question that makes the learner apply today's theory to a realistic situation (answerable in 3–6 sentences), with a 3–4 point rubric.",
+      gaps.length
+        ? "- GAPS TO CLOSE: briefly re-explain each gap (2–4 sentences) inside the most fitting section — name it in that section's focus — and let the open question also give the learner a chance to show they now understand at least one gap (one rubric point for it)."
+        : "",
       "- title: a short lesson title.",
     ].join("\n");
     draft.plan = await step(

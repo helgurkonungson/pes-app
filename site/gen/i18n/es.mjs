@@ -1,7 +1,7 @@
 export default {
   "brand": "Chompbook",
-  "title": "Chompbook — aprende lo que quieras, a bocados",
-  "desc": "Chompbook convierte tus libros, PDF y notas en lecciones diarias cortas. Responde con tus palabras y la IA comprueba si lo entendiste. Cinco cursos gratis, sin anuncios ni rastreo.",
+  "title": "Chompbook — estudia con una IA que revisa tus respuestas",
+  "desc": "Responde con tus palabras y la IA revisa si de verdad lo entiendes. Chompbook convierte tus libros, PDF y apuntes en lecciones cortas con tests. Cinco cursos gratis, sin anuncios.",
   "nav": {
     "how": "Cómo funciona",
     "features": "Funciones",
@@ -12,13 +12,13 @@ export default {
   "langLabel": "Idioma",
   "skip": "Ir al contenido",
   "hero": {
-    "eyebrow": "Gratis · la IA corrige tus respuestas · funciona sin conexión",
-    "h1": "Aprende lo que quieras, {a bocados}",
-    "lead": "Tus libros y artículos se convierten en lecciones cortas ajustadas a los minutos que tienes hoy. Responde con tus propias palabras y la IA comprueba si de verdad lo entendiste. Cinco cursos gratis incluidos.",
+    "eyebrow": "Gratis · la IA corrige tus respuestas · sin cuentas ni anuncios",
+    "h1": "Explícalo con tus palabras. {La IA revisa} si lo entiendes.",
+    "lead": "Cada lección termina con una pregunta abierta. Responde con tus propias palabras y la IA revisa si de verdad lo entiendes: nota sobre 10, qué mejorar y una respuesta modelo. Las lecciones salen de tus libros, PDF y apuntes, ajustadas a los minutos que tienes hoy.",
     "ticks": [
-      "Respuestas con tus palabras",
-      "Sin cuentas ni anuncios",
-      "Funciona sin conexión"
+      "Respuestas abiertas corregidas por IA",
+      "Lecciones de tus libros y PDF",
+      "Sin cuentas ni anuncios"
     ],
     "apk": "¿Android y aún no está en la tienda?",
     "apkLink": "Descarga el APK desde GitHub"
@@ -52,18 +52,18 @@ export default {
       },
       {
         "t": "Un bocado al día",
-        "p": "Teoría, preguntas y un test. Los errores vuelven más tarde para que se queden."
+        "p": "Teoría, un test y una pregunta abierta que corrige la IA. Los errores vuelven más tarde para que se queden."
       }
     ]
   },
   "ai": {
     "kicker": "Lo principal",
     "h2": "La IA comprueba lo que entendiste, no lo que adivinaste",
-    "p": "Un test muestra si reconoces la opción correcta. La comprensión se ve cuando lo explicas tú. Cada lección de Chompbook termina con una pregunta abierta: respondes con tus palabras y la IA la corrige a partir de tu fuente, como haría un tutor.",
+    "p": "Las tarjetas de memoria y los tests de opción múltiple miden el reconocimiento: puedes reconocer o adivinar la opción correcta. La comprensión se ve cuando lo explicas tú. Cada lección de Chompbook termina con una pregunta abierta: respondes con tus palabras y la IA la corrige a partir de tu fuente, como haría un tutor.",
     "points": [
       "Respuesta libre: no hay opciones entre las que adivinar",
-      "Nota sobre 10 y comentarios concretos: qué salió bien y qué mejorar",
-      "Las lagunas vuelven en las siguientes lecciones hasta cerrarse"
+      "Nota sobre 10, qué salió bien, qué mejorar y cómo, y una respuesta modelo",
+      "La IA recuerda lo que se te escapó y lo trae de vuelta en las siguientes lecciones hasta que lo domines"
     ],
     "q": "¿Por qué releer parece útil pero ayuda menos que intentar recordar?",
     "a": "Al releer, el texto nos resulta familiar y parece que ya lo sabemos. Al recordar, el cerebro tiene que sacar la información por sí mismo, y eso es lo que fortalece la memoria.",
@@ -93,12 +93,12 @@ export default {
         "p": "Tu teléfono lee las lecciones en voz alta: aprende paseando o de camino."
       },
       {
-        "t": "IA si la quieres",
-        "p": "Conecta un servicio de IA gratuito en pocos toques, usa tu propia clave o Chompbook Pro."
+        "t": "La IA a tu manera",
+        "p": "Conecta una IA gratis en un par de toques, usa tu propia clave o Chompbook Pro."
       },
       {
-        "t": "Funciona sin conexión",
-        "p": "Las lecciones de tus materiales y los cursos incluidos funcionan sin IA y sin internet."
+        "t": "También sin IA",
+        "p": "Las lecciones de tus materiales y los cinco cursos funcionan sin IA y sin internet."
       }
     ]
   },
@@ -173,15 +173,15 @@ export default {
       },
       {
         "q": "¿Cómo corrige la IA mis respuestas?",
-        "a": "Al final de cada lección respondes una pregunta abierta con tus palabras. La IA la compara con la fuente y las ideas clave de la lección, pone una nota sobre 10 y explica qué salió bien y qué mejorar. Sin IA puedes comparar tú mismo tu respuesta con la respuesta modelo."
+        "a": "Al final de cada lección respondes una pregunta abierta con tus palabras. La IA la compara con la fuente y las ideas clave de la lección, pone una nota sobre 10, explica qué salió bien, qué mejorar y cómo, y muestra una respuesta modelo. Lo que se te escapó vuelve en las siguientes lecciones con IA hasta que lo domines."
       },
       {
         "q": "¿Necesito IA o internet?",
-        "a": "No. Las lecciones de tus materiales y los cursos incluidos funcionan por completo sin IA, incluso sin conexión. La IA enriquece las explicaciones y los tests y corrige las respuestas abiertas."
+        "a": "Para aprender, no: las lecciones de tus materiales y los cinco cursos funcionan por completo sin IA, incluso sin conexión, y tú mismo comparas tu respuesta con la respuesta modelo. Para que la IA corrija tus respuestas y escriba lecciones, conecta una IA gratis en un par de toques o usa tu propia clave."
       },
       {
         "q": "¿Qué archivos puedo añadir?",
-        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, enlaces web y texto pegado. Los archivos de Google Drive, Dropbox u OneDrive se eligen en el selector de archivos del teléfono."
+        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, enlaces web, texto pegado y fotos o escaneos de páginas (el texto se reconoce en el teléfono). Los archivos de Google Drive, Dropbox u OneDrive se eligen en el selector de archivos del teléfono."
       },
       {
         "q": "¿Dónde están mis datos?",

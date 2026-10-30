@@ -3,6 +3,7 @@ import { badgeById, newBadges } from "../core/badges";
 import type { ChunkDraft } from "../core/chunker";
 import { addDays, localDay, weekOf } from "../core/dates";
 import { mistakesOf, tallyLesson } from "../core/flow";
+import { gapsForNextLesson } from "../core/gaps";
 import { nowIso, uid } from "../core/ids";
 import { advanceCursor, clampMinutes, coverage } from "../core/planner";
 import { levelFromXp, scorePlacement, skippedPlacement, XP } from "../core/scoring";
@@ -168,6 +169,14 @@ export async function recentMistakes(skillsetId: string, max = 4): Promise<Mcq[]
   const done = await db.sessions.where("[skillsetId+status]").equals([skillsetId, "done"]).toArray();
   const lessons = done.filter((s) => s.kind === "lesson" && s.lesson).sort((a, b) => (b.finishedAt ?? "").localeCompare(a.finishedAt ?? "")).slice(0, 2);
   return lessons.flatMap((s) => mistakesOf(s.lesson!, s.progress)).slice(0, max);
+}
+
+/** What the learner missed in earlier open answers and hasn't closed yet, newest first (core/gaps.ts). */
+export async function openAnswerGaps(skillsetId: string): Promise<string[]> {
+  const done = await db.sessions.where("[skillsetId+status]").equals([skillsetId, "done"]).toArray();
+  return gapsForNextLesson(
+    done.filter((s) => s.kind === "lesson" && s.lesson).map((s) => ({ finishedAt: s.finishedAt ?? s.createdAt ?? "", grade: s.progress.grade, revisit: s.lesson!.revisit })),
+  );
 }
 
 async function bumpActivity(day: string, patch: Omit<DayActivity, "day">): Promise<void> {

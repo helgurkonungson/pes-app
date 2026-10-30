@@ -453,6 +453,10 @@ export const en = {
   "open.improve": "To improve",
   "open.covered": "Covered",
   "open.missed": "Missed",
+  "session.revisitTitle": "Back to what you missed last time",
+  "open.revisitHint": "A good answer here also closes what you missed before.",
+  "open.aiCta": "Let AI check your answer: it scores it out of 10 and shows what to improve. Connect a free AI in a couple of taps.",
+  "open.aiCtaBtn": "Connect free AI",
 
   // offline lessons
   "offline.title": "Reading: {title}",

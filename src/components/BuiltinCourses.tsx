@@ -71,9 +71,9 @@ export function BuiltinCourseList({ onPick, busy, compact }: { onPick: (slug: st
             <CourseIcon c={c} />
             <span className="grow" style={{ textAlign: "left", minWidth: 0 }}>
               <span className="bold block">{t(`courses.${c.slug}.title` as Key)}</span>
-              <span className="small muted block">{t(`courses.${c.slug}.hint` as Key)}</span>
+              {/* the lesson count sits under the title, styled apart from the description */}
               {!compact && (
-                <span className="tiny muted block">
+                <span className="course-meta tiny block">
                   {t("stat.lessonsN", { n: 8 })}
                   {has && (
                     <>
@@ -83,6 +83,7 @@ export function BuiltinCourseList({ onPick, busy, compact }: { onPick: (slug: st
                   )}
                 </span>
               )}
+              <span className="course-hint small muted block">{t(`courses.${c.slug}.hint` as Key)}</span>
             </span>
             <ChevronRight size={20} className="muted" aria-hidden />
           </button>

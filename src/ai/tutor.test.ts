@@ -142,6 +142,29 @@ describe("lesson written in steps", () => {
     expect(lesson.review).toEqual({ recap: [], questions: [] });
   });
 
+  it("gaps from earlier open answers go into the plan and are remembered on the lesson (0.19.2)", async () => {
+    const saved: LessonDraft[] = [];
+    const { lesson } = await generateLesson({
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 2, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+      gaps: ["You didn't name who approves definitions", "", "No example given"],
+      saveDraft: async (d) => void saved.push(structuredClone(d)),
+    });
+    const planPrompt = (ai.structured.mock.calls[0][0] as { prompt: string }).prompt;
+    expect(planPrompt).toContain("GAPS TO CLOSE");
+    expect(planPrompt).toContain("- You didn't name who approves definitions");
+    expect(planPrompt).toMatch(/one rubric point for it/);
+    expect(lesson.revisit).toEqual(["You didn't name who approves definitions", "No example given"]);
+    expect(saved[0].revisit).toEqual(lesson.revisit); // a resumed draft keeps them
+  });
+
+  it("no gaps: no gap instructions and no revisit list", async () => {
+    const { lesson } = await generateLesson({
+      model: "m", skillset, plan: { ...planSession(15), theorySections: 2 }, number: 2, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],
+    });
+    expect((ai.structured.mock.calls[0][0] as { prompt: string }).prompt).not.toContain("GAPS TO CLOSE");
+    expect(lesson.revisit).toBeUndefined();
+  });
+
   it("a skipped placement test means: assume no prior knowledge", async () => {
     await generateLesson({
       model: "m", skillset: { ...skillset, placement: { score: 0, total: 0, level: "beginner", strengths: [], gaps: [], at: "x", skipped: true } }, plan: { ...planSession(15), theorySections: 2 }, number: 1, chunks, sourceTitles: new Map(), mistakes: [], previousTitles: [],

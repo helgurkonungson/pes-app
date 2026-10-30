@@ -8,14 +8,14 @@ export const COURSE_V2 = `${FIXTURES}sample-course-v2.pes.json`;
 export const SOURCE_TEXT = Array.from(
   { length: 120 },
   (_, i) =>
-    `Руководство данными (Data Governance) определяет права принятия решений для набора ${i + 1}. Стюард данных следит за правилами качества и метаданными в каталоге. Линейность данных показывает путь показателей от источника до отчёта номер ${i + 1}.`,
+    `Руководство данными (Data Governance) определяет права принятия решений для набора ${i + 1}. Стюард данных следит за правилами качества и метаданными в каталоге. Линейность данных показывает путь показателей от источника до отчета номер ${i + 1}.`,
 ).join("\n\n");
 
 const mcq = (i: number, topic = "Основы") => ({
   q: `Вопрос ${i}: что определяет руководство данными?`,
-  options: ["Права принятия решений", "Цвет отчётов", "Размер серверов", "График отпусков"],
+  options: ["Права принятия решений", "Цвет отчетов", "Размер серверов", "График отпусков"],
   answer: 0,
-  explanation: "Руководство данными задаёт права решений и ответственность.",
+  explanation: "Руководство данными задает права решений и ответственность.",
   difficulty: "m",
   topic,
 });
@@ -121,7 +121,7 @@ export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: stri
     await page.locator("#key").fill(opts.key);
     await btn(page, lang === "ru" ? /Сохранить и начать/ : /Save and start/).click();
   } else {
-    await btn(page, lang === "ru" ? "Продолжить без AI" : "Continue without AI").click();
+    await btn(page, lang === "ru" ? "Продолжить без ИИ" : "Continue without AI").click();
   }
   await expect(page.getByRole("navigation")).toBeVisible();
   if (!opts.tutorial) await skipTutorial(page);
@@ -153,15 +153,16 @@ export async function skipCountdown(page: Page): Promise<void> {
 }
 
 /** Walks through the open lesson answering the first option, self-checks the open question and finishes. */
-export async function finishLesson(page: Page, opts: { aiGrade?: boolean } = {}): Promise<void> {
+export async function finishLesson(page: Page, opts: { aiGrade?: boolean; atOpenQuestion?: () => Promise<void> } = {}): Promise<void> {
   for (let guard = 0; guard < 60; guard++) {
     const option = page.locator(".option:not([disabled])").first();
     if (await option.isVisible().catch(() => false)) await option.click();
     const textarea = page.getByRole("textbox", { name: /Ваш ответ|Your answer/ });
     if (await textarea.isVisible().catch(() => false)) {
       await textarea.fill("Назначу владельца данных и стюарда, договорюсь о метрике качества и проверю результат через месяц.");
+      await opts.atOpenQuestion?.();
       if (opts.aiGrade) {
-        await btn(page, /Проверить с AI|Check with AI/).click();
+        await btn(page, /Проверить с ИИ|Check with AI/).click();
       } else {
         await btn(page, /Сравнить с эталоном|Compare with the model answer/).click();
         const boxes = page.locator(".check-row input");
@@ -202,7 +203,7 @@ export async function expectNoHorizontalOverflow(page: Page, label = ""): Promis
 
 /** Settings → AI provider sheet → pick a provider (Settings tab must be open). */
 export async function chooseProvider(page: Page, name: string): Promise<void> {
-  await page.getByRole("button", { name: /Провайдер AI|AI provider/ }).click();
+  await page.getByRole("button", { name: /Провайдер ИИ|AI provider/ }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("radio").first()).toBeVisible();
   const direct = dialog.getByRole("radio", { name: new RegExp(`^${name}`) });

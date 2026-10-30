@@ -22,7 +22,7 @@ import { localDay } from "../core/dates";
 import type { Chunk, LessonContent, LessonDraft, Mcq, Session, Skillset } from "../core/types";
 import { t } from "../i18n";
 import { db, getProfile } from "./db";
-import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, recentMistakes, saveSession, skillsetCards, skillsetChunks, skipPlacement } from "./repo";
+import { doneCourseLessonIds, findReadySession, lastDoneLesson, nextSessionNumber, openAnswerGaps, recentMistakes, saveSession, skillsetCards, skillsetChunks, skipPlacement } from "./repo";
 
 export class CourseFinishedError extends Error {
   constructor() {
@@ -255,6 +255,8 @@ interface WriterInputs {
   titles: Map<string, string>;
   last?: LessonContent;
   mistakes: Mcq[];
+  /** Open-answer gaps to revisit (new lessons only; a resumed draft keeps its own). */
+  gaps?: string[];
   previousTitles: string[];
   draft?: LessonDraft;
 }
@@ -298,6 +300,7 @@ async function writeAiLesson(
       sourceTitles: inp.titles,
       lastLesson: inp.last,
       mistakes: inp.mistakes,
+      gaps: inp.gaps,
       previousTitles: inp.previousTitles,
       onProgress: (stage, detail, steps) => {
         if (!started) opts.onProgress?.(stage, detail, steps);
@@ -457,6 +460,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
         const picked = pickChunks(chunks, skillset.cursor, plan.sourceWords);
         const last = await lastDoneLesson(skillsetId);
         const mistakes = await recentMistakes(skillsetId);
+        const gaps = await openAnswerGaps(skillsetId);
         const done = await db.sessions.where("[skillsetId+status]").equals([skillsetId, "done"]).toArray();
         const previousTitles = done
           .filter((s) => s.lesson)
@@ -467,7 +471,7 @@ async function doPrepare(skillsetId: string, minutesIn: number, opts: PrepareOpt
         if (draft) base.number = draft.number;
         base.chunkIds = picked.map((c) => c.id);
         const review = draft?.review ? { review: draft.review as LessonContent["review"], checkpoint: false } : await buildReview(skillset, last?.lesson);
-        const started = await writeAiLesson(base, { skillset, minutes, picked, titles, last: last?.lesson, mistakes, previousTitles, draft, review }, opts);
+        const started = await writeAiLesson(base, { skillset, minutes, picked, titles, last: last?.lesson, mistakes, gaps, previousTitles, draft, review }, opts);
         if (started.status === "saved") {
           await reportAiOk();
           return started.session; // the rest is being written in the background

@@ -9,7 +9,7 @@ test.describe("first-run tutorial", () => {
     await expect(tut).toBeVisible();
     await expect(tut.getByRole("heading", { name: "Учитесь по своим материалам" })).toBeVisible();
     for (let i = 0; i < 5; i++) await tut.getByRole("button", { name: /^Далее/ }).click();
-    await expect(tut.getByRole("heading", { name: "С чего начнём?" })).toBeVisible(); // last step
+    await expect(tut.getByRole("heading", { name: "С чего начнем?" })).toBeVisible(); // last step
     await expect(tut.getByRole("button", { name: "Пропустить" })).toHaveCount(0);
     await expect(tut.locator("[data-course]")).toHaveCount(5);
     await tut.getByRole("button", { name: "Решу позже" }).click();
@@ -82,7 +82,7 @@ test.describe("report a lesson", () => {
     await createSkillsetWithText(page);
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.getByText("Создано AI")).toBeVisible();
+    await expect(page.getByText("Создано ИИ")).toBeVisible();
     // go to a theory page and report it
     while (!(await page.getByRole("heading", { name: "Кто решает" }).isVisible())) {
       const opt = page.locator(".option:not([disabled])").first();

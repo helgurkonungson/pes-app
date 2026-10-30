@@ -6,7 +6,7 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await mockApis(page, "ok");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
     await createSkillsetWithText(page, undefined, { keepTest: true });
-    await expect(page.locator(".hero .pill").first()).toHaveText("Уроки с AI");
+    await expect(page.locator(".hero .pill").first()).toHaveText("Уроки с ИИ");
     await btn(page, "Пройти входной тест").click();
     await skipCountdown(page);
     await expect(page.getByRole("heading", { name: "Определим ваш стартовый уровень" })).toBeVisible();
@@ -25,12 +25,36 @@ test.describe("AI lessons (mocked Claude API)", () => {
     await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
     await finishLesson(page, { aiGrade: true });
     // token usage: per lesson on the results screen, per month in Settings
-    await expect(page.getByText(/AI для этого урока: [\d\s ]+ токенов · \d+ запрос/)).toBeVisible();
+    await expect(page.getByText(/ИИ для этого урока: [\d\s ]+ токенов · \d+ запрос/)).toBeVisible();
     await btn(page, "Закрыть").click();
     await btn(page, "Назад").click();
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await expect(page.getByText("Токены AI в этом месяце")).toBeVisible();
+    await expect(page.getByText("Токены ИИ в этом месяце")).toBeVisible();
     await expect(page.getByText(/^[\d\s ]+ · \d+ запрос/)).toBeVisible();
+  });
+
+  test("what the open answer missed comes back in the next AI lesson", async ({ page }) => {
+    await mockApis(page, "ok"); // the mocked grade is 9/10 with one gap: «Добавьте метрику»
+    await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
+    await createSkillsetWithText(page);
+    await btn(page, /Начать · 15 мин/).click();
+    await skipCountdown(page);
+    await expect(page.getByRole("heading", { name: "Кто решает" })).toBeVisible();
+    await expect(page.getByTestId("revisit")).toHaveCount(0); // nothing to revisit in the first lesson
+    await finishLesson(page, { aiGrade: true });
+    await btn(page, "Закрыть").click();
+    await btn(page, /Начать · 15 мин|Продолжить · 15 мин|Следующий урок/).click();
+    await skipCountdown(page);
+    for (let i = 0; i < 8 && !(await page.getByTestId("revisit").isVisible().catch(() => false)); i++) await btn(page, /^Далее/).click(); // past the review
+    await expect(page.getByTestId("revisit")).toContainText("Возвращаемся к тому, что не получилось в прошлый раз");
+    await expect(page.getByTestId("revisit")).toContainText("Добавьте метрику");
+    await finishLesson(page, {
+      atOpenQuestion: async () => {
+        await expect(page.getByText("Хороший ответ здесь закроет и прошлые пробелы.")).toBeVisible();
+        await expect(page.getByTestId("open-ai-cta")).toHaveCount(0); // AI is connected
+      },
+      aiGrade: true,
+    });
   });
 
   test("while a lesson is written: a moving progress bar and changing phrases; the test counts its own questions", async ({ page }) => {
@@ -106,7 +130,7 @@ test.describe("other AI providers", () => {
     await btn(page, /Ключ API ChatGPT/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("sk-openai-test-0123456789");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gpt-5-mini");
     await createSkillsetWithText(page);
     await btn(page, /Начать · 15 мин/).click();
@@ -145,7 +169,7 @@ test("NVIDIA key → lesson from a JSON text answer", async ({ page }) => {
   await btn(page, /Ключ API NVIDIA/).click();
   await page.getByRole("dialog").getByRole("textbox").fill("nvapi-test-0123456789abcdef");
   await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-  await expect(page.getByText("Ключ сохранён")).toBeVisible();
+  await expect(page.getByText("Ключ сохранен")).toBeVisible();
   await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("meta/llama-3.3-70b-instruct");
   await createSkillsetWithText(page);
   await btn(page, /Начать · 15 мин/).click();
@@ -205,7 +229,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, /Ключ API Gemini/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");
     await lessonWorks(page);
   });
@@ -222,7 +246,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     // a neutral age screen first (the year isn't kept, only the age group)
     await expect(dialog.getByRole("button", { name: "Продолжить" })).toBeDisabled();
@@ -240,22 +264,22 @@ test.describe("Gemini, Groq and a custom server", () => {
     await (await popup).close();
     await dialog.getByRole("textbox", { name: "Ключ Gemini" }).fill(`скопировано: ${KEY}`);
     await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
-    await expect(page.getByText("Ключ Gemini получен — уроки будут с AI")).toBeVisible();
+    await expect(page.getByText("Ключ Gemini получен — уроки будут с ИИ")).toBeVisible();
     await expect(page.getByRole("navigation")).toBeVisible(); // onboarding finished
     await skipTutorial(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
+    await expect(page.getByRole("button", { name: /Провайдер ИИ/ })).toContainText("Gemini");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gemini-3.8-flash");
-    await expect(page.getByRole("button", { name: /Подключить бесплатный AI/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Подключить бесплатный ИИ/ })).toHaveCount(0);
     // the provider picker: built-in (selected now), your own server, other services
-    await page.getByRole("button", { name: /Провайдер AI/ }).click();
-    await expect(page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ })).toHaveAttribute("aria-checked", "true");
+    await page.getByRole("button", { name: /Провайдер ИИ/ }).click();
+    await expect(page.getByRole("dialog").getByRole("radio", { name: /^Встроенный ИИ/ })).toHaveAttribute("aria-checked", "true");
     await page.getByRole("dialog").getByRole("radio", { name: /^Другие сервисы/ }).click();
     await expect(page.getByRole("dialog").getByRole("radio", { name: /^Gemini \(свой ключ\)/ })).toHaveAttribute("aria-checked", "true");
     await page.getByRole("dialog").getByRole("radio", { name: /^Claude/ }).click();
-    await page.getByRole("button", { name: /Провайдер AI/ }).click();
-    await page.getByRole("dialog").getByRole("radio", { name: /^Встроенный AI/ }).click(); // key exists: switches back at once
-    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Gemini");
+    await page.getByRole("button", { name: /Провайдер ИИ/ }).click();
+    await page.getByRole("dialog").getByRole("radio", { name: /^Встроенный ИИ/ }).click(); // key exists: switches back at once
+    await expect(page.getByRole("button", { name: /Провайдер ИИ/ })).toContainText("Gemini");
   });
 
   test("free AI by age: a teen gets only Mistral (with a parent's permission), the key is picked up and Mistral becomes the provider", async ({ page, context }) => {
@@ -268,7 +292,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await context.route("https://console.mistral.ai/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Mistral</h1>" }));
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 15));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
@@ -286,8 +310,8 @@ test.describe("Gemini, Groq and a custom server", () => {
     await (await popup).close();
     await dialog.getByRole("textbox", { name: "Ключ Mistral" }).fill(KEY);
     await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
-    await expect(page.getByText("Mistral подключён — уроки будут с AI")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("Mistral");
+    await expect(page.getByText("Mistral подключен — уроки будут с ИИ")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Провайдер ИИ/ })).toContainText("Mistral");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("mistral-small-latest");
   });
 
@@ -295,14 +319,14 @@ test.describe("Gemini, Groq and a custom server", () => {
     await mockApis(page, "credits");
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     await page.getByRole("dialog").getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 10));
     await page.getByRole("dialog").getByRole("button", { name: "Продолжить" }).click();
-    await expect(page.getByRole("dialog").getByText(/только с определённого возраста/)).toBeVisible();
+    await expect(page.getByRole("dialog").getByText(/только с определенного возраста/)).toBeVisible();
     await page.getByRole("dialog").getByRole("button", { name: "Закрыть" }).last().click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     await expect(page.getByRole("dialog").getByLabel("Год рождения")).toHaveCount(0);
-    await expect(page.getByRole("dialog").getByText(/только с определённого возраста/)).toBeVisible();
+    await expect(page.getByRole("dialog").getByText(/только с определенного возраста/)).toBeVisible();
   });
 
   test("free AI: Groq for an adult — key page, key checked, Groq with its best free model", async ({ page, context }) => {
@@ -312,7 +336,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await context.route("https://console.groq.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>Groq</h1>" }));
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 40));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
@@ -327,7 +351,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await (await popup).close();
     await dialog.getByRole("textbox", { name: "Ключ Groq" }).fill(KEY);
     await dialog.getByRole("button", { name: "Сохранить ключ" }).click();
-    await expect(page.getByText("Groq подключён — уроки будут с AI")).toBeVisible();
+    await expect(page.getByText("Groq подключен — уроки будут с ИИ")).toBeVisible();
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("gpt-oss-120b");
   });
 
@@ -342,7 +366,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await context.route("https://aistudio.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>AI Studio</h1>" }));
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 30));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
@@ -381,7 +405,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, /Ключ API Gemini/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
     await createSkillsetWithText(page);
     await btn(page, /Начать · 15 мин/).click();
     await expect(page.getByRole("alert")).toContainText("перегружен", { timeout: 40_000 });
@@ -402,7 +426,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, /Ключ API Gemini/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("AIza-test-0123456789abcdef");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
     await createSkillsetWithText(page);
   }
 
@@ -556,7 +580,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, /Ключ API Groq/).click();
     await page.getByRole("dialog").getByRole("textbox").fill("gsk_test_0123456789abcdef");
     await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
-    await expect(page.getByText("Ключ сохранён")).toBeVisible();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
     await lessonWorks(page);
     expect(forced).toBe(true);
   });
@@ -618,7 +642,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     await context.route("https://openrouter.ai/auth**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>OpenRouter sign-in</h1>" }));
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
-    await btn(page, /Подключить бесплатный AI/).click();
+    await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Год рождения").selectOption(String(new Date().getFullYear() - 30));
     await dialog.getByRole("button", { name: "Продолжить" }).click();
@@ -628,7 +652,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     await dialog.getByRole("button", { name: /Другие сервисы/ }).click();
     await expect(dialog.getByRole("button", { name: /^Gemini/ })).toBeVisible();
     await dialog.getByRole("button", { name: /^OpenRouter/ }).click();
-    await expect(dialog.getByText(/около 50 запросов к AI в день/)).toBeVisible();
+    await expect(dialog.getByText(/около 50 запросов к ИИ в день/)).toBeVisible();
     await expect(dialog.getByText(/OpenRouter может использовать ваши материалы/)).toBeVisible();
     const signIn = dialog.getByRole("button", { name: "Войти через OpenRouter" });
     await expect(signIn).toBeDisabled();
@@ -646,7 +670,7 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     await expect(dialog.getByText(/Завершите вход на странице OpenRouter/)).toBeVisible();
     // a link with a foreign state is refused
     await page.evaluate(() => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: "online.chompbook.app://oauth/openrouter?code=evil&state=forged" })));
-    await expect(dialog.getByRole("alert")).toContainText("Попробуйте ещё раз");
+    await expect(dialog.getByRole("alert")).toContainText("Попробуйте еще раз");
     expect(exchanged).toBeNull();
     // the real sign-in: the callback page opens the app with the code and our state
     const popup2P = page.waitForEvent("popup");
@@ -654,11 +678,11 @@ test.describe("OpenRouter in one tap (Russia)", () => {
     const auth2 = new URL((await popup2P).url());
     const state = new URL(auth2.searchParams.get("callback_url") ?? "").searchParams.get("state");
     await page.evaluate((s) => window.dispatchEvent(new CustomEvent("pes:deeplink", { detail: `online.chompbook.app://oauth/openrouter?state=${s}&code=one-time-code` })), state);
-    await expect(page.getByText("OpenRouter подключён — уроки будут с AI")).toBeVisible();
+    await expect(page.getByText("OpenRouter подключен — уроки будут с ИИ")).toBeVisible();
     expect(exchanged).toMatchObject({ code: "one-time-code", code_challenge_method: "S256" });
     expect(String((exchanged as unknown as { code_verifier: string }).code_verifier)).toMatch(/^[A-Za-z0-9_-]{43,128}$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("button", { name: /Провайдер AI/ })).toContainText("OpenRouter");
+    await expect(page.getByRole("button", { name: /Провайдер ИИ/ })).toContainText("OpenRouter");
     await expect(page.locator(".menu-row", { hasText: "Модель" })).toContainText("llama-3.3-70b-instruct:free");
   });
 });
@@ -685,8 +709,8 @@ test.describe("the waiting game while a lesson is prepared", () => {
     await game.focus();
     await page.keyboard.press("Space");
     await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 8000 });
-    await expect(page.getByText(/Счёт 0 · рекорд 0/)).toBeVisible();
-    await expect(page.getByText("Нажмите, чтобы сыграть ещё")).toBeVisible();
+    await expect(page.getByText(/Счет 0 · рекорд 0/)).toBeVisible();
+    await expect(page.getByText("Нажмите, чтобы сыграть еще")).toBeVisible();
     // another round; the lesson becomes ready mid-round
     await page.waitForTimeout(600);
     await holdWormRound(page, true); // the round below stays open until the test lets it go
