@@ -1,0 +1,8 @@
+# old addresses → new ones (Cloudflare Workers static assets)
+/en/ / 301
+/en / 301
+/privacy/ru/ /ru/privacy/ 301
+/privacy/ru /ru/privacy/ 301
+/terms/ru/ /ru/terms/ 301
+/terms/ru /ru/terms/ 301
+/ru/cis/* /cis/:splat 301
