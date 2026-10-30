@@ -3,6 +3,8 @@ import { autoSendLogs } from "../data/logSend";
 import { retryUnsent } from "../data/reports";
 import { scheduleReminders } from "../native/reminders";
 import { settleStreakNow } from "../data/repo";
+import { refreshHomeWidget, syncLanguageWithAndroid } from "../data/androidSync";
+import { predictiveBackDevice, setBackHandled } from "../native/androidFeatures";
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -12,7 +14,7 @@ import { ConfirmHost, toast, Toaster } from "../components/ui";
 import { db, getProfile } from "../data/db";
 import { requestPersistentStorage, restoreIfEmpty, writeSnapshot } from "../data/safety";
 import { resolveLang, t, useLang } from "../i18n";
-import { type Route, useNav } from "../nav/store";
+import { backWouldHandle, type Route, useNav, watchBackState } from "../nav/store";
 import { Home } from "../screens/Home";
 import { SessionScreen } from "../screens/Session";
 import { SkillsetDetail } from "../screens/SkillsetDetail";
@@ -129,6 +131,20 @@ export function App() {
     if (profile) applyTheme(profile.theme);
   }, [profile?.theme, profile]);
 
+  // Android 13+: the language in Android Settings → Apps follows the app's choice and back (0.19.2)
+  const uiLanguage = profile?.uiLanguage;
+  useEffect(() => {
+    if (ready && profile) void syncLanguageWithAndroid();
+  }, [ready, uiLanguage, !!profile]);
+
+  // predictive back: Android draws "back to home" only when the app has nothing to go back to
+  useEffect(() => {
+    if (!predictiveBackDevice()) return;
+    const apply = () => setBackHandled(backWouldHandle());
+    apply();
+    return watchBackState(apply);
+  }, []);
+
   useEffect(() => {
     if (ready && profile === null) getProfile(); // recreate the default profile → onboarding
   }, [ready, profile]);
@@ -150,8 +166,13 @@ export function App() {
     });
     // snapshot when the app goes to the background (the OS may kill it later)
     const state = CapApp.addListener("appStateChange", ({ isActive }) => {
-      if (!isActive) writeSnapshot();
-      else void settleStreakNow().then(scheduleReminders); // a new day may have started; "studied today?" and due cards may have changed
+      if (!isActive) {
+        writeSnapshot();
+        void refreshHomeWidget(); // the widget is seen while the app is in the background
+      } else {
+        void settleStreakNow().then(scheduleReminders); // a new day may have started; "studied today?" and due cards may have changed
+        void syncLanguageWithAndroid(); // the language may have been changed in Android Settings
+      }
     });
     return () => {
       sub.then((s) => s.remove());
@@ -161,7 +182,7 @@ export function App() {
 
   useEffect(() => {
     // after boot: the check writes to the profile, and an empty database must be restored first
-    if (ready) void settleStreakNow().then(scheduleReminders); // missed days: freezes, rest days, repair (ADR-029)
+    if (ready) void settleStreakNow().then(scheduleReminders).then(refreshHomeWidget); // missed days: freezes, rest days, repair (ADR-029)
     if (!ready || !autoUpdateCheckEnabled()) return;
     runDailyUpdateCheck();
     if (!Capacitor.isNativePlatform()) return;

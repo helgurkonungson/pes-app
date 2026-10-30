@@ -4,4 +4,12 @@
     <string name="title_activity_main">Chompbook</string>
     <string name="package_name">online.chompbook.app</string>
     <string name="custom_url_scheme">online.chompbook.app</string>
+    <!-- home-screen widget -->
+    <string name="widget_name">Day streak</string>
+    <string name="widget_description">Your day streak and today\'s goal</string>
+    <string name="widget_streak_label">days in a row</string>
+    <string name="widget_cta">Study</string>
+    <string name="widget_empty">Open Chompbook to start</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">12 min to today\'s goal</string>
 </resources>

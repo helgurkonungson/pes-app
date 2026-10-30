@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">连续学习</string>
+    <string name="widget_description">连续学习天数和今日目标</string>
+    <string name="widget_streak_label">天连续学习</string>
+    <string name="widget_cta">去学习</string>
+    <string name="widget_empty">打开 Chompbook 开始学习</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">距今日目标还差 12 分钟</string>
+</resources>

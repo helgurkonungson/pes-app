@@ -2,4 +2,11 @@
 <resources>
     <color name="pes_background">#141517</color>
     <color name="pes_splash">#FFC53A</color>
+    <!-- home-screen widget, light theme (values-night has the dark one) -->
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="widget_text">#1B1C1F</color>
+    <color name="widget_muted">#595C64</color>
+    <color name="widget_accent">#8F5F00</color>
+    <color name="widget_btn">#FFC53A</color>
+    <color name="widget_on_accent">#231A00</color>
 </resources>

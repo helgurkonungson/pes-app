@@ -28,11 +28,30 @@ interface NavState {
 
 /** Sheets and dialogs register here so the hardware back button closes them first. */
 const backHandlers: (() => boolean)[] = [];
+const backListeners = new Set<() => void>();
 export function onBack(handler: () => boolean): () => void {
   backHandlers.push(handler);
+  backListeners.forEach((l) => l());
   return () => {
     const i = backHandlers.lastIndexOf(handler);
     if (i >= 0) backHandlers.splice(i, 1);
+    backListeners.forEach((l) => l());
+  };
+}
+
+/** Whether Back has anything to do in the app (a sheet, a pushed screen, another tab) — for predictive back. */
+export function backWouldHandle(): boolean {
+  const s = useNav.getState();
+  return backHandlers.length > 0 || s.stack.length > 0 || s.tab !== "home";
+}
+
+/** Calls `fn` whenever backWouldHandle() may have changed. */
+export function watchBackState(fn: () => void): () => void {
+  backListeners.add(fn);
+  const unsub = useNav.subscribe(fn);
+  return () => {
+    backListeners.delete(fn);
+    unsub();
   };
 }
 

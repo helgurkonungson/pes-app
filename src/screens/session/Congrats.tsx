@@ -8,6 +8,7 @@ import { totalEnergy } from "../../core/energy";
 import { rankFor } from "../../core/scoring";
 import type { Session, SessionResult } from "../../core/types";
 import { db } from "../../data/db";
+import { maybeAskForReview } from "../../data/androidSync";
 import { type Key, locale, useT } from "../../i18n";
 import { formatTokens } from "../../ai/usage";
 
@@ -19,6 +20,12 @@ export function Congrats({ session, result, onClose }: { session: Session; resul
   useEffect(() => {
     if (session.kind === "placement" && result) db.skillsets.get(session.skillsetId).then((s) => s?.placement && setPlacement(s.placement));
     if (session.kind === "final" && result) db.skillsets.get(session.skillsetId).then((s) => s?.final && setFinal(s.final));
+  }, [session, result]);
+  // a good moment for the Google Play rating card: right after a well-answered lesson or a streak milestone
+  useEffect(() => {
+    if (!result) return;
+    const timer = setTimeout(() => void maybeAskForReview(session, result).catch(() => undefined), 1200);
+    return () => clearTimeout(timer);
   }, [session, result]);
   if (!result) {
     return (

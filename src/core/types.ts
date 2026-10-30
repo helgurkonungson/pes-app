@@ -258,6 +258,8 @@ export interface Profile {
   ageGroup?: "child" | "teen" | "adult";
   /** Explicit consents for the assisted free connections (Groq, Mistral, OpenRouter). */
   aiConsents?: Partial<Record<ProviderId, { version: number; at: string }>>;
+  /** Google Play rating asks so far (core/reviewAsk.ts). */
+  reviewAsk?: { at: string; count: number };
   /** Colour theme; default "system". */
   theme?: "system" | "light" | "dark";
   /** Explicit consent to create a free Gemini key in the learner's Google account (ADR-021). */

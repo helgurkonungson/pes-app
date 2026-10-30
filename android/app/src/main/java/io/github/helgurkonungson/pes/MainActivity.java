@@ -24,6 +24,9 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
         EdgeToEdge.enable(this);
         // Local plugins must be registered before the bridge starts.
         registerPlugin(ScreenAwakePlugin.class);
+        registerPlugin(HomeWidgetPlugin.class);
+        registerPlugin(AppLocalePlugin.class);
+        registerPlugin(StoreReviewPlugin.class);
         super.onCreate(savedInstanceState);
         // Belt and braces: the web layer has its own top bar.
         ActionBar bar = getSupportActionBar();

@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">Racha de días</string>
+    <string name="widget_description">Tu racha de días y la meta de hoy</string>
+    <string name="widget_streak_label">días seguidos</string>
+    <string name="widget_cta">Estudiar</string>
+    <string name="widget_empty">Abre Chompbook para empezar</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">12 min para la meta de hoy</string>
+</resources>

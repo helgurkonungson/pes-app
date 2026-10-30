@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">Tagesserie</string>
+    <string name="widget_description">Deine Tagesserie und das heutige Ziel</string>
+    <string name="widget_streak_label">Tage in Folge</string>
+    <string name="widget_cta">Lernen</string>
+    <string name="widget_empty">Öffne Chompbook, um zu starten</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">Noch 12 Min. bis zum Tagesziel</string>
+</resources>

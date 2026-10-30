@@ -457,6 +457,8 @@ export const hi: Dict = {
   "open.revisitHint": "यहाँ अच्छा जवाब पिछली कमियाँ भी पूरी करेगा।",
   "open.aiCta": "AI से अपना जवाब जँचवाएँ: वह 10 में से अंक देगा और बताएगा कि क्या सुधारें। कुछ टैप में मुफ़्त AI जोड़ें।",
   "open.aiCtaBtn": "मुफ़्त AI जोड़ें",
+  "widget.streak": { one: "दिन लगातार", other: "दिन लगातार" },
+  "widget.cta": "पढ़ें",
 
   // offline lessons
   "offline.title": "पढ़ाई: {title}",

@@ -457,6 +457,8 @@ export const fr: Dict = {
   "open.revisitHint": "Une bonne réponse ici comble aussi vos lacunes précédentes.",
   "open.aiCta": "Laissez l'IA vérifier votre réponse : elle la note sur 10 et montre quoi améliorer. Connectez une IA gratuite en quelques touches.",
   "open.aiCtaBtn": "Connecter une IA gratuite",
+  "widget.streak": { one: "jour d'affilée", many: "jours d'affilée", other: "jours d'affilée" },
+  "widget.cta": "Étudier",
 
   // offline lessons
   "offline.title": "Lecture : {title}",

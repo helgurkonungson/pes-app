@@ -457,6 +457,8 @@ export const en = {
   "open.revisitHint": "A good answer here also closes what you missed before.",
   "open.aiCta": "Let AI check your answer: it scores it out of 10 and shows what to improve. Connect a free AI in a couple of taps.",
   "open.aiCtaBtn": "Connect free AI",
+  "widget.streak": { one: "day in a row", other: "days in a row" },
+  "widget.cta": "Study",
 
   // offline lessons
   "offline.title": "Reading: {title}",

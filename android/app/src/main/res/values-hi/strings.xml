@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">लगातार दिन</string>
+    <string name="widget_description">लगातार पढ़ाई के दिन और आज का लक्ष्य</string>
+    <string name="widget_streak_label">दिन लगातार</string>
+    <string name="widget_cta">पढ़ें</string>
+    <string name="widget_empty">शुरू करने के लिए Chompbook खोलें</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">आज के लक्ष्य तक 12 मिनट</string>
+</resources>

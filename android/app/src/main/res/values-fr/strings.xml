@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">Série de jours</string>
+    <string name="widget_description">Votre série de jours et l\'objectif du jour</string>
+    <string name="widget_streak_label">jours d\'affilée</string>
+    <string name="widget_cta">Étudier</string>
+    <string name="widget_empty">Ouvrez Chompbook pour commencer</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">12 min avant l\'objectif du jour</string>
+</resources>

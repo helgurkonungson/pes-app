@@ -457,6 +457,8 @@ export const zh: Dict = {
   "open.revisitHint": "答好这一题，也能补上之前的漏洞。",
   "open.aiCta": "让 AI 检查你的回答：按 10 分制打分，并指出哪里可以改进。轻点几下即可连接免费 AI。",
   "open.aiCtaBtn": "连接免费 AI",
+  "widget.streak": { one: "天连续学习", other: "天连续学习" },
+  "widget.cta": "去学习",
 
   // offline lessons
   "offline.title": "阅读：{title}",

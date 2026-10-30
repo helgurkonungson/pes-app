@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="widget_name">Серія днів</string>
+    <string name="widget_description">Серія днів і мета на сьогодні</string>
+    <string name="widget_streak_label">днів поспіль</string>
+    <string name="widget_cta">Вчитися</string>
+    <string name="widget_empty">Відкрийте Chompbook, щоб почати</string>
+    <string name="widget_preview_streak">🔥 7</string>
+    <string name="widget_preview_status">12 хв до мети на сьогодні</string>
+</resources>

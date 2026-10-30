@@ -95,4 +95,28 @@ describe("branding", () => {
     expect(page).toContain('"online.chompbook.app" : "io.github.helgurkonungson.pes"');
     expect(page).toContain("pes-oauth");
   });
+  it("0.19.2 Android features: widget, per-app language, predictive back, Play review — declared and registered", () => {
+    const main = new URL("../android/app/src/main/", import.meta.url);
+    const read = (p: string) => readFileSync(new URL(p, main), "utf8");
+    const manifest = read("AndroidManifest.xml");
+    expect(manifest).toContain('android:localeConfig="@xml/locales_config"');
+    expect(manifest).toContain('android:enableOnBackInvokedCallback="true"');
+    expect(manifest).toMatch(/<receiver\s+android:name="\.StreakWidget"[\s\S]*?android\.appwidget\.provider/);
+    // the languages offered in Android Settings are exactly the app's nine
+    const locales = [...read("res/xml/locales_config.xml").matchAll(/<locale android:name="([^"]+)"/g)].map((m) => m[1].split("-")[0]);
+    expect(locales.sort()).toEqual(["be", "de", "en", "es", "fr", "hi", "ru", "uk", "zh"]);
+    const activity = read("java/io/github/helgurkonungson/pes/MainActivity.java");
+    const boot = activity.indexOf("super.onCreate");
+    for (const plugin of ["HomeWidgetPlugin", "AppLocalePlugin", "StoreReviewPlugin"]) {
+      const at = activity.indexOf(`registerPlugin(${plugin}.class)`);
+      expect(at, plugin).toBeGreaterThan(0);
+      expect(at, plugin).toBeLessThan(boot);
+    }
+    expect(readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8")).toContain("com.google.android.play:review:");
+    // every widget string exists in every language folder
+    for (const dir of ["values", "values-ru", "values-uk", "values-be", "values-es", "values-de", "values-fr", "values-zh", "values-hi"]) {
+      const xml = read(`res/${dir}/strings.xml`);
+      for (const name of ["widget_name", "widget_description", "widget_streak_label", "widget_cta", "widget_empty"]) expect(xml, `${dir}/${name}`).toContain(`name="${name}"`);
+    }
+  });
 });
