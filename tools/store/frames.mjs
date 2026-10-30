@@ -6,9 +6,12 @@ import { mkdirSync, readFileSync } from "node:fs";
 
 const raw = process.argv[2];
 const out = process.argv[3] ?? "store-assets";
-const LANGS = (process.argv[4] ?? "en,es,de,fr,zh,hi,ru,uk,be").split(",");
+const LANGS = (process.argv[4] ?? "en,es,de,fr,zh,zh-TW,hi,ru,uk,be").split(",");
+// listings without their own app language use another language's screens (zh-TW: the zh interface)
+const RAW = { "zh-TW": "zh" };
 const ROOT = new URL("../../", import.meta.url);
-const SCREENS = ["1-home", "2-sources", "3-lesson", "4-quiz", "5-courses", "6-progress"];
+// store order: the AI-checked open answer (the main feature) first
+const SCREENS = ["1-ai-check", "2-sources", "3-lesson", "4-quiz", "5-courses", "6-home"];
 // target sizes required by the stores
 const FRAMES = {
   "google-play/phone": { w: 1080, h: 1920, src: "phone" },
@@ -63,13 +66,13 @@ for (const lang of LANGS) {
     mkdirSync(dir, { recursive: true });
     await page.setViewportSize({ width: f.w, height: f.h });
     for (const [k, s] of SCREENS.entries()) {
-      await page.setContent(frameHtml(f, L.captions[k], img(`${raw}/${f.src}/${lang}/${s}.png`), k), { waitUntil: "load" });
+      await page.setContent(frameHtml(f, L.captions[k], img(`${raw}/${f.src}/${RAW[lang] ?? lang}/${s}.png`), k), { waitUntil: "load" });
       await page.screenshot({ path: `${dir}/${k + 1}.png` });
     }
   }
   mkdirSync(`${out}/google-play/feature-graphic`, { recursive: true });
   await page.setViewportSize({ width: 1024, height: 500 });
-  await page.setContent(featureHtml(L, img(`${raw}/phone/${lang}/3-lesson.png`)), { waitUntil: "load" });
+  await page.setContent(featureHtml(L, img(`${raw}/phone/${RAW[lang] ?? lang}/1-ai-check.png`)), { waitUntil: "load" });
   await page.screenshot({ path: `${out}/google-play/feature-graphic/${lang}.png` });
   console.log("ok", lang);
 }

@@ -16,7 +16,7 @@ node site/gen/build.mjs --check  # what the test runs
 | Short versions for uk, be, es, de, fr, zh, hi | `docs/summaries.mjs` |
 | RuStore (CIS): user agreement, offer, 152-FZ policy, consent | `docs/cis.mjs` |
 | Screenshot captions | `store/listing/<lang>.json` (same as the stores) |
-| Screenshots | `site/public/img/shots/<lang>/1…6.webp` (cropped from the Play phone screenshots) |
+| Screenshots | `site/public/img/shots/<lang>/1…6.webp` — `python3 tools/store/site_shots.py <raw dir of tools/store/capture.mjs>` (store order, side margins so text never touches the phone frame) |
 | Styles / scripts | `site/public/style.css`, `site/public/site.js` (hand-written) |
 
 Store forms: privacy `https://chompbook.online/privacy/`, terms `/terms/`, support `/support/`, data deletion `/delete-data/`; RuStore — `/cis/privacy/`, `/cis/terms/`, `/cis/offer/`.

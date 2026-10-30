@@ -15,7 +15,8 @@ It fails (and writes nothing) if a text breaks a rule: title ≤30, short ≤80,
   npm run build && npx vite preview --port 4175 &
   node tools/store/capture.mjs /tmp/raw                 # real app screens: 9 languages × phone/tablet
   node tools/store/frames.mjs  /tmp/raw /tmp/assets     # captioned store screenshots, feature graphic, 512 px icon
+  python3 tools/store/site_shots.py /tmp/raw            # the same screens for chompbook.online
   ```
   Output sizes: Google Play phone 1080×1920, tablet 1600×2560, feature graphic 1024×500, icon 512×512; App Store iPhone 6.9" 1320×2868, iPad 13" 2064×2752.
-  The capture uses a free built-in course and writes demo progress (a 7-day streak) into the local database for the screenshots only.
+  The capture uses a free built-in course with a demo AI key against a mocked AI (nothing leaves the machine) — screenshot 1 is its AI-checked open answer — and writes demo progress (a 7-day streak) into the local database for the screenshots only. zh-TW uses the zh screens with its own captions.
 - Answers for the store questionnaires: `docs/STORE_FORMS.md`; legal checks: `docs/LEGAL_CHECK.md`; the publishing to-do: `docs/STORE_PUBLISHING.md`.

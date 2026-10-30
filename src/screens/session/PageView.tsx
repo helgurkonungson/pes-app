@@ -9,6 +9,7 @@ import { ExtLink, toast } from "../../components/ui";
 import { WormGame } from "../../components/WormGame";
 import { BuildProgress } from "../../components/BuildProgress";
 import { Markdown, ScoreRing } from "../../components/visuals";
+import { answerWords } from "../../core/answerWords";
 import type { Page, StepKey } from "../../core/flow";
 import type { OpenGrade, Session, SessionProgress } from "../../core/types";
 import { db, getProfile } from "../../data/db";
@@ -246,7 +247,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
   const skipped = progress.openAnswer === "__skipped__";
   const canAi = ai === "ok";
   const hasModel = !!lesson.open.modelAnswer;
-  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const words = answerWords(text);
 
   const checkAi = async () => {
     setBusy(true);
@@ -373,6 +374,14 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
       )}
       {grade && (
         <>
+          {!!progress.openAnswer && progress.openAnswer !== "__skipped__" && (
+            <div className="card tight your-answer">
+              <p className="tiny muted" style={{ marginBottom: 4 }}>
+                {t("open.answerAria")}
+              </p>
+              <p className="small selectable">{progress.openAnswer}</p>
+            </div>
+          )}
           <div className="card row" style={{ gap: 16 }}>
             <ScoreRing score={grade.score} />
             <div className="grow">

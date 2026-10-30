@@ -1,5 +1,6 @@
-/** Pure rules behind the 0.19.2 Android features: per-app language sync, rating prompt, widget texts. */
+/** Pure rules behind 0.19.2: per-app language sync, rating prompt, widget texts, answer word count. */
 import { describe, expect, it } from "vitest";
+import { answerWords } from "./answerWords";
 import { langOfTag, syncAppLanguage, tagOf } from "./appLanguage";
 import { recordReviewAsk, REVIEW_ASK, shouldAskForReview } from "./reviewAsk";
 import { widgetData } from "./widget";
@@ -56,5 +57,15 @@ describe("home-screen widget texts", () => {
     expect(d).toEqual({ day: "2026-11-01", streak: 4, streakLabel: 'widget.streak{"n":4}', status: 'home.minLeft{"n":9}', newDayStatus: 'home.minLeft{"n":15}', cta: "widget.cta" });
     expect(widgetData({ day: "x", streak: -1, minutes: 20, goal: 15 }, t as never).status).toBe("✓ home.goalDone");
     expect(widgetData({ day: "x", streak: -1, minutes: 20, goal: 15 }, t as never).streak).toBe(0);
+  });
+});
+
+describe("words in an open answer (enables Check with AI at 5)", () => {
+  it("counts spaced words and CJK characters (two per word)", () => {
+    expect(answerWords("")).toBe(0);
+    expect(answerWords("  one two  three — four, five ")).toBe(5);
+    expect(answerWords("上周我读了一篇文章")).toBe(5);
+    expect(answerWords("我读了 PDF 文件")).toBe(4);
+    expect(answerWords("मैंने एक लेख पढ़ा और भूल गया")).toBe(7);
   });
 });
