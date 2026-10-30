@@ -8,7 +8,11 @@ import { flap, GROUND, H, newGame, SKY, step, W, WORM_X, type GameState } from "
 import { useT } from "../i18n";
 
 const BEST_KEY = "pes.worm.best";
-/** Test switch: localStorage "pes.worm.calm" = "1" → no birds (e2e tests keep a round going for as long as they need). */
+/**
+ * Test switch for e2e tests: localStorage "pes.worm.calm" = "1" → no birds, and `window.__wormHold(true)`
+ * pauses the physics while a round goes on (so a test can hold a round open for as long as it needs,
+ * independent of the machine's speed); `__wormHold(false)` lets the worm fall again.
+ */
 const calm = () => {
   try {
     return localStorage.getItem("pes.worm.calm") === "1";
@@ -213,14 +217,21 @@ export function WormGame({ ready = false, onDone, onPlay }: { ready?: boolean; o
     let pal = palette(c);
     const theme = new MutationObserver(() => (pal = palette(c)));
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-    const opts = { birds: !calm() };
+    const testing = calm();
+    const opts = { birds: !testing };
+    let held = false;
+    const w = window as unknown as { __wormHold?: (on: boolean) => void };
+    const hold = (on: boolean) => {
+      held = on;
+    };
+    if (testing) w.__wormHold = hold;
     let raf = 0;
     let last = performance.now();
     const frame = (now: number) => {
       const dt = (now - last) / 1000;
       last = now;
       const prev = game.current;
-      const next = document.visibilityState === "visible" ? step(prev, dt, Math.random, opts) : prev;
+      const next = document.visibilityState === "visible" && !(held && prev.mode === "play") ? step(prev, dt, Math.random, opts) : prev;
       game.current = next;
       if (next.mode !== prev.mode) {
         if (next.mode === "over") overAt.current = now;
@@ -228,13 +239,13 @@ export function WormGame({ ready = false, onDone, onPlay }: { ready?: boolean; o
       }
       if (next.score !== prev.score) setScore(next.score);
       draw(ctx, next, pal);
-      c.dataset.y = String(Math.round(next.y)); // the worm's height, read by the e2e tests to keep it flying
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
       theme.disconnect();
+      if (w.__wormHold === hold) delete w.__wormHold;
     };
   }, []);
 

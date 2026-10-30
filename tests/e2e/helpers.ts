@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
 export const FIXTURES = fileURLToPath(new URL("../fixtures/", import.meta.url));
@@ -219,30 +219,17 @@ export async function skipPlacementUI(page: Page): Promise<void> {
   await expect(page.getByText("Тест пропущен · начинаем с нуля")).toBeVisible();
 }
 
-/** Test switch for the waiting game: no birds, so a round lasts as long as the test keeps the worm flying. */
+/** Test switch for the waiting game: no birds, and the physics can be held (see `holdWormRound`). */
 export async function calmWormGame(page: Page): Promise<void> {
   await page.addInitScript(() => localStorage.setItem("pes.worm.calm", "1"));
 }
 
 /**
- * Starts an autopilot inside the page that keeps the worm of the waiting game in the air: whenever
- * it sinks below the middle it "presses" Space on the game. It runs in the page itself (no round
- * trips to the test runner), so a busy machine can't let the worm fall. In idle or after a crash
- * the first tap starts a round. The game writes the worm's height to the canvas (`data-y`, 0 = top
- * of a 360-px field; clouds end at 30, the soil starts at 326); a tap at 150 lifts it to ~92.
+ * Holds the waiting game's physics while a round goes on (true) or lets it run again (false), so a
+ * test can keep a round open for exactly as long as it needs, whatever the machine's speed. Needs
+ * `calmWormGame` and a game on screen.
  */
-export async function startWormPilot(game: Locator): Promise<void> {
-  await game.evaluate((el) => {
-    const canvas = el.querySelector("canvas") as HTMLCanvasElement;
-    const w = window as unknown as { __wormPilot?: number };
-    window.clearInterval(w.__wormPilot);
-    w.__wormPilot = window.setInterval(() => {
-      if (Number(canvas.dataset.y) > 150) el.dispatchEvent(new KeyboardEvent("keydown", { key: " ", bubbles: true }));
-    }, 25);
-  });
+export async function holdWormRound(page: Page, on: boolean): Promise<void> {
+  await page.waitForFunction(() => typeof (window as unknown as { __wormHold?: unknown }).__wormHold === "function");
+  await page.evaluate((v) => (window as unknown as { __wormHold: (on: boolean) => void }).__wormHold(v), on);
 }
-
-export async function stopWormPilot(page: Page): Promise<void> {
-  await page.evaluate(() => window.clearInterval((window as unknown as { __wormPilot?: number }).__wormPilot));
-}
-
