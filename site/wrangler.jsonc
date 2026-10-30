@@ -1,5 +1,5 @@
 // Cloudflare Worker for chompbook.online: the static files in ./public plus the report endpoint
-// POST /api/report (lesson reports + error journals → D1 + Telegram; ADR-033).
+// POST /api/report (lesson reports + error journals → D1 + Telegram; ADR-033). 
 // Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "site".
 // Secret (dashboard → chompbook-site → Settings → Variables and Secrets): TG_BOT_TOKEN. The chat id is not secret.
 {
