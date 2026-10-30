@@ -1,0 +1,25 @@
+# chompbook.online: quick checks for website changes (about a minute).
+# Cloudflare Workers Builds deploys the site from main by itself; this only reports problems.
+name: Site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", "store/listing/**", "src/i18n/**"]
+  pull_request:
+    paths: ["site/**", "store/listing/**", "src/i18n/**"]
+  workflow_dispatch:
+
+jobs:
+  site:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Pages are generated, texts complete, links resolve
+        run: npx vitest run site/src

@@ -11,7 +11,10 @@ name: Android
 on:
   push:
     branches: [main]
+    # a push that only changes the website doesn't rebuild the app (site.yml checks it instead)
+    paths-ignore: ["site/**"]
   pull_request:
+    paths-ignore: ["site/**"]
   workflow_dispatch:
 
 permissions:
