@@ -148,6 +148,46 @@ ${lang === "ru" || lang === "be" || lang === "uk" ? b("ruStore", "RuStore", I.ba
 </div>`;
 }
 
+/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app. */
+function appLabels(lang) {
+  const src = readFileSync(join(REPO, "src", "i18n", `${lang}.ts`), "utf8");
+  const get = (k) => {
+    const m = src.match(new RegExp(`"${k.replace(".", "\\.")}":\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+    if (!m) throw new Error(`missing ${k} in src/i18n/${lang}.ts`);
+    return JSON.parse(`"${m[1]}"`);
+  };
+  return { kicker: get("open.kicker"), check: get("open.checkAi"), score: get("open.aiScore"), worked: get("open.worked"), improve: get("open.improve") };
+}
+
+function aiSection(lang) {
+  const t = T[lang].ai;
+  const L = appLabels(lang);
+  return `
+<section id="ai" class="ai-sec"><div class="wrap ai-grid">
+<div class="reveal">
+<span class="kicker">${esc(t.kicker)}</span>
+<h2>${esc(t.h2)}</h2>
+<p class="ai-p">${esc(t.p)}</p>
+<ul class="ai-points">${t.points.map((x, i) => `<li><span class="num">${i + 1}</span><span>${esc(x)}</span></li>`).join("")}</ul>
+</div>
+<div class="demo reveal" style="--d:.12s" data-demo>
+<div class="demo-card">
+<div class="demo-kicker">${I.pen}${esc(L.kicker)}</div>
+<p class="demo-q">${esc(t.q)}</p>
+<div class="demo-answer"><span class="typed" data-text="${esc(t.a)}">${esc(t.a)}</span><i class="caret"></i></div>
+<div class="demo-btn"><span>${I.sparkle}${esc(L.check)}</span><i class="shimmer"></i></div>
+</div>
+<div class="demo-result">
+<div class="score"><svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="33" class="track"/><circle cx="40" cy="40" r="33" class="val"/></svg><b data-score="8">8</b></div>
+<div class="score-label">${esc(L.score)}</div>
+</div>
+<div class="fb good">${I.check}<div><b>${esc(L.worked)}</b><p>${esc(t.worked)}</p></div></div>
+<div class="fb warn">${I.target}<div><b>${esc(L.improve)}</b><p>${esc(t.improve)}</p></div></div>
+<button type="button" class="replay" data-replay>${I.repeat}${esc(t.replay)}</button>
+</div>
+</div></section>`;
+}
+
 function captions(lang) {
   const f = join(REPO, "store", "listing", `${lang}.json`);
   return JSON.parse(readFileSync(f, "utf8")).captions;
@@ -187,7 +227,7 @@ ${storeButtons(lang)}
 <div class="chip c3"><span class="ic">${I.check}</span><span>${esc(t.chips.ok)}<small>${esc(t.chips.okSub)}</small></span></div>
 </div>
 </div></section>
-
+${aiSection(lang)}
 <section id="how"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.how.kicker)}</span><h2>${esc(t.how.h2)}</h2><p>${esc(t.how.p)}</p></div>
 <div class="steps">

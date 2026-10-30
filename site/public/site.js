@@ -45,14 +45,48 @@
     els.forEach(function (el) { el.classList.add("in"); });
   }
 
-  // Hero phone: cycle through screenshots.
+  // Hero phone: cycle through screenshots. The next image fades in on top of the current one,
+  // which stays fully visible underneath until the fade ends — no dark dip, no jump when the cycle restarts.
   var rot = document.querySelector("[data-rotate]");
   if (rot && !reduce) {
-    var imgs = rot.querySelectorAll("img"), k = 0;
+    var imgs = rot.querySelectorAll("img"), k = 0, z = 1;
+    imgs[0].style.zIndex = z;
     setInterval(function () {
       if (document.hidden) return;
-      imgs[k].classList.remove("on"); k = (k + 1) % imgs.length; imgs[k].classList.add("on");
-    }, 3200);
+      var prev = imgs[k]; k = (k + 1) % imgs.length; var next = imgs[k];
+      next.style.zIndex = ++z; next.classList.add("on");
+      setTimeout(function () { prev.style.transition = "none"; prev.classList.remove("on"); void prev.offsetWidth; prev.style.transition = ""; }, 1000);
+    }, 3600);
+  }
+
+  // AI answer check demo: type the answer, "check" it, show the score and the feedback.
+  var demo = document.querySelector("[data-demo]");
+  if (demo && !reduce && "IntersectionObserver" in window) {
+    var typed = demo.querySelector(".typed"), full = typed.getAttribute("data-text"), num = demo.querySelector("[data-score]");
+    var timers = [];
+    var at = function (ms, fn) { timers.push(setTimeout(fn, ms)); };
+    var set = function (cls) { demo.className = "demo reveal in js " + cls; };
+    var play = function () {
+      timers.forEach(clearTimeout); timers = [];
+      set("s-typing"); typed.textContent = ""; num.textContent = "0";
+      var chars = Array.from(full), step = Math.max(14, Math.min(32, 2600 / chars.length)), i = 0;
+      (function tick() { typed.textContent = chars.slice(0, ++i).join(""); if (i < chars.length) at(step, tick); else at(450, check); })();
+    };
+    var check = function () {
+      set("s-checking");
+      at(1300, function () {
+        set("s-scored");
+        var n = 0, target = Number(num.getAttribute("data-score"));
+        (function count() { num.textContent = String(++n); if (n < target) at(110, count); })();
+        at(900, function () { set("s-scored s-good"); });
+        at(1500, function () { set("s-scored s-good s-warn"); });
+        at(2200, function () { set("s-scored s-good s-warn s-done"); });
+      });
+    };
+    demo.classList.add("js"); demo.classList.add("s-typing"); typed.textContent = "";
+    var dio = new IntersectionObserver(function (en) { if (en[0].isIntersecting) { dio.disconnect(); at(500, play); } }, { threshold: 0.45 });
+    dio.observe(demo);
+    demo.querySelector("[data-replay]").addEventListener("click", play);
   }
 
   // "Pick your minutes" chips.

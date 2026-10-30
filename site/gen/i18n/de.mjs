@@ -1,91 +1,252 @@
 export default {
-  brand: "Chompbook",
-  title: "Chompbook — lerne alles, Happen für Happen",
-  desc: "Chompbook macht aus deinen Büchern, PDFs und Notizen kurze tägliche Lektionen mit Quiz und cleverer Wiederholung. Fünf kostenlose Kurse, KI optional, keine Werbung, kein Tracking.",
-  nav: { how: "So funktioniert's", features: "Funktionen", pro: "Pro", faq: "FAQ", docs: "Dokumente" },
-  langLabel: "Sprache",
-  skip: "Zum Inhalt",
-  hero: {
-    eyebrow: "Kostenlos · 9 Sprachen · funktioniert offline",
-    h1: "Lerne alles – {Happen für Happen}",
-    lead: "Deine eigenen Bücher und Artikel werden zu kurzen Lektionen mit Quiz und cleverer Wiederholung – passend zu den Minuten, die du heute hast. Fünf kostenlose Kurse inklusive.",
-    ticks: ["Keine Konten", "Keine Werbung", "KI optional"],
-    apk: "Android, aber noch nicht im Store?",
-    apkLink: "Lade die APK von GitHub herunter",
+  "brand": "Chompbook",
+  "title": "Chompbook — lerne alles, Happen für Happen",
+  "desc": "Chompbook macht aus deinen Büchern, PDFs und Notizen kurze tägliche Lektionen. Antworte in eigenen Worten, und die KI prüft, ob du es verstanden hast. Fünf kostenlose Kurse, keine Werbung, kein Tracking.",
+  "nav": {
+    "how": "So funktioniert's",
+    "features": "Funktionen",
+    "pro": "Pro",
+    "faq": "FAQ",
+    "docs": "Dokumente"
   },
-  store: { getOn: "Jetzt bei", soon: "Demnächst", apk: "APK von GitHub", download: "Herunterladen" },
-  chips: { xp: "+10 XP", xpSub: "Lektion geschafft", streak: "7 Tage", streakSub: "Serie", ok: "Richtig!", okSub: "Abruf" },
-  how: {
-    kicker: "So funktioniert's", h2: "Vom Buch zur Gewohnheit in drei Schritten", p: "Chompbook übernimmt die Planung – du musst nur dranbleiben.",
-    steps: [
-      { t: "Füge hinzu, was du lernen willst", p: "PDF, EPUB, Word, Text, Webseiten oder Notizen. Gescannte Seiten werden direkt auf dem Handy erkannt." },
-      { t: "Wähle deine Minuten", p: "5, 15, 30 oder 60 Minuten am Tag. Jede Lektion wird passend zugeschnitten." },
-      { t: "Jeden Tag ein Happen", p: "Theorie, Fragen und ein Quiz. Fehler kommen später wieder – so bleiben sie hängen." },
+  "langLabel": "Sprache",
+  "skip": "Zum Inhalt",
+  "hero": {
+    "eyebrow": "Kostenlos · KI prüft deine Antworten · funktioniert offline",
+    "h1": "Lerne alles – {Happen für Happen}",
+    "lead": "Deine Bücher und Artikel werden zu kurzen Lektionen – passend zu den Minuten, die du heute hast. Antworte in eigenen Worten, und die KI prüft, ob du es wirklich verstanden hast. Fünf kostenlose Kurse inklusive.",
+    "ticks": [
+      "Antworten in eigenen Worten",
+      "Keine Konten, keine Werbung",
+      "Funktioniert offline"
     ],
+    "apk": "Android, aber noch nicht im Store?",
+    "apkLink": "Lade die APK von GitHub herunter"
   },
-  features: {
-    kicker: "Funktionen", h2: "Kleine Lektionen, echter Fortschritt", p: "Alles, was ein guter Nachhilfelehrer tut – auf deinem Handy, in deiner Sprache.",
-    items: [
-      { t: "Deine eigenen Materialien", p: "Die Lektionen folgen deinen Quellen der Reihe nach, Teil für Teil – bis das Buch geschafft ist." },
-      { t: "Einstufungstest", p: "Die erste Sitzung findet dein Niveau und überspringt, was du schon kannst." },
-      { t: "Verteilte Wiederholung", p: "Falsche Antworten kommen zur richtigen Zeit zurück; jede 5. Lektion beginnt mit einem Check." },
-      { t: "Lektionen anhören", p: "Dein Handy liest Lektionen vor – lerne beim Spazieren oder unterwegs." },
-      { t: "KI, wenn du willst", p: "Verbinde mit wenigen Tipps einen kostenlosen KI-Dienst, nutze deinen eigenen Schlüssel oder Chompbook Pro." },
-      { t: "Funktioniert offline", p: "Lektionen aus deinen Materialien und die eingebauten Kurse laufen ohne KI und ohne Internet." },
+  "store": {
+    "getOn": "Jetzt bei",
+    "soon": "Demnächst",
+    "apk": "APK von GitHub",
+    "download": "Herunterladen"
+  },
+  "chips": {
+    "xp": "+10 XP",
+    "xpSub": "Lektion geschafft",
+    "streak": "7 Tage",
+    "streakSub": "Serie",
+    "ok": "Richtig!",
+    "okSub": "Abruf"
+  },
+  "how": {
+    "kicker": "So funktioniert's",
+    "h2": "Vom Buch zur Gewohnheit in drei Schritten",
+    "p": "Chompbook übernimmt die Planung – du musst nur dranbleiben.",
+    "steps": [
+      {
+        "t": "Füge hinzu, was du lernen willst",
+        "p": "PDF, EPUB, Word, Text, Webseiten oder Notizen. Gescannte Seiten werden direkt auf dem Handy erkannt."
+      },
+      {
+        "t": "Wähle deine Minuten",
+        "p": "5, 15, 30 oder 60 Minuten am Tag. Jede Lektion wird passend zugeschnitten."
+      },
+      {
+        "t": "Jeden Tag ein Happen",
+        "p": "Theorie, Fragen und ein Quiz. Fehler kommen später wieder – so bleiben sie hängen."
+      }
+    ]
+  },
+  "ai": {
+    "kicker": "Das Wichtigste",
+    "h2": "Die KI prüft, was du verstanden hast – nicht, was du geraten hast",
+    "p": "Ein Quiz zeigt, ob du die richtige Option erkennst. Verständnis zeigt sich, wenn du es selbst erklärst. Jede Lektion in Chompbook endet mit einer offenen Frage: Du antwortest in eigenen Worten, und die KI prüft die Antwort anhand deiner Quelle – wie ein Tutor.",
+    "points": [
+      "Freie Antwort – nichts zum Raten",
+      "Note von 10 und konkretes Feedback: was gut war und was du verbessern kannst",
+      "Lücken kommen in den nächsten Lektionen wieder, bis sie geschlossen sind"
     ],
+    "q": "Warum fühlt sich erneutes Lesen wirksam an, hilft aber weniger als der Versuch, sich zu erinnern?",
+    "a": "Beim erneuten Lesen wirkt der Text vertraut, und es fühlt sich an, als wüsste man ihn schon. Beim Erinnern muss das Gehirn die Information selbst abrufen – genau das stärkt das Gedächtnis.",
+    "worked": "Richtiger Gedanke: Vertrautheit wird leicht mit Wissen verwechselt.",
+    "improve": "Nenne den Effekt: Abrufübung, auch Testeffekt genannt.",
+    "replay": "Nochmal"
   },
-  gallery: { kicker: "Ein Blick in die App", h2: "Schau's dir an", prev: "Zurück", next: "Weiter" },
-  courses: {
-    kicker: "Kostenlose Kurse", h2: "Fünf fertige Kurse", p: "Je 8 Lektionen, in allen neun Sprachen, ohne KI.", lessons: "8 Lektionen",
-    items: [
-      { t: "Effektiv lernen", p: "Gedächtnis, verteilte Wiederholung und Gewohnheiten" },
-      { t: "KI-Kompetenz", p: "Wie Chatbots funktionieren und wie man sie sicher nutzt" },
-      { t: "Daten und Tabellen", p: "Tabellen, Formeln, Verweise und ehrliche Diagramme" },
-      { t: "Finanzwissen", p: "Budget, Notgroschen, Schulden, Zinsen, Betrug" },
-      { t: "Kritisches Denken", p: "Argumente, Denkfehler und Behauptungen prüfen" },
+  "features": {
+    "kicker": "Funktionen",
+    "h2": "Kleine Lektionen, echter Fortschritt",
+    "p": "Alles, was ein guter Nachhilfelehrer tut – auf deinem Handy, in deiner Sprache.",
+    "items": [
+      {
+        "t": "Deine eigenen Materialien",
+        "p": "Die Lektionen folgen deinen Quellen der Reihe nach, Teil für Teil – bis das Buch geschafft ist."
+      },
+      {
+        "t": "Einstufungstest",
+        "p": "Die erste Sitzung findet dein Niveau und überspringt, was du schon kannst."
+      },
+      {
+        "t": "Verteilte Wiederholung",
+        "p": "Falsche Antworten kommen zur richtigen Zeit zurück; jede 5. Lektion beginnt mit einem Check."
+      },
+      {
+        "t": "Lektionen anhören",
+        "p": "Dein Handy liest Lektionen vor – lerne beim Spazieren oder unterwegs."
+      },
+      {
+        "t": "KI, wenn du willst",
+        "p": "Verbinde mit wenigen Tipps einen kostenlosen KI-Dienst, nutze deinen eigenen Schlüssel oder Chompbook Pro."
+      },
+      {
+        "t": "Funktioniert offline",
+        "p": "Lektionen aus deinen Materialien und die eingebauten Kurse laufen ohne KI und ohne Internet."
+      }
+    ]
+  },
+  "gallery": {
+    "kicker": "Ein Blick in die App",
+    "h2": "Schau's dir an",
+    "prev": "Zurück",
+    "next": "Weiter"
+  },
+  "courses": {
+    "kicker": "Kostenlose Kurse",
+    "h2": "Fünf fertige Kurse",
+    "p": "Je 8 Lektionen, sofort startklar – ohne KI und Einrichtung.",
+    "lessons": "8 Lektionen",
+    "items": [
+      {
+        "t": "Effektiv lernen",
+        "p": "Gedächtnis, verteilte Wiederholung und Gewohnheiten"
+      },
+      {
+        "t": "KI-Kompetenz",
+        "p": "Wie Chatbots funktionieren und wie man sie sicher nutzt"
+      },
+      {
+        "t": "Daten und Tabellen",
+        "p": "Tabellen, Formeln, Verweise und ehrliche Diagramme"
+      },
+      {
+        "t": "Finanzwissen",
+        "p": "Budget, Notgroschen, Schulden, Zinsen, Betrug"
+      },
+      {
+        "t": "Kritisches Denken",
+        "p": "Argumente, Denkfehler und Behauptungen prüfen"
+      }
+    ]
+  },
+  "privacy": {
+    "kicker": "Privat von Anfang an",
+    "h": "Dein Lernen bleibt auf deinem Handy",
+    "p": "Keine Konten, keine Werbung, kein Tracking. Text verlässt das Handy nur in Richtung des KI-Dienstes, den du wählst.",
+    "items": [
+      "Materialien und Fortschritt liegen nur auf dem Gerät",
+      "Keine Analyse- oder Werbe-SDKs",
+      "Backup jederzeit, alles löschen mit einem Tipp",
+      "Lektionsmeldungen und Fehlerprotokolle gehen nur raus, wenn du es willst"
+    ]
+  },
+  "pro": {
+    "kicker": "Chompbook Pro",
+    "h": "KI-Lektionen ohne eigenen Schlüssel",
+    "p": "Chompbook AI schreibt Lektionen aus deinen Quellen und prüft deine schriftlichen Antworten.",
+    "items": [
+      "Etwa 10 KI-Lektionen pro Tag",
+      "7 Tage gratis für neue Abonnenten",
+      "Monatlich oder jährlich, jederzeit kündbar",
+      "Alles andere bleibt kostenlos"
     ],
+    "price": "Der Preis wird vor dem Kauf im Store angezeigt"
   },
-  privacy: {
-    kicker: "Privat von Anfang an", h: "Dein Lernen bleibt auf deinem Handy",
-    p: "Keine Konten, keine Werbung, kein Tracking. Text verlässt das Handy nur in Richtung des KI-Dienstes, den du wählst.",
-    items: ["Materialien und Fortschritt liegen nur auf dem Gerät", "Keine Analyse- oder Werbe-SDKs", "Backup jederzeit, alles löschen mit einem Tipp", "Lektionsmeldungen und Fehlerprotokolle gehen nur raus, wenn du es willst"],
+  "langs": {
+    "kicker": "Sprachen",
+    "h2": "Lerne in deiner Sprache"
   },
-  pro: {
-    kicker: "Chompbook Pro", h: "KI-Lektionen ohne eigenen Schlüssel",
-    p: "Chompbook AI schreibt Lektionen aus deinen Quellen und prüft deine schriftlichen Antworten.",
-    items: ["Etwa 10 KI-Lektionen pro Tag", "7 Tage gratis für neue Abonnenten", "Monatlich oder jährlich, jederzeit kündbar", "Alles andere bleibt kostenlos"],
-    price: "Der Preis wird vor dem Kauf im Store angezeigt",
+  "faq": {
+    "kicker": "FAQ",
+    "h2": "Fragen und Antworten",
+    "items": [
+      {
+        "q": "Ist Chompbook kostenlos?",
+        "a": "Ja. Lektionen aus deinen Materialien, die fünf Kurse, Serien und Abzeichen sind kostenlos. Chompbook Pro ist ein optionales Abo für KI-Lektionen ohne eigenen Schlüssel."
+      },
+      {
+        "q": "Wie prüft die KI meine Antworten?",
+        "a": "Am Ende jeder Lektion beantwortest du eine offene Frage in eigenen Worten. Die KI vergleicht sie mit der Quelle und den Kernideen der Lektion, vergibt eine Note von 10 und erklärt, was gut war und was du verbessern kannst. Ohne KI vergleichst du deine Antwort selbst mit der Musterantwort."
+      },
+      {
+        "q": "Brauche ich KI oder Internet?",
+        "a": "Nein. Lektionen aus deinen Materialien und die eingebauten Kurse funktionieren komplett ohne KI, sogar offline. KI macht Erklärungen und Quiz reichhaltiger und prüft offene Antworten."
+      },
+      {
+        "q": "Welche Dateien kann ich hinzufügen?",
+        "a": "PDF, EPUB, Word, TXT, Markdown, HTML, Weblinks und eingefügten Text. Dateien aus Google Drive, Dropbox oder OneDrive wählst du in der Dateiauswahl des Handys."
+      },
+      {
+        "q": "Wo sind meine Daten?",
+        "a": "Auf deinem Handy. Wir haben keine Konten und keine Kopie deiner Materialien. Details stehen in der Datenschutzerklärung."
+      },
+      {
+        "q": "Welche Geräte werden unterstützt?",
+        "a": "Android-Smartphones und -Tablets; eine iPhone-Version ist geplant. Helles und dunkles Design."
+      }
+    ]
   },
-  langs: { kicker: "Sprachen", h2: "Lerne in deiner Sprache" },
-  faq: {
-    kicker: "FAQ", h2: "Fragen und Antworten",
-    items: [
-      { q: "Ist Chompbook kostenlos?", a: "Ja. Lektionen aus deinen Materialien, die fünf Kurse, Serien und Abzeichen sind kostenlos. Chompbook Pro ist ein optionales Abo für KI-Lektionen ohne eigenen Schlüssel." },
-      { q: "Brauche ich KI oder Internet?", a: "Nein. Lektionen aus deinen Materialien und die eingebauten Kurse funktionieren komplett ohne KI, sogar offline. KI macht Erklärungen und Quiz reichhaltiger und prüft offene Antworten." },
-      { q: "Welche Dateien kann ich hinzufügen?", a: "PDF, EPUB, Word, TXT, Markdown, HTML, Weblinks und eingefügten Text. Dateien aus Google Drive, Dropbox oder OneDrive wählst du in der Dateiauswahl des Handys." },
-      { q: "Wo sind meine Daten?", a: "Auf deinem Handy. Wir haben keine Konten und keine Kopie deiner Materialien. Details stehen in der Datenschutzerklärung." },
-      { q: "Welche Geräte werden unterstützt?", a: "Android-Smartphones und -Tablets; eine iPhone-Version ist geplant. Die App gibt es in neun Sprachen, mit hellem und dunklem Design." },
-    ],
+  "cta": {
+    "h2": "Nimm heute deinen ersten Happen",
+    "p": "Fünf Minuten reichen für den Anfang."
   },
-  cta: { h2: "Nimm heute deinen ersten Happen", p: "Fünf Minuten reichen für den Anfang." },
-  foot: {
-    tagline: "Lerne alles, Happen für Happen.", app: "App", docs: "Dokumente", contact: "Kontakt",
-    seller: "Anbieter", reg: "Reg.-Nr.", tin: "Steuer-Nr. (ՀՎՀՀ)",
+  "foot": {
+    "tagline": "Lerne alles, Happen für Happen.",
+    "app": "App",
+    "docs": "Dokumente",
+    "contact": "Kontakt",
+    "seller": "Anbieter",
+    "reg": "Reg.-Nr.",
+    "tin": "Steuer-Nr. (ՀՎՀՀ)"
   },
-  docs: {
-    hubTitle: "Dokumente", hubLead: "Rechtliche Dokumente zu Chompbook. Welche gelten, hängt davon ab, woher du die App installiert hast.",
-    intlTitle: "Google Play, App Store und Website", intlSub: "Für die App aus Google Play, dem Apple App Store oder von GitHub – in jedem Land.",
-    cisTitle: "RuStore (GUS-Staaten)", cisSub: "Für die App aus RuStore. Auf Russisch.",
-    effective: "Gültig ab", contents: "Inhalt", home: "Start",
-    summary: "Zusammenfassung", binding: "Dies ist eine Zusammenfassung. Verbindlich ist der vollständige englische Text.", readFull: "Vollständigen Text lesen (Englisch)",
-    otherLangs: "Auch auf", sellerTitle: "Angaben zum Anbieter",
-    names: {
-      privacy: ["Datenschutzerklärung", "Welche Daten die App nutzt, wohin sie gehen und deine Rechte"],
-      terms: ["Nutzungsbedingungen", "Regeln für die App und das Abo Chompbook Pro"],
-      support: ["Support", "Kontakt, Abos, Erstattungen und häufige Fragen"],
-      "delete-data": ["Daten löschen", "So löschst du Daten auf dem Handy und auf unseren Servern"],
-      cis: ["Dokumente für RuStore", "Datenschutz, Bedingungen, öffentliches Angebot und Einwilligung – auf Russisch"],
-    },
+  "docs": {
+    "hubTitle": "Dokumente",
+    "hubLead": "Rechtliche Dokumente zu Chompbook. Welche gelten, hängt davon ab, woher du die App installiert hast.",
+    "intlTitle": "Google Play, App Store und Website",
+    "intlSub": "Für die App aus Google Play, dem Apple App Store oder von GitHub – in jedem Land.",
+    "cisTitle": "RuStore (GUS-Staaten)",
+    "cisSub": "Für die App aus RuStore. Auf Russisch.",
+    "effective": "Gültig ab",
+    "contents": "Inhalt",
+    "home": "Start",
+    "summary": "Zusammenfassung",
+    "binding": "Dies ist eine Zusammenfassung. Verbindlich ist der vollständige englische Text.",
+    "readFull": "Vollständigen Text lesen (Englisch)",
+    "otherLangs": "Auch auf",
+    "sellerTitle": "Angaben zum Anbieter",
+    "names": {
+      "privacy": [
+        "Datenschutzerklärung",
+        "Welche Daten die App nutzt, wohin sie gehen und deine Rechte"
+      ],
+      "terms": [
+        "Nutzungsbedingungen",
+        "Regeln für die App und das Abo Chompbook Pro"
+      ],
+      "support": [
+        "Support",
+        "Kontakt, Abos, Erstattungen und häufige Fragen"
+      ],
+      "delete-data": [
+        "Daten löschen",
+        "So löschst du Daten auf dem Handy und auf unseren Servern"
+      ],
+      "cis": [
+        "Dokumente für RuStore",
+        "Datenschutz, Bedingungen, öffentliches Angebot und Einwilligung – auf Russisch"
+      ]
+    }
   },
-  notFound: { h: "Diese Seite wurde aufgefuttert", p: "Wir konnten sie nicht finden. Versuch's mit der Startseite.", btn: "Zur Startseite" },
+  "notFound": {
+    "h": "Diese Seite wurde aufgefuttert",
+    "p": "Wir konnten sie nicht finden. Versuch's mit der Startseite.",
+    "btn": "Zur Startseite"
+  }
 };
