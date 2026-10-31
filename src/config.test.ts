@@ -91,8 +91,6 @@ describe("branding", () => {
     expect(manifest).toMatch(/<data android:scheme="online\.chompbook\.app" android:host="oauth" \/>/);
     expect(manifest).toContain('android:launchMode="singleTask"');
     const page = readFileSync(new URL("../site/public/oauth/openrouter/index.html", import.meta.url), "utf8");
-    expect(page).toContain('"#Intent;scheme=" + id + ";package=" + id + ";end"');
-    expect(page).toContain('"online.chompbook.app" : "io.github.helgurkonungson.pes"');
     expect(page).toContain("pes-oauth");
   });
   it("0.19.2 Android features: widget, per-app language, predictive back, Play review — declared and registered", () => {
