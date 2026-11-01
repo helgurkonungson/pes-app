@@ -110,6 +110,15 @@ test.describe("lessons without AI", () => {
     await expect(page.getByText("Ошибок не было.")).toBeVisible();
   });
 
+  test("a placement test skipped by accident can be taken later from the skill page (0.21)", async ({ page }) => {
+    await mockApis(page, "credits");
+    await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
+    await createSkillsetWithText(page); // skips the placement test
+    await btn(page, /Стартовый уровень/).click();
+    await skipCountdown(page);
+    await expect(page.getByText(/Короткий тест по вашим материалам/)).toBeVisible();
+  });
+
   test("credits ran out: lessons continue offline and the app explains why", async ({ page }) => {
     const api = await mockApis(page, "credits");
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });

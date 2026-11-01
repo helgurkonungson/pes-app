@@ -7,7 +7,7 @@ import { HeroBg } from "../components/visuals";
 import { courseModules } from "../core/course";
 import { needsPlacement, pct } from "../core/scoring";
 import { useSkillset } from "../data/hooks";
-import { skipPlacement, updateSkillset } from "../data/repo";
+import { reopenPlacement, skipPlacement, updateSkillset } from "../data/repo";
 import { restartReading } from "../data/sessionService";
 import { useT } from "../i18n";
 import { useNav } from "../nav/store";
@@ -162,6 +162,16 @@ export function SkillsetDetail({ id }: { id: string }) {
               <MenuRow
                 icon={<Target size={20} />}
                 label={t("skillset.startingPoint")}
+                value={s.placement.skipped ? t("skillset.takeTest") : undefined}
+                onClick={
+                  s.placement.skipped
+                    ? async () => {
+                        // skipped by accident: take the test now; lessons done so far are kept
+                        await reopenPlacement(s.id);
+                        start();
+                      }
+                    : undefined
+                }
                 hint={
                   s.placement.skipped
                     ? t("skillset.placementSkippedHint")

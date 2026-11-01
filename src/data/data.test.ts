@@ -33,7 +33,7 @@ import type { LessonContent, LessonDraft, Session } from "../core/types";
 import { findBuiltin, installBuiltinCourse } from "./builtinCourses";
 import { importCourse } from "./courses";
 import { db, DB_VERSION, getProfile, PesDb, updateProfile } from "./db";
-import { addSource, buyStreakFreeze, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, setRestDays, settleStreakNow, skipPlacement, wipeAll } from "./repo";
+import { addSource, buyStreakFreeze, completeSession, createSkillset, deleteSkillset, doneCourseLessonIds, exportBackup, importBackup, setRestDays, settleStreakNow, reopenPlacement, skipPlacement, wipeAll } from "./repo";
 import { clearSnapshots, readSnapshot, restoreIfEmpty, setSnapshotStore, SNAPSHOT, SNAPSHOT_PREV, type SnapshotStore, writeSnapshot } from "./safety";
 import { CourseFinishedError, prepareSession, restartReading, usableDraft } from "./sessionService";
 
@@ -161,6 +161,28 @@ describe("offline lessons (no key)", () => {
     const wrong = [...first.lesson!.review.questions, ...first.lesson!.quiz][0];
     expect(second.lesson!.review.questions.map((q) => q.q)).toContain(wrong.q);
     expect(second.lesson!.review.questions.every((q) => q.cardId)).toBe(true);
+  });
+
+  it("a placement test skipped by accident can be taken later; lessons done so far stay (0.21)", async () => {
+    const s = await createSkillset({ name: "Later", goal: "Learn", minutes: 5, useInternet: false, language: "English", hue: 10 });
+    const words = TEXT.split(/\s+/).length;
+    await addSource(s.id, "text", "Book", "pasted", Array.from({ length: 6 }, (_, i) => ({ title: `Part ${i + 1}`, text: TEXT.replace(/asset/g, `asset${i}`), words })));
+    await skipPlacement(s.id);
+    const first = await prepareSession(s.id, 5);
+    expect(first.kind).toBe("lesson");
+    await passSession(first);
+    await reopenPlacement(s.id);
+    const sk = (await db.skillsets.get(s.id))!;
+    expect(sk.placement).toBeUndefined();
+    expect(sk.placementSkipped).toBe(false);
+    expect(sk.lessonsDone).toBe(1);
+    const test = await prepareSession(s.id, 5);
+    expect(test.kind).toBe("placement");
+    expect(test.placement!.questions.length).toBeGreaterThan(0);
+    // a test that was really taken is not reopened
+    await db.skillsets.update(s.id, { placement: { score: 3, total: 4, level: "intermediate", strengths: [], gaps: [], at: "x", known: [] } });
+    await reopenPlacement(s.id);
+    expect((await db.skillsets.get(s.id))!.placement?.score).toBe(3);
   });
 
   it("every 5th lesson the review becomes an intermediate test over everything learned", async () => {

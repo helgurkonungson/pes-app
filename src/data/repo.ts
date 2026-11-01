@@ -69,6 +69,16 @@ export async function deleteSkillset(id: string): Promise<void> {
   });
 }
 
+/**
+ * A skipped placement test can be taken later (0.21): the "starting from zero" result is dropped,
+ * so the next session is the placement test again. Lessons done so far and their progress stay.
+ */
+export async function reopenPlacement(skillsetId: string): Promise<void> {
+  const s = await db.skillsets.get(skillsetId);
+  if (!s?.placement?.skipped) return;
+  await db.skillsets.update(skillsetId, { placement: undefined, placementSkipped: false });
+}
+
 /** Ids of course lessons already completed in a skillset. */
 /**
  * Skips the placement test: the learner starts from zero (beginner, nothing known),
