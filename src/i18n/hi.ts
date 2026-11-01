@@ -434,7 +434,7 @@ export const hi: Dict = {
   // open question
   "open.kicker": "जो सीखा उसे लागू करें",
   "open.answerAria": "आपका जवाब",
-  "open.placeholder": "अपना जवाब 3–6 वाक्यों में लिखें…",
+  "open.placeholder": "अपना जवाब 3–6 वाक्यों में लिखें, निजी जानकारी के बिना…",
   "open.covers": "अच्छे जवाब में यह होता है: {list}",
   "open.checkAi": "AI से जाँचें",
   "open.checking": "आपका जवाब जाँचा जा रहा है…",

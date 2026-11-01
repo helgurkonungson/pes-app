@@ -4,6 +4,7 @@ import { type SessionPlan, truncateWords } from "../core/planner";
 import { languageForPrompt } from "../core/languages";
 import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset, TokenUsage } from "../core/types";
 import { addUsage } from "./usage";
+import { PRIVACY_RULE } from "./privacy";
 import { AiError, research, type ResearchNotes, structured, type ToolDef } from "./client";
 
 // ---------- schemas ----------
@@ -109,6 +110,7 @@ const GRADE_TOOL: ToolDef = {
 
 // ---------- prompt helpers ----------
 
+
 function languageRule(lang: LessonLanguage): string {
   if (lang === "Source") return "Write in the same language as the source excerpts (if there are none, English).";
   return `Write everything in ${languageForPrompt(lang)}.`;
@@ -120,6 +122,7 @@ function tutorSystem(lang: LessonLanguage): string {
     "Teach for understanding and application, not trivia. Be concrete: examples, numbers, mini-cases.",
     "Stay faithful to the sources; when general knowledge or web notes add something, integrate it and say so briefly. Never invent citations, quotes or page numbers.",
     "Theory bodies use light Markdown only: short paragraphs, **bold** key terms, '-' bullet lists, numbered lists. No tables, no HTML, no headings inside bodies.",
+    PRIVACY_RULE,
     languageRule(lang),
   ].join("\n");
 }
@@ -355,7 +358,7 @@ export async function generateLesson(opts: {
       "Plan today's lesson with the emit_plan tool (the sections themselves are written later):",
       `- sections: exactly ${plan.theorySections}, in teaching order, about ${Math.round(plan.theoryWords / plan.theorySections)} words each when written. For each: heading, focus (what exactly it teaches, 1–2 sentences) and excerpts (numbers of the source excerpts it uses).`,
       "- keyPoints: 3–6 takeaways of today's theory.",
-      "- open: one open question that makes the learner apply today's theory to a realistic situation (answerable in 3–6 sentences), with a 3–4 point rubric.",
+      "- open: one open question that makes the learner apply today's theory to a realistic but made-up situation (answerable in 3–6 sentences, without the learner sharing anything personal), with a 3–4 point rubric.",
       gaps.length
         ? "- GAPS TO CLOSE: briefly re-explain each gap (2–4 sentences) inside the most fitting section — name it in that section's focus — and let the open question also give the learner a chance to show they now understand at least one gap (one rubric point for it)."
         : "",
@@ -470,6 +473,7 @@ export async function gradeAnswer(opts: { model: string; language: LessonLanguag
     "- verdict: one encouraging but honest sentence.",
     "- strengths and gaps: short, specific bullets addressed to the learner (“You …”). Gaps say what was missing or wrong and how to fix it.",
     "- modelAnswer: a concise exemplary answer (3–6 sentences).",
+    "- If the answer contains personal data (names of private people, contacts, addresses, ID numbers, health details), don't quote or comment on it; grade only the subject matter.",
   ].join("\n");
   const raw = await structured<unknown>({ model: opts.model, system: tutorSystem(opts.language), prompt, tool: GRADE_TOOL, maxTokens: 1800, signal: opts.signal });
   return normalizeGrade(raw);

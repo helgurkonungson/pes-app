@@ -434,7 +434,7 @@ export const en = {
   // open question
   "open.kicker": "Apply what you learned",
   "open.answerAria": "Your answer",
-  "open.placeholder": "Write your answer in 3–6 sentences…",
+  "open.placeholder": "Write your answer in 3–6 sentences, without personal data…",
   "open.covers": "A good answer covers: {list}",
   "open.checkAi": "Check with AI",
   "open.checking": "Checking your answer…",

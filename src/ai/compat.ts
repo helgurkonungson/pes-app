@@ -7,7 +7,7 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
 import type { Profile, ProviderId, TokenUsage } from "../core/types";
 import { AiError, type ModelInfo, noteUsage, type ToolDef } from "./client";
-import { baseUrl, chatModels, openRouterModels, PROVIDERS, wireModel } from "./providers";
+import { baseUrl, chatModels, fallbackModels, openRouterModels, PROVIDERS, wireModel } from "./providers";
 
 type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl"> & Partial<Pick<Profile, "ageGroup">>;
 
@@ -81,6 +81,14 @@ function errorMessage(data: unknown, status: number): string {
 /** Server-side failures worth re-sending as is (Gemini "model is overloaded" 503, transient 500s). */
 const transient = (status: number) => status === 500 || status === 502 || status === 503 || status === 529;
 
+/** Final failures after which another free model of the same provider may still answer (busy, limited, retired). */
+const canFallback = (status: number) => status === 429 || status === 404 || status === 504 || transient(status);
+
+/** A dropped connection is worth re-sending; a timeout is not (the learner already waited minutes). */
+export function retryableNetwork(e: unknown): boolean {
+  return e instanceof AiError && e.kind === "network" && !/too long/i.test(e.message);
+}
+
 /** Pauses before each re-send of a transient failure. Tests set it to [0, 0]. */
 export const retryPolicy = { delaysMs: [2_000, 5_000], rateWaits: 2, maxRateWaitMs: 65_000, rateScale: 1, busyWaitsMs: [8_000, 20_000] };
 
@@ -103,7 +111,7 @@ export function rateLimitWaitMs(data: unknown): number | null {
   return Math.round(ms * retryPolicy.rateScale);
 }
 
-function pause(ms: number, signal?: AbortSignal): Promise<void> {
+export function pause(ms: number, signal?: AbortSignal): Promise<void> {
   if (signal?.aborted) return Promise.reject(new AiError("Cancelled.", "aborted"));
   if (ms <= 0) return Promise.resolve();
   return new Promise((resolve, reject) => {
@@ -181,8 +189,19 @@ export async function compatStructured<T>(
   // Gemini thinks at full depth by default: slow, token-hungry, and long requests end in 5xx/timeouts
   if (id === "gemini" && isGeminiThinking(opts.model)) body.reasoning_effort = "low";
   const url = `${baseUrl(id, cfg)}/chat/completions`;
-  const post = () => http(url, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal, timeoutMs: id === "custom" ? 600_000 : undefined });
-  const send = async () => {
+  const postOnce = () => http(url, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal, timeoutMs: id === "custom" ? 600_000 : undefined });
+  // a dropped connection (mobile network switch, Wi-Fi hiccup) is re-sent after the same pauses
+  const post = async () => {
+    for (let i = 0; ; i++) {
+      try {
+        return await postOnce();
+      } catch (e) {
+        if (i >= retryPolicy.delaysMs.length || !retryableNetwork(e)) throw e;
+        await pause(retryPolicy.delaysMs[i], opts.signal);
+      }
+    }
+  };
+  const send = async (rateWaits = retryPolicy.rateWaits) => {
     let res = await post();
     for (const ms of retryPolicy.delaysMs) {
       if (!transient(res.status)) break;
@@ -190,7 +209,7 @@ export async function compatStructured<T>(
       res = await post();
     }
     // per-minute limits (Gemini free tier: "Please retry in 41s"): wait it out, a lesson takes several requests
-    for (let i = 0; i < retryPolicy.rateWaits && res.status === 429; i++) {
+    for (let i = 0; i < rateWaits && res.status === 429; i++) {
       // a busy free OpenRouter model says no "retry in": back off a little anyway (not for a daily quota)
       const busy = id === "openrouter" && !isDailyLimit(res.data) ? Math.round((retryPolicy.busyWaitsMs[i] ?? 0) * retryPolicy.rateScale) : null;
       const wait = rateLimitWaitMs(res.data) ?? busy;
@@ -210,6 +229,15 @@ export async function compatStructured<T>(
     else if (body.tools && ((r.status === 400 && /tool|function/i.test(msg)) || r.status >= 500)) asPlainJson(body, opts.system, opts.tool);
     else break;
     r = await send();
+  }
+  // still busy, limited or retired on a free tier: try another free model of the same provider
+  // (each has its own quota); short retries only, no minute-long waits
+  for (const fb of fallbackModels(id, opts.model)) {
+    if (!canFallback(r.status)) break;
+    body.model = wireModel(id, fb, cfg);
+    delete body.models;
+    if (id === "gemini" && !isGeminiThinking(fb)) delete body.reasoning_effort;
+    r = await send(0);
   }
   check(id, r);
   const usage = (r.data as { usage?: { prompt_tokens?: number; completion_tokens?: number } } | null)?.usage;

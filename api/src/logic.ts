@@ -34,6 +34,8 @@ export interface Deps {
   fetch: typeof fetch;
   now: () => number;
   store: Store;
+  /** Pause before re-sending to OpenRouter (tests pass an instant one). */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 export const DEFAULTS = {
@@ -53,6 +55,8 @@ export const DEFAULTS = {
   usageRetentionDays: 90,
   /** A cached subscription answer is dropped when the learner hasn't used Chompbook AI this long. */
   entitlementRetentionDays: 30,
+  /** Pauses before re-sending a failed OpenRouter request (the app retries on its side too). */
+  upstreamRetryMs: [1_000, 3_000],
 };
 
 /** Rough lesson size for "≈ N lessons left" in the app (prompt + answer of a 15-minute AI lesson). */
@@ -134,6 +138,17 @@ export function resetAt(now: number): string {
 }
 
 /**
+ * Added in front of every request, adults included: we don't collect personal data, so the AI
+ * must neither ask for it nor work with it (privacy policy, section "Chompbook Pro").
+ */
+export const PRIVACY_RULES = [
+  "Privacy rules from Chompbook: do not request or process users' personal data.",
+  "Never ask the learner for personal information: name, age, contacts, address, school or employer, documents, health, finances, photos or similar.",
+  "If the material or the learner's answer contains personal data of the learner or of other private people (names, phone numbers, e-mails, addresses, ID or account numbers, health details), do not repeat, collect, analyse or draw conclusions from it: leave it out of lessons, questions and feedback and work only with the subject matter.",
+  "Facts about public figures and historical persons that belong to the subject are fine.",
+].join(" ");
+
+/**
  * Added in front of the app's messages unless the app says the learner is an adult (header
  * x-chompbook-audience: adult). Pro is sold from 13; model providers ask apps used by minors for
  * extra safeguards (Anthropic: "Guidelines for organizations serving minors").
@@ -162,7 +177,7 @@ export function upstreamBody(body: Record<string, unknown>, env: Env, user: stri
   const fallbacks = (env.FALLBACK_MODELS ?? DEFAULTS.fallbacks).split(",").map((m) => m.trim()).filter(Boolean);
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const out: Record<string, unknown> = {
-    messages: adult ? messages : [{ role: "system", content: TEEN_SAFETY }, ...messages],
+    messages: [{ role: "system", content: adult ? PRIVACY_RULES : `${PRIVACY_RULES}\n${TEEN_SAFETY}` }, ...messages],
     model,
     ...(fallbacks.length ? { models: [model, ...fallbacks.filter((m) => m !== model)] } : {}),
     max_tokens: Math.min(Number(body.max_tokens) || 4096, DEFAULTS.maxOutputTokens),
@@ -227,26 +242,39 @@ export async function handle(req: Request, env: Env, deps: Deps): Promise<Respon
   }
   if (!Array.isArray(body.messages) || body.messages.length === 0) return apiError(400, "no_messages", "messages are required.");
 
-  let up: Response;
-  try {
-    up = await deps.fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.OPENROUTER_KEY}`,
-        "content-type": "application/json",
-        "HTTP-Referer": "https://chompbook.online",
-        "X-Title": "Chompbook",
-      },
-      body: JSON.stringify(upstreamBody(body, env, user, isAdult(req))),
-    });
-  } catch {
-    return apiError(503, "upstream_unreachable", "Chompbook AI is busy right now. Retrying…");
-  }
+  const upstream = JSON.stringify(upstreamBody(body, env, user, isAdult(req)));
+  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
+  let up: Response | null = null;
   let data: unknown = null;
-  try {
-    data = await up.json();
-  } catch {
-    /* empty body */
+  // OpenRouter already falls back across `models`; a dropped connection, a 429 or a 5xx is re-sent after a pause
+  for (let attempt = 0; ; attempt++) {
+    const canRetry = attempt < DEFAULTS.upstreamRetryMs.length;
+    try {
+      up = await deps.fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${env.OPENROUTER_KEY}`,
+          "content-type": "application/json",
+          "HTTP-Referer": "https://chompbook.online",
+          "X-Title": "Chompbook",
+        },
+        body: upstream,
+      });
+    } catch {
+      if (canRetry) {
+        await sleep(DEFAULTS.upstreamRetryMs[attempt]);
+        continue;
+      }
+      return apiError(503, "upstream_unreachable", "Chompbook AI is busy right now. Retrying…");
+    }
+    data = null;
+    try {
+      data = await up.json();
+    } catch {
+      /* empty body */
+    }
+    if (up.ok || !canRetry || !(up.status === 429 || up.status >= 500)) break;
+    await sleep(DEFAULTS.upstreamRetryMs[attempt]);
   }
   if (!up.ok) {
     // our key or credits (401/402/403) and upstream limits are our problem, not the learner's: report as temporary

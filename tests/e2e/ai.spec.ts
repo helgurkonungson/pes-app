@@ -388,14 +388,16 @@ test.describe("Gemini, Groq and a custom server", () => {
     await mockApis(page, "credits");
     let calls = 0;
     let effort: unknown;
+    const models: string[] = [];
     await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       calls++;
       const body = JSON.parse(route.request().postData() ?? "{}");
+      models.push(body.model);
       if (calls === 1) effort = body.reasoning_effort;
-      // 3 tries with tools + 3 tries without, all "overloaded" (Gemini wraps errors in an array)
-      if (calls <= 6)
+      // 3 tries with tools + 3 tries without, then 3 tries with the free Lite model — all "overloaded" (Gemini wraps errors in an array)
+      if (calls <= 9)
         return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify([{ error: { code: 503, message: "The model is overloaded. Please try again later.", status: "UNAVAILABLE" } }]) });
       return lessonReply(route, !body.tools);
     });
@@ -412,7 +414,9 @@ test.describe("Gemini, Groq and a custom server", () => {
     await expect(page.getByRole("alert")).toContainText("(503)");
     await expect(page.getByText("Ответ сервиса: The model is overloaded. Please try again later. UNAVAILABLE")).toBeVisible();
     await expect(page.getByText(/выберите другую модель/)).toBeVisible();
-    expect(calls).toBe(6);
+    expect(calls).toBe(9);
+    expect(models.slice(0, 6).every((m) => m === "gemini-3.8-flash")).toBe(true);
+    expect(models.slice(6, 9).every((m) => m === "gemini-flash-lite-latest")).toBe(true);
     expect(effort).toBe("low");
     await btn(page, "Повторить").click();
     await skipCountdown(page);
@@ -515,28 +519,32 @@ test.describe("Gemini, Groq and a custom server", () => {
       }, v);
     await mockApis(page, "credits");
     const tools: string[] = [];
-    let cut = false;
+    let asleep = false;
     await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");
       const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
-      tools.push(tool);
-      if (tool === "emit_section" && prompt.includes("SECTION 2 of") && !cut) {
-        cut = true;
-        await setVis("hidden"); // the phone falls asleep while part 2 is being written…
-        return route.abort("connectionreset"); // …and the connection drops
+      if (tool === "emit_section" && prompt.includes("SECTION 2 of") && (asleep || !tools.includes("emit_section#2"))) {
+        if (!asleep) {
+          asleep = true;
+          tools.push("emit_section#2");
+          await setVis("hidden"); // the phone falls asleep while part 2 is being written…
+        }
+        return route.abort("connectionreset"); // …and the connection stays down (the app's own re-sends fail too)
       }
+      tools.push(tool);
       return lessonReply(route);
     });
     await geminiReady(page);
     await btn(page, /Начать · 15 мин/).click();
     await skipCountdown(page);
-    await expect(page.locator(".build-strip")).toContainText("на паузе");
+    await expect(page.locator(".build-strip")).toContainText("на паузе", { timeout: 20_000 });
+    asleep = false;
     await setVis("visible"); // the learner comes back
     await expect(page.locator(".build-strip")).toHaveCount(0, { timeout: 15_000 });
     // nothing was written twice
-    expect(tools).toEqual(["emit_plan", "emit_section", "emit_section", "emit_section", "emit_quiz"]); // first lesson: no review step
+    expect(tools.filter((t) => t !== "emit_section#2")).toEqual(["emit_plan", "emit_section", "emit_section", "emit_quiz"]); // first lesson: no review step
     await finishLesson(page);
   });
 

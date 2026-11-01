@@ -444,7 +444,7 @@ export const ru: Dict = {
   // open question
   "open.kicker": "Примените то, что узнали",
   "open.answerAria": "Ваш ответ",
-  "open.placeholder": "Ответьте в 3–6 предложениях…",
+  "open.placeholder": "Ответьте в 3–6 предложениях, без личных данных…",
   "open.covers": "Хороший ответ раскрывает: {list}",
   "open.checkAi": "Проверить с ИИ",
   "open.checking": "Проверяю ответ…",

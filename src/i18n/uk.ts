@@ -434,7 +434,7 @@ export const uk: Dict = {
   // open question
   "open.kicker": "Застосуйте вивчене",
   "open.answerAria": "Ваша відповідь",
-  "open.placeholder": "Напишіть відповідь у 3–6 реченнях…",
+  "open.placeholder": "Напишіть відповідь у 3–6 реченнях, без особистих даних…",
   "open.covers": "Добра відповідь охоплює: {list}",
   "open.checkAi": "Перевірити з ШІ",
   "open.checking": "Перевіряємо відповідь…",

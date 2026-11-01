@@ -74,6 +74,8 @@ describe("lesson written in steps", () => {
     expect(sec2.prompt).not.toContain('n="1"');
     // the quiz is written from the theory that was actually written
     expect((ai.structured.mock.calls[3][0] as { prompt: string }).prompt).toContain("Body of section 1");
+    // every step carries the strict privacy rule
+    for (const c of ai.structured.mock.calls) expect((c[0] as { system: string }).system).toContain("do not request or process users' personal data");
   });
 
   it("an interruption keeps finished steps; the next run continues from there", async () => {
@@ -194,5 +196,13 @@ describe("lesson written in steps", () => {
     });
     expect(lesson.review.questions).toEqual([card]);
     expect(tools()).not.toContain("emit_review");
+  });
+});
+
+describe("privacy rule in every AI instruction", () => {
+  it("is strict and names personal data", async () => {
+    const { PRIVACY_RULE } = await import("./privacy");
+    expect(PRIVACY_RULE).toContain("do not request or process users' personal data");
+    expect(PRIVACY_RULE).toMatch(/Never ask the learner for personal information/);
   });
 });

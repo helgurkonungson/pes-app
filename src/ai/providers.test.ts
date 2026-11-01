@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { compatListModels, compatStructured, extractJson, GEMINI_THINKING_TOKENS, isDailyLimit, isGeminiThinking, rateLimitWaitMs, retryPolicy } from "./compat";
-import { activeProvider, baseUrl, chatModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, openRouterModels, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
+import { activeProvider, baseUrl, chatModels, fallbackModels, isChatModel, isNvidiaChatModel, modelOf, normalizeBaseUrl, openRouterModels, pickDefaultModel, pickOpenAiModel, wireModel } from "./providers";
 
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
 const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom" | "chompbook", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
@@ -287,10 +287,29 @@ describe("Gemini lessons (0.4.2)", () => {
     expect(f).toHaveBeenCalledTimes(2);
     expect(bodyOf(f, 1).tools).toBeUndefined();
   });
-  it("gives up with the provider's words after the plainer round fails too", async () => {
+  it("gives up with the provider's words after the plainer round and the free fallback models fail too", async () => {
     const f = mockReplies([503, overloaded]);
     await expect(call("gemini")).rejects.toMatchObject({ kind: "overloaded", status: 503, detail: "The model is overloaded. Please try again later. UNAVAILABLE" });
-    expect(f).toHaveBeenCalledTimes(6);
+    // 3 + 3 (plainer round) for the chosen model, then 3 for each of the two free fallbacks
+    expect(f).toHaveBeenCalledTimes(12);
+    expect(bodyOf(f, 6).model).toBe("gemini-flash-latest");
+    expect(bodyOf(f, 11).model).toBe("gemini-flash-lite-latest");
+  });
+  it("a busy Flash falls back to the free Lite model", async () => {
+    const f = mockReplies([503, overloaded], [503, overloaded], [503, overloaded], [503, overloaded], [503, overloaded], [503, overloaded], [200, ok]);
+    expect(await compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).toEqual({ a: 1 });
+    expect(f).toHaveBeenCalledTimes(7);
+    expect(bodyOf(f, 6).model).toBe("gemini-flash-lite-latest");
+  });
+  it("re-sends after a dropped connection", async () => {
+    let n = 0;
+    const f = vi.fn(async () => {
+      if (n++ === 0) throw new TypeError("Failed to fetch");
+      return new Response(JSON.stringify(ok), { status: 200 });
+    });
+    vi.stubGlobal("fetch", f);
+    expect(await call("gemini")).toEqual({ a: 1 });
+    expect(f).toHaveBeenCalledTimes(2);
   });
   it("drops reasoning_effort when a model refuses it", async () => {
     const f = mockReplies([400, [{ error: { code: 400, message: "Thinking is not supported for this model.", status: "INVALID_ARGUMENT" } }]], [200, ok]);
@@ -337,7 +356,25 @@ describe("per-minute rate limits (0.6.0)", () => {
     retryPolicy.rateScale = 0;
     const f = mockReplies([429, perMinute]);
     await expect(compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool, maxTokens: 900 })).rejects.toMatchObject({ kind: "rate", status: 429 });
-    expect(f).toHaveBeenCalledTimes(3);
+    // 3 for the chosen model, then one try (no minute-long waits) with the free Lite model
+    expect(f).toHaveBeenCalledTimes(4);
+    expect(bodyOf(f, 3).model).toBe("gemini-flash-lite-latest");
+  });
+});
+
+describe("free fallback models", () => {
+  it("only free-tier providers switch, never to the same model", () => {
+    expect(fallbackModels("gemini", "gemini-3.8-flash")).toEqual(["gemini-flash-lite-latest"]);
+    expect(fallbackModels("gemini", "gemini-flash-lite-latest")).toEqual(["gemini-flash-latest"]);
+    expect(fallbackModels("gemini", "gemini-3.5-pro")).toEqual(["gemini-flash-latest", "gemini-flash-lite-latest"]);
+    expect(fallbackModels("groq", "llama-3.3-70b-versatile")).toEqual(["openai/gpt-oss-20b", "llama-3.1-8b-instant"]);
+    expect(fallbackModels("mistral", "mistral-small-latest")).toEqual(["ministral-8b-latest"]);
+    for (const id of ["openai", "anthropic", "yandex", "qwen", "nvidia", "custom", "openrouter", "chompbook"] as const) expect(fallbackModels(id, "x")).toEqual([]);
+  });
+  it("a key or credits problem doesn't switch models", async () => {
+    const f = mockReplies([401, { error: { message: "API key not valid" } }]);
+    await expect(compatStructured("gemini", "K", {}, { model: "gemini-3.8-flash", system: "s", prompt: "p", tool: { name: "emit_x", description: "d", input_schema: {} }, maxTokens: 900 })).rejects.toMatchObject({ kind: "auth" });
+    expect(f).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -2,6 +2,11 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## Unreleased
+
+- **AI lessons survive a busy AI:** when the AI service is overloaded, rate-limited or the connection drops, the app now re-sends the request after a short pause — for Claude too, honouring its "retry after" hint. If a free model (Gemini, Groq, Mistral) stays busy, the app switches to another free model of the same service for that request. Chompbook AI's server also re-sends a failed request before giving up.
+- **No personal data for the AI:** every instruction the app gives the AI now strictly says not to request or process personal data — the AI won't ask for personal information, open questions use made-up situations, and personal data found in materials or answers is left out. Chompbook AI's server adds the same rules to every request, for adults too. The answer field reminds you not to write personal data; the privacy policy says so.
+
 ## 0.20.0 — 2026-10-30
 
 - **Chompbook Pro:** built-in AI with nothing to set up — lessons from any of your materials and feedback on your written answers, about 10 AI lessons a day. A monthly or yearly subscription through Google Play, with a 7-day free trial for new subscribers. Settings → Chompbook Pro shows the plans, today's allowance, "Restore purchases" and "Manage subscription"; Chompbook AI is also the first choice in Settings → AI provider. After the purchase lessons switch to Chompbook AI; you can go back to your own key at any time. If Pro ends or today's allowance is used up, lessons continue without AI, as always.

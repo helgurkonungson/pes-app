@@ -290,3 +290,22 @@ export function pickOpenRouterModel(ids: string[]): string {
   }
   return free[0] ?? ids[0] ?? "";
 }
+
+/**
+ * Free-tier models of the same provider to try when the chosen one stays busy, rate-limited or
+ * retired after the retries (each free model has its own quota). Only providers with a free tier
+ * (FREE_PROVIDERS); paid providers and the learner's own servers are never switched silently.
+ * OpenRouter's fallback is the `models` list (openRouterModels); Chompbook AI falls back on the server.
+ */
+export function fallbackModels(id: ProviderId, model: string): string[] {
+  const m = model.trim();
+  let list: string[] = [];
+  if (id === "gemini") {
+    // a numbered Flash and gemini-flash-latest are usually the same model with one quota: step down to Lite
+    if (/lite/i.test(m)) list = ["gemini-flash-latest"];
+    else if (/flash/i.test(m)) list = ["gemini-flash-lite-latest"];
+    else list = ["gemini-flash-latest", "gemini-flash-lite-latest"];
+  } else if (id === "groq") list = ["llama-3.3-70b-versatile", "openai/gpt-oss-20b", "llama-3.1-8b-instant"];
+  else if (id === "mistral") list = ["mistral-small-latest", "ministral-8b-latest"];
+  return list.filter((x) => x !== m).slice(0, 2);
+}

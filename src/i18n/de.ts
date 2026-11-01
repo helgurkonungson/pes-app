@@ -434,7 +434,7 @@ export const de: Dict = {
   // open question
   "open.kicker": "Wende das Gelernte an",
   "open.answerAria": "Deine Antwort",
-  "open.placeholder": "Schreib deine Antwort in 3–6 Sätzen…",
+  "open.placeholder": "Schreib deine Antwort in 3–6 Sätzen, ohne persönliche Daten…",
   "open.covers": "Eine gute Antwort enthält: {list}",
   "open.checkAi": "Mit KI prüfen",
   "open.checking": "Deine Antwort wird geprüft…",

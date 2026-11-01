@@ -434,7 +434,7 @@ export const zh: Dict = {
   // open question
   "open.kicker": "运用所学",
   "open.answerAria": "你的回答",
-  "open.placeholder": "用 3–6 句话写下你的回答…",
+  "open.placeholder": "用 3–6 句话写下你的回答，不要包含个人信息…",
   "open.covers": "好的回答应包含：{list}",
   "open.checkAi": "用 AI 检查",
   "open.checking": "正在检查你的回答…",

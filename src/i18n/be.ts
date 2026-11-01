@@ -434,7 +434,7 @@ export const be: Dict = {
   // open question
   "open.kicker": "Прымяніце вывучанае",
   "open.answerAria": "Ваш адказ",
-  "open.placeholder": "Напішыце адказ у 3–6 сказах…",
+  "open.placeholder": "Напішыце адказ у 3–6 сказах, без асабістых даных…",
   "open.covers": "Добры адказ ахоплівае: {list}",
   "open.checkAi": "Праверыць з ШІ",
   "open.checking": "Правяраем адказ…",

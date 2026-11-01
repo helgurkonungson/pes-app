@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { cleanup, DEFAULTS, TEEN_SAFETY, entitlementState, handle, memoryStore, resetAt, retentionCutoffs, upstreamBody, utcDay, validUserId, type Env } from "./logic";
+import { cleanup, DEFAULTS, PRIVACY_RULES, TEEN_SAFETY, entitlementState, handle, memoryStore, resetAt, retentionCutoffs, upstreamBody, utcDay, validUserId, type Env } from "./logic";
 
 const USER = "$RCAnonymousID:0123456789abcdef0123456789abcdef";
 const NOW = Date.parse("2026-10-29T10:00:00Z");
@@ -22,7 +22,7 @@ function setup(opts: { sub?: unknown; rcStatus?: number; upstream?: (body: Recor
     }
     throw new Error(`unexpected ${url}`);
   });
-  const deps = { fetch: fetchMock as unknown as typeof fetch, now: () => NOW, store };
+  const deps = { fetch: fetchMock as unknown as typeof fetch, now: () => NOW, store, sleep: async () => {} };
   return { store, calls, deps };
 }
 
@@ -70,7 +70,7 @@ describe("Chompbook AI server (ADR-037)", () => {
     expect(sent.models[0]).toBe(DEFAULTS.model);
     expect(sent.max_tokens).toBe(DEFAULTS.maxOutputTokens);
     expect(sent.tool_choice).toBe("auto"); // forcing a function isn't supported by every upstream model
-    expect(sent.messages[0].content).toBe(TEEN_SAFETY); // no "adult" header: safety rules first
+    expect(sent.messages[0].content).toBe(`${PRIVACY_RULES}\n${TEEN_SAFETY}`); // no "adult" header: privacy + safety rules first
     expect(s.store.usage.get(`${USER}|2026-10-29`)).toBe(300);
     // second request: RevenueCat is not asked again within the cache window
     await handle(chat(), env, s.deps);
@@ -117,9 +117,32 @@ describe("Chompbook AI server (ADR-037)", () => {
     expect(b.tools).toBeUndefined();
     expect(String(b.user).length).toBeLessThanOrEqual(32);
     expect(upstreamBody({ messages: [] }, { ...env, FALLBACK_MODELS: "" }, USER).models).toBeUndefined();
-    // learners who may be minors get the safety rules first; adults get the app's messages as they are
-    expect((b.messages as { content: string }[]).map((m) => m.content)).toEqual([TEEN_SAFETY, "x"]);
-    expect(upstreamBody({ messages: [{ role: "user", content: "x" }] }, env, USER, true).messages).toEqual([{ role: "user", content: "x" }]);
+    // everyone gets the privacy rules first; learners who may be minors also get the safety rules
+    expect((b.messages as { content: string }[]).map((m) => m.content)).toEqual([`${PRIVACY_RULES}\n${TEEN_SAFETY}`, "x"]);
+    expect(upstreamBody({ messages: [{ role: "user", content: "x" }] }, env, USER, true).messages).toEqual([{ role: "system", content: PRIVACY_RULES }, { role: "user", content: "x" }]);
+    expect(PRIVACY_RULES).toContain("do not request or process users' personal data");
+  });
+
+  it("re-sends to OpenRouter after a 5xx or a dropped connection, but not after a 400", async () => {
+    const replies = [new Response("{}", { status: 502 }), null, new Response(JSON.stringify({ choices: [], usage: { total_tokens: 10 } }), { status: 200 })];
+    const s = setup({
+      upstream: () => {
+        const r = replies.shift();
+        if (r === null) throw new Error("connection reset");
+        return r!;
+      },
+    });
+    const r = await handle(chat(), env, s.deps);
+    expect(r.status).toBe(200);
+    expect(s.calls.filter((c) => c.url.startsWith("https://openrouter.ai/")).length).toBe(3);
+
+    const bad = setup({ upstream: () => new Response(JSON.stringify({ error: { message: "bad" } }), { status: 400 }) });
+    expect((await handle(chat(), env, bad.deps)).status).toBe(400);
+    expect(bad.calls.filter((c) => c.url.startsWith("https://openrouter.ai/")).length).toBe(1);
+
+    const down = setup({ upstream: () => new Response("{}", { status: 503 }) });
+    expect((await handle(chat(), env, down.deps)).status).toBe(503);
+    expect(down.calls.filter((c) => c.url.startsWith("https://openrouter.ai/")).length).toBe(1 + DEFAULTS.upstreamRetryMs.length);
   });
 
   it("answers CORS preflight and health", async () => {

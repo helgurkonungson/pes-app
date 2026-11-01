@@ -6,9 +6,10 @@ import { type AiErrorKind, classifyApiError } from "../core/aiStatus";
 import { getProfile } from "../data/db";
 import type { ProviderId, TokenUsage } from "../core/types";
 import { recordMonthly } from "./usage";
-import { compatListModels, compatStructured } from "./compat";
+import { compatListModels, compatStructured, pause, retryPolicy } from "./compat";
 import { getApiKey } from "./key";
 import { activeProvider, PROVIDERS } from "./providers";
+import { PRIVACY_RULE } from "./privacy";
 
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
@@ -62,26 +63,44 @@ function headers(key: string): Record<string, string> {
   };
 }
 
+/** Claude answers worth re-sending: rate limit (not credits), server errors, "overloaded" (529). */
+const retryable = (status: number) => status === 429 || status === 500 || status === 502 || status === 503 || status === 529;
+
+/** Claude's `retry-after` header (seconds) as a pause, or null when absent or longer than we wait. */
+export function retryAfterMs(value: string | null): number | null {
+  const sec = Number(value);
+  if (value === null || value.trim() === "" || !Number.isFinite(sec) || sec < 0) return null;
+  const ms = Math.ceil(sec * 1000);
+  return ms > retryPolicy.maxRateWaitMs ? null : Math.round(ms * retryPolicy.rateScale);
+}
+
 async function request<T>(path: string, init: RequestInit & { key?: string; timeoutMs?: number } = {}): Promise<T> {
   const key = init.key ?? (await getApiKey("anthropic"));
   if (!key) throw new AiError("Add your Claude API key in Settings first.", "no-key");
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), init.timeoutMs ?? 240_000);
   const outer = init.signal;
-  const onAbort = () => ctrl.abort();
-  outer?.addEventListener("abort", onAbort);
-  let res: Response;
-  try {
-    res = await fetch(`${API}${path}`, { ...init, headers: headers(key), signal: ctrl.signal });
-  } catch (e) {
-    if (outer?.aborted) throw new AiError("Cancelled.", "aborted");
-    if (ctrl.signal.aborted) throw new AiError("The AI took too long to answer. Try again.", "network");
-    throw new AiError("No connection to the AI service. Check your internet.", "network");
-  } finally {
-    clearTimeout(timer);
-    outer?.removeEventListener("abort", onAbort);
-  }
-  if (!res.ok) {
+  // retries with growing pauses (retryPolicy.delaysMs); a 429/529 waits as long as Claude asks
+  for (let attempt = 0; ; attempt++) {
+    const canRetry = attempt < retryPolicy.delaysMs.length;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), init.timeoutMs ?? 240_000);
+    const onAbort = () => ctrl.abort();
+    outer?.addEventListener("abort", onAbort);
+    let res: Response;
+    try {
+      res = await fetch(`${API}${path}`, { ...init, headers: headers(key), signal: ctrl.signal });
+    } catch {
+      if (outer?.aborted) throw new AiError("Cancelled.", "aborted");
+      if (ctrl.signal.aborted) throw new AiError("The AI took too long to answer. Try again.", "network");
+      if (canRetry) {
+        await pause(retryPolicy.delaysMs[attempt], outer ?? undefined);
+        continue;
+      }
+      throw new AiError("No connection to the AI service. Check your internet.", "network");
+    } finally {
+      clearTimeout(timer);
+      outer?.removeEventListener("abort", onAbort);
+    }
+    if (res.ok) return (await res.json()) as T;
     let msg = `${res.status}`;
     try {
       const j = await res.json();
@@ -89,9 +108,14 @@ async function request<T>(path: string, init: RequestInit & { key?: string; time
     } catch {
       /* ignore */
     }
-    throw new AiError(`AI request failed (${res.status}): ${msg}`, classifyApiError(res.status, msg), res.status, msg, "anthropic");
+    const kind = classifyApiError(res.status, msg);
+    if (canRetry && retryable(res.status) && kind !== "credits") {
+      const wait = retryAfterMs(res.headers.get("retry-after")) ?? retryPolicy.delaysMs[attempt];
+      await pause(wait, outer ?? undefined);
+      continue;
+    }
+    throw new AiError(`AI request failed (${res.status}): ${msg}`, kind, res.status, msg, "anthropic");
   }
-  return (await res.json()) as T;
 }
 
 export interface CreateParams {
@@ -151,7 +175,7 @@ export async function research(opts: { model: string; prompt: string; signal?: A
     const res = await createMessage(
       {
         model: opts.model,
-        system: "You are a meticulous research assistant. Search the web, then write compact factual notes. Prefer authoritative and recent sources.",
+        system: `You are a meticulous research assistant. Search the web, then write compact factual notes. Prefer authoritative and recent sources. Never search for or write down personal data of private people.\n${PRIVACY_RULE}`,
         max_tokens: 2500,
         messages,
         tools: [{ type: "web_search_20250305", name: "web_search", max_uses: opts.maxSearches ?? 3 }],
