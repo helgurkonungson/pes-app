@@ -468,7 +468,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await finishLesson(page);
   });
 
-  test("waiting for a part: the worm game keeps going after the part arrives, the part opens when the round ends", async ({ page }) => {
+  test("waiting for a part: the worm game keeps going after the part arrives; 'Open the lesson' or the round's end opens it", async ({ page }) => {
     test.setTimeout(90_000);
     await calmWormGame(page); // no birds, and the round can be held open (holdWormRound)
     await mockApis(page, "credits");
@@ -490,19 +490,20 @@ test.describe("Gemini, Groq and a custom server", () => {
       if (await option.isVisible().catch(() => false)) await option.click();
       await page.getByRole("button", { name: /^Далее/ }).click();
     }
-    const game = page.locator(".pending-page").getByRole("button", { name: /червяк против птиц/ });
-    await expect(page.locator(".pending-page")).toContainText("уворачивайтесь от птиц", { ignoreCase: true });
+    const game = page.locator(".pending-page").getByRole("button", { name: /ведите червяка по саду/ });
+    await expect(page.locator(".pending-page")).toContainText("уворачивайтесь от птиц и кротов", { ignoreCase: true });
     await game.focus();
     await holdWormRound(page, true); // the round below stays open until the test lets it go
-    await page.keyboard.press("Space"); // a round starts
+    await page.keyboard.press("ArrowLeft"); // a round starts
+    await page.keyboard.up("ArrowLeft");
     releaseQuiz();
-    // the quiz is ready, but the round goes on
-    const banner = page.getByText("Урок готов — доиграйте раунд!");
+    // the quiz is ready, but the round goes on — until the learner chooses to open it
+    const banner = page.getByText("Урок готов — откройте, когда захотите.");
     await expect(banner).toBeVisible({ timeout: 15_000 });
     await holdWormRound(page, false);
+    await page.waitForTimeout(500);
     await expect(page.locator(".option")).toHaveCount(0);
-    // no more taps: the worm falls or a bird gets it, then the quiz opens by itself
-    await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Открыть урок" }).click();
     await expect(page.locator(".option").first()).toBeVisible({ timeout: 5000 });
     await finishLesson(page);
   });
@@ -709,13 +710,14 @@ test.describe("the waiting game while a lesson is prepared", () => {
     await onboard(page, { key: "sk-ant-test-0123456789abcdef" });
     await createSkillsetWithText(page, undefined, { keepTest: true });
     await btn(page, "Пройти входной тест").click();
-    const game = page.locator(".preparing").getByRole("button", { name: /червяк против птиц/ });
+    const game = page.locator(".preparing").getByRole("button", { name: /ведите червяка по саду/ });
     await expect(game).toBeVisible();
-    await expect(page.locator(".preparing")).toContainText("Нажимайте — червяк подпрыгнет");
+    await expect(page.locator(".preparing")).toContainText("Ведите червяка влево-вправо");
     await expect(page.getByRole("progressbar")).toBeVisible(); // the writing progress stays under the game
-    // a round while still waiting: one hop, then the worm falls to the ground
+    // a round while still waiting: three hits (a bird or a mole each) end it
     await game.focus();
     await page.keyboard.press("Space");
+    for (let i = 0; i < 3; i++) await page.evaluate(() => (window as unknown as { __wormHit: () => void }).__wormHit());
     await expect(page.getByText("Ой — раунд окончен!")).toBeVisible({ timeout: 8000 });
     await expect(page.getByText(/Счет 0 · рекорд 0/)).toBeVisible();
     await expect(page.getByText("Нажмите, чтобы сыграть еще")).toBeVisible();
@@ -724,10 +726,12 @@ test.describe("the waiting game while a lesson is prepared", () => {
     await holdWormRound(page, true); // the round below stays open until the test lets it go
     await page.keyboard.press("Space");
     release();
-    const banner = page.getByText("Урок готов — доиграйте раунд!");
+    const banner = page.getByText("Урок готов — откройте, когда захотите.");
     await expect(banner).toBeVisible({ timeout: 15_000 });
     await holdWormRound(page, false);
     await expect(page.locator(".session-body")).toHaveCount(0);
+    // the round ends (no lives left), then the lesson opens by itself
+    for (let i = 0; i < 3; i++) await page.evaluate(() => (window as unknown as { __wormHit: () => void }).__wormHit());
     await expect(page.getByText("Урок готов — открываем…")).toBeVisible({ timeout: 10_000 });
     await skipCountdown(page);
     await expect(page.locator(".session-body")).toBeVisible();

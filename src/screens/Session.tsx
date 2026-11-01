@@ -302,7 +302,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
                     {t("session.addSources")}
                   </button>
                 )}
-                {(kind === "network" || kind === "overloaded" || kind === "rate" || kind === "bad-response" || kind === "api" || !kind) && !(error instanceof OfflineError) && !(error instanceof CourseFinishedError) && (
+                {(kind === "network" || kind === "overloaded" || kind === "rate" || kind === "bad-response" || kind === "garbled" || kind === "api" || !kind) && !(error instanceof OfflineError) && !(error instanceof CourseFinishedError) && (
                   <button className={`btn ${canOffline ? "dark" : "primary"} block`} onClick={() => setAttempt((a) => a + 1)}>
                     {t("common.retry")}
                   </button>

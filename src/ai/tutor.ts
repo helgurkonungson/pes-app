@@ -5,6 +5,7 @@ import { languageForPrompt } from "../core/languages";
 import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset, TokenUsage } from "../core/types";
 import { addUsage } from "./usage";
 import { PRIVACY_RULE } from "./privacy";
+import { dominantScript, type Script, scriptOfLanguage, textQuality } from "../core/textQuality";
 import { AiError, research, type ResearchNotes, structured, type ToolDef } from "./client";
 
 // ---------- schemas ----------
@@ -108,6 +109,22 @@ const GRADE_TOOL: ToolDef = {
   },
 };
 
+// ---------- answer checks ----------
+
+/**
+ * Throws when AI text looks like nonsense (mixed-up scripts, invented capitalised terms, another
+ * language, loops — core/textQuality). Such text is never shown as a lesson.
+ */
+export function sane(text: string, expected: Script | null, what: string): void {
+  const q = textQuality(text, expected);
+  if (q.garbled) throw new AiError(`The AI wrote ${what} that doesn't make sense: ${q.issues.join("; ")}`, "garbled");
+}
+
+/** Script the lesson must be written in: the lesson language's, or (for "Source") the material's. */
+function lessonScript(lang: LessonLanguage, chunks: { text: string }[]): Script | null {
+  return scriptOfLanguage(lang) ?? dominantScript(chunks.map((c) => c.text).join(" ").slice(0, 20_000));
+}
+
 // ---------- prompt helpers ----------
 
 
@@ -165,14 +182,15 @@ export async function generatePlacement(opts: {
     opts.samples.length ? "- Ask two questions per excerpt (different aspects of it) and set excerpt to the number of the excerpt each question checks." : "",
     "- intro: 1–2 sentences telling the learner what the test covers and that guessing or tapping “I don't know” is fine.",
   ].join("\n");
-  const raw = await structured<unknown>({
-    model: opts.model,
-    system: tutorSystem(s.language),
-    prompt,
-    tool: PLACEMENT_TOOL,
-    maxTokens: Math.min(12000, opts.count * 260 + 800),
-    signal: opts.signal,
-  });
+  const script = lessonScript(s.language, opts.samples);
+  const raw = await step(
+    () => structured<unknown>({ model: opts.model, system: tutorSystem(s.language), prompt, tool: PLACEMENT_TOOL, maxTokens: Math.min(12000, opts.count * 260 + 800), signal: opts.signal }),
+    (r) => {
+      const qs = normalizeMcqs((r as { questions?: unknown } | null)?.questions, "p");
+      if (qs.length) sane(qs.map((m) => [m.q, ...m.options, m.explanation].join("\n")).join("\n"), script, "a placement test");
+      return r ?? {};
+    },
+  );
   // remember which part of the material each question checks, so known parts can be skipped
   const o = (raw ?? {}) as { questions?: { excerpt?: unknown; ref?: unknown }[] };
   if (Array.isArray(o.questions))
@@ -214,7 +232,14 @@ async function step<T>(run: () => Promise<unknown>, check: (raw: unknown) => T |
       if (i === 0 && e instanceof AiError && e.kind === "bad-response") continue;
       throw e;
     }
-    const ok = check(raw);
+    let ok: T | null;
+    try {
+      ok = check(raw);
+    } catch (e) {
+      // nonsense text (sane()): ask once more, then give up rather than serve it
+      if (i === 0 && e instanceof AiError && e.kind === "garbled") continue;
+      throw e;
+    }
     if (ok !== null) return ok;
     if (i > 0) throw new AiError("The AI answer was missing parts of the lesson.", "bad-response");
   }
@@ -305,6 +330,7 @@ export async function generateLesson(opts: {
     (wantResearch && draft.research !== undefined ? 1 : 0) + (draft.plan ? 1 : 0) + draft.sections.filter(isStr).length + (draft.quiz ? 1 : 0);
   const report = (stage: "research" | "writing", detail: string) => opts.onProgress?.(stage, detail, { done: doneCount(), total: total() });
   const system = tutorSystem(s.language);
+  const script = lessonScript(s.language, opts.chunks);
 
   // 1. web research (Claude only, optional)
   if (wantResearch && draft.research === undefined) {
@@ -378,7 +404,9 @@ export async function generateLesson(opts: {
           .slice(0, 8);
         const q = isStr(o.open?.q) ? o.open.q.trim() : "";
         if (!sections.length || !q) return null;
-        return { title: isStr(o.title) ? o.title.trim() : "Today's lesson", sections, keyPoints: strList(o.keyPoints).slice(0, 8), open: { q, rubric: strList(o.open?.rubric).slice(0, 6) } };
+        const result = { title: isStr(o.title) ? o.title.trim() : "Today's lesson", sections, keyPoints: strList(o.keyPoints).slice(0, 8), open: { q, rubric: strList(o.open?.rubric).slice(0, 6) } };
+        sane([result.title, ...sections.map((x: { heading: string; focus: string }) => `${x.heading}. ${x.focus}`), ...result.keyPoints, q, ...result.open.rubric].join("\n"), script, "a lesson plan");
+        return result;
       },
     );
     draft.sections = draft.plan.sections.map(() => null);
@@ -425,7 +453,9 @@ export async function generateLesson(opts: {
       () => structured<unknown>({ model: opts.model, system, prompt, tool: SECTION_TOOL, maxTokens: Math.min(8000, Math.round(words * 2.4) + 500), signal: opts.signal, onUsage }),
       (raw) => {
         const body = (raw as { body?: unknown } | null)?.body;
-        return isStr(body) && body.trim().length >= 40 ? body.trim() : null;
+        if (!isStr(body) || body.trim().length < 40) return null;
+        sane(body, script, "a lesson part");
+        return body.trim();
       },
     );
     await save();
@@ -449,7 +479,11 @@ export async function generateLesson(opts: {
       () => structured<unknown>({ model: opts.model, system, prompt, tool: QUIZ_TOOL, maxTokens: plan.quizQuestions * 320 + 700, signal: opts.signal, onUsage }),
       (raw) => {
         const q = (raw as { questions?: unknown } | null)?.questions;
-        return Array.isArray(q) && normalizeMcqs(q, "q").length ? q : null;
+        if (!Array.isArray(q)) return null;
+        const mcqs = normalizeMcqs(q, "q");
+        if (!mcqs.length) return null;
+        sane(mcqs.map((m) => [m.q, ...m.options, m.explanation].join("\n")).join("\n"), script, "a quiz");
+        return q;
       },
     );
     await save();
@@ -475,6 +509,13 @@ export async function gradeAnswer(opts: { model: string; language: LessonLanguag
     "- modelAnswer: a concise exemplary answer (3–6 sentences).",
     "- If the answer contains personal data (names of private people, contacts, addresses, ID numbers, health details), don't quote or comment on it; grade only the subject matter.",
   ].join("\n");
-  const raw = await structured<unknown>({ model: opts.model, system: tutorSystem(opts.language), prompt, tool: GRADE_TOOL, maxTokens: 1800, signal: opts.signal });
-  return normalizeGrade(raw);
+  const script = scriptOfLanguage(opts.language) ?? dominantScript([opts.lesson.open.q, ...opts.lesson.theory.keyPoints].join(" "));
+  return step(
+    () => structured<unknown>({ model: opts.model, system: tutorSystem(opts.language), prompt, tool: GRADE_TOOL, maxTokens: 1800, signal: opts.signal }),
+    (raw) => {
+      const g = normalizeGrade(raw);
+      sane([g.verdict, ...g.strengths, ...g.gaps, g.modelAnswer].join("\n"), script, "feedback");
+      return g;
+    },
+  );
 }

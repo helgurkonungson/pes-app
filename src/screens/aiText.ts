@@ -19,6 +19,7 @@ const AI_ERR: Record<AiErrorKind, Key> = {
   overloaded: "aiErr.overloaded",
   network: "aiErr.network",
   "bad-response": "aiErr.badResponse",
+  garbled: "aiErr.garbled",
   api: "aiErr.api",
   aborted: "aiErr.aborted",
 };

@@ -206,3 +206,35 @@ describe("privacy rule in every AI instruction", () => {
     expect(PRIVACY_RULE).toMatch(/Never ask the learner for personal information/);
   });
 });
+
+describe("nonsense text is never served as a lesson (0.21)", () => {
+  const salad = "Перед процедурой обязательна ФТОЛОГИЧЕСКА ФАЙЛИНГАМДИЯ,Contact затем ЭЛЕКТРИЧЕСКИЙ ФАЙЛИНГ микроорганизмов.Proto Потовые闭塞 гиперемия.";
+  beforeEach(() => {
+    ai.structured.mockReset();
+  });
+
+  it("a garbled part is written again", async () => {
+    let sections = 0;
+    ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) => {
+      if (o.tool.name === "emit_section" && ++sections === 1) return { body: salad };
+      return reply(o.tool.name, o.prompt);
+    });
+    const { lesson } = await run();
+    expect(sections).toBe(3); // part 1 twice, part 2 once
+    expect(lesson.theory.sections[0].body).toContain("section 1");
+  });
+
+  it("still garbled after a second try → a 'garbled' error, nothing saved for that step", async () => {
+    const saved: LessonDraft[] = [];
+    ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) => (o.tool.name === "emit_section" ? { body: salad } : reply(o.tool.name, o.prompt)));
+    await expect(run(undefined, saved)).rejects.toMatchObject({ kind: "garbled" });
+    expect(saved.at(-1)?.sections).toEqual([null, null]);
+  });
+
+  it("a lesson in the wrong language is rejected too", async () => {
+    ai.structured.mockImplementation(async (o: { tool: { name: string }; prompt: string }) =>
+      o.tool.name === "emit_quiz" ? { questions: [2, 3].map((i) => ({ ...mcq(i), q: `Вопрос номер ${i} о правах на данные?`, options: ["Владелец данных", "Никто", "Все сразу", "Только ИТ"], explanation: "Потому что так." })) } : reply(o.tool.name, o.prompt),
+    );
+    await expect(run()).rejects.toMatchObject({ kind: "garbled" }); // the skillset is in English
+  });
+});

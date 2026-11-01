@@ -220,7 +220,7 @@ export async function skipPlacementUI(page: Page): Promise<void> {
   await expect(page.getByText("Тест пропущен · начинаем с нуля")).toBeVisible();
 }
 
-/** Test switch for the waiting game: no birds, and the physics can be held (see `holdWormRound`). */
+/** Test switch for the waiting game: no birds or moles, the game can be held (see `holdWormRound`), and `window.__wormHit()` costs a life. */
 export async function calmWormGame(page: Page): Promise<void> {
   await page.addInitScript(() => localStorage.setItem("pes.worm.calm", "1"));
 }

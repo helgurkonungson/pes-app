@@ -15,7 +15,8 @@ export function aiState(p: Pick<Profile, "aiMode" | "aiBlock"> | undefined, hasK
   return "ok";
 }
 
-export type AiErrorKind = "no-key" | "auth" | "credits" | "rate" | "overloaded" | "network" | "bad-response" | "api" | "aborted";
+/** "garbled": the AI answered, but the text is nonsense (core/textQuality) — not served as a lesson. */
+export type AiErrorKind = "no-key" | "auth" | "credits" | "rate" | "overloaded" | "network" | "bad-response" | "garbled" | "api" | "aborted";
 
 /** Maps an HTTP status + API error message to an error kind. */
 export function classifyApiError(status: number, message: string): AiErrorKind {
