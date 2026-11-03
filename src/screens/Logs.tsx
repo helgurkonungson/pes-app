@@ -2,13 +2,12 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Bug, Send, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Empty, toast, Toggle, TopBar } from "../components/ui";
+import { Empty, Toggle, TopBar } from "../components/ui";
 import { db } from "../data/db";
 import { useProfile } from "../data/hooks";
-import { canSendLogs, sendLogsNow, setAutoReports } from "../data/logSend";
-import { logText } from "../data/logs";
+import { canSendLogs, setAutoReports } from "../data/logSend";
+import { sendJournal } from "../components/SendLogButton";
 import { locale, useT } from "../i18n";
-import { shareText } from "../native/share";
 
 export function Logs() {
   const t = useT();
@@ -17,16 +16,11 @@ export function Logs() {
   const [busy, setBusy] = useState(false);
 
   /** Without an endpoint (or when it can't be reached) the journal goes through the share sheet. */
-  const share = async () => {
-    if ((await shareText(t("logs.title"), await logText())) === "copied") toast(t("logs.copied"));
-  };
-
   const send = async () => {
     if (busy) return;
     setBusy(true);
     try {
-      if (canSendLogs() && (await sendLogsNow())) toast(t("logs.sent"));
-      else await share();
+      await sendJournal(t);
     } finally {
       setBusy(false);
     }

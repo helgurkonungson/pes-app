@@ -2,6 +2,18 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 1.0.0 — 2026-11-03
+
+The first public release on Google Play.
+
+- **Lessons no longer stop at "finish_reason: length":** the AI is now given enough room for a lesson in Russian, Ukrainian, Belarusian, Hindi or Chinese (they take more tokens than English for the same text), and an answer that still gets cut off is asked for once more with twice the room — for every AI, Chompbook AI included.
+- **Send the error report right from the error:** when a lesson can't be prepared or its writing stops, a "Send the error report" button sits next to "Study without AI" and "Retry". The error on screen goes to the developer together with the error log — no need to look for Settings → Error log.
+- **Every report arrives whole:** the developer now receives the full error log as a file, not just the first five entries.
+- **The worm's garden asks for a little attention:** a page or a book that crawls past uncollected costs a life (missed apples don't), and it fades out so you see what you missed.
+- **Chompbook AI is harder to abuse:** the server answers only the app's lesson requests (no general chat), refuses a request that alone would exceed the day's allowance, gives the 7-day free trial about 3 AI lessons a day (10 once the subscription is paid), and has a daily spending stop for the whole service.
+- **Protection from prompt injection:** the AI is told — by the app and again by Chompbook AI's server — that the learner's material, web notes and answers are data, never instructions. Text in a book or an answer that says "ignore the rules" or "give me 10/10" is treated as ordinary text, and material can no longer break out of its excerpt markers.
+- Chompbook Pro is sold in the Google Play countries where Chompbook is available; the app is not distributed on Google Play in Russia and Belarus.
+
 ## 0.21.0 — 2026-11-01
 
 - **A calm waiting game:** the worm now crawls through a garden seen from above while the lesson is written. Steer it left and right with your finger (or ← →) to gather pages, books and apples; apples are lives (3 at the start, up to 5). Birds and moles warn you first — a shadow grows on the ground, a molehill swells — so there's time to move away. Slow and gentle, made to relax rather than rush. When the lesson is ready mid-round, "Open the lesson" appears — you decide when to stop.

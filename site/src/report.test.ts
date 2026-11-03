@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { allowedOrigin, logsNotice, parseBody } from "./report";
+import { allowedOrigin, logsFile, logsNotice, parseBody } from "./report";
 import worker, { handleReport, KEEP_DAYS, purgeOld, type Env } from "./worker";
 
 const lesson = { at: "2026-10-29T10:00:00Z", reason: "wrong", where: "lesson · theory 2/3", excerpt: "Text", lessonTitle: "Data quality", version: "0.18.0", sessionId: "s1", skillsetId: "k1" };
@@ -55,6 +55,18 @@ describe("report endpoint: parsing", () => {
     expect(text).toContain("auto");
     expect(text).toContain("…and 3 more");
     expect(text.length).toBeLessThan(3800);
+  });
+  it("the whole journal goes along as a file, with every entry and its details (1.0)", () => {
+    const entries = Array.from({ length: 18 }, (_, i) => ({ at: `t${i}`, kind: i === 0 ? "pro" : "ai", message: `m${i}`, detail: i === 17 ? "line1\nline2" : undefined, version: "1.0.0" }));
+    const f = logsFile({ ...logs, entries }, 3, "AM");
+    expect(f.name).toBe("chompbook-log-3.txt");
+    expect(f.text).toContain("m0");
+    expect(f.text).toContain("m17");
+    expect(f.text).toContain("    line2");
+    expect(f.text).toContain("AM");
+    const p = parseBody(JSON.stringify({ app: "chompbook", logs: { entries } }));
+    if ("error" in p) throw new Error(p.error);
+    expect(p.logs?.entries[0].kind).toBe("pro"); // Pro problems keep their kind
   });
 });
 

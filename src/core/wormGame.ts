@@ -3,7 +3,8 @@
  * crawls up a slowly scrolling garden; the learner steers it left and right (drag, tap, ←/→) to
  * gather pages and books (score) and apples (lives). Now and then a bird's shadow grows on the
  * ground before it swoops, and a mole's mound swells before it pops up: steer away from both.
- * A hit costs a life (3 at the start, 5 at most) and gives a moment of safety; no lives left ends
+ * A hit costs a life (3 at the start, 5 at most) and gives a moment of safety; since 1.0 a page or
+ * a book that crawls past uncollected costs a life too (missed apples don't). No lives left ends
  * the round. Slow and forgiving on purpose — it should calm, not stress.
  * Pure and deterministic for a given random source, so it is unit tested; the canvas only draws.
  */
@@ -37,6 +38,8 @@ export interface Item {
   kind: ItemKind;
   x: number;
   y: number;
+  /** Passed the worm uncollected (a page or a book: already cost its life). */
+  missed?: boolean;
 }
 
 export interface Bird {
@@ -77,7 +80,7 @@ export interface GameState {
   nextMoleIn: number;
   nextId: number;
   /** Last thing that happened, for a short flash in the UI. */
-  event: { kind: "pick" | "apple" | "hit"; at: number } | null;
+  event: { kind: "pick" | "apple" | "hit" | "miss"; at: number } | null;
 }
 
 export function newGame(): GameState {
@@ -181,7 +184,14 @@ export function step(s: GameState, dt: number, rnd: () => number = Math.random, 
       }
       continue;
     }
-    if (y < H + ITEM_R * 2) items.push({ ...it, y });
+    // a page or a book left behind costs a life (1.0); not in the test mode without hazards
+    let missed = it.missed;
+    if (!missed && it.kind !== "apple" && y > WORM_Y + WORM_R + ITEM_R && opts.hazards !== false) {
+      missed = true;
+      lives--;
+      event = { kind: "miss", at: t };
+    }
+    if (y < H + ITEM_R * 2) items.push({ ...it, y, missed });
   }
 
   const moles: Mole[] = [];

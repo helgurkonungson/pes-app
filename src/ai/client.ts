@@ -10,6 +10,7 @@ import { compatListModels, compatStructured, pause, retryPolicy } from "./compat
 import { getApiKey } from "./key";
 import { activeProvider, PROVIDERS } from "./providers";
 import { PRIVACY_RULE } from "./privacy";
+import { retryBudget } from "../core/tokenBudget";
 
 const API = "https://api.anthropic.com/v1";
 const VERSION = "2023-06-01";
@@ -26,6 +27,14 @@ export class AiError extends Error {
   ) {
     super(message);
   }
+  /** The answer was cut off at the output budget (finish_reason "length" / stop_reason "max_tokens"). */
+  truncated = false;
+}
+
+/** Marks an error as "the answer was cut off" (worth one more try with a bigger budget). */
+export function truncatedError(e: AiError): AiError {
+  e.truncated = true;
+  return e;
 }
 
 /** Counts a request's tokens for the lesson (callback) and the month (profile). */
@@ -132,8 +141,24 @@ export function createMessage(params: CreateParams, signal?: AbortSignal): Promi
   return request<MessageResponse>("/messages", { method: "POST", body: JSON.stringify(params), signal });
 }
 
-/** Forces a single tool call and returns its input — our way of getting reliable JSON. */
-export async function structured<T>(opts: { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal; onUsage?: (u: TokenUsage) => void }): Promise<T> {
+type StructuredOpts = { model: string; system: string; prompt: string; tool: ToolDef; maxTokens: number; signal?: AbortSignal; onUsage?: (u: TokenUsage) => void };
+
+/**
+ * Forces a single tool call and returns its input — our way of getting reliable JSON.
+ * An answer cut off at the budget is asked once more with a bigger budget (1.0): long answers in
+ * Russian, Hindi or Chinese, or a model that thinks first, used to fail with "finish_reason: length".
+ */
+export async function structured<T>(opts: StructuredOpts): Promise<T> {
+  try {
+    return await structuredOnce<T>(opts);
+  } catch (e) {
+    const more = retryBudget(opts.maxTokens);
+    if (!(e instanceof AiError) || !e.truncated || more <= opts.maxTokens) throw e;
+    return structuredOnce<T>({ ...opts, maxTokens: more });
+  }
+}
+
+async function structuredOnce<T>(opts: StructuredOpts): Promise<T> {
   const profile = await getProfile();
   const provider = activeProvider(profile);
   if (provider !== "anthropic") {
@@ -154,8 +179,8 @@ export async function structured<T>(opts: { model: string; system: string; promp
   );
   noteUsage({ input: res.usage?.input_tokens ?? 0, output: res.usage?.output_tokens ?? 0, requests: 1 }, opts.onUsage);
   const block = res.content.find((b): b is { type: "tool_use"; id: string; name: string; input: unknown } => b.type === "tool_use" && (b as { name?: string }).name === opts.tool.name);
-  if (!block) {
-    if (res.stop_reason === "max_tokens") throw new AiError("The lesson was too long for one answer. Try a shorter portion.", "bad-response");
+  if (!block || res.stop_reason === "max_tokens") {
+    if (res.stop_reason === "max_tokens") throw truncatedError(new AiError("The lesson was too long for one answer. Try a shorter portion.", "bad-response", undefined, "stop_reason: max_tokens", "anthropic"));
     throw new AiError("The AI answered in an unexpected format. Try again.", "bad-response");
   }
   return block.input as T;

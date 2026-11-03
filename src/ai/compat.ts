@@ -6,7 +6,7 @@
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { classifyApiError } from "../core/aiStatus";
 import type { Profile, ProviderId, TokenUsage } from "../core/types";
-import { AiError, type ModelInfo, noteUsage, type ToolDef } from "./client";
+import { AiError, type ModelInfo, noteUsage, type ToolDef, truncatedError } from "./client";
 import { baseUrl, chatModels, fallbackModels, openRouterModels, PROVIDERS, wireModel } from "./providers";
 
 type Cfg = Pick<Profile, "yandexFolder" | "qwenRegion" | "customBaseUrl"> & Partial<Pick<Profile, "ageGroup">>;
@@ -246,13 +246,19 @@ export async function compatStructured<T>(
   const call = choice?.message?.tool_calls?.find((c) => c.function?.name === opts.tool.name) ?? choice?.message?.tool_calls?.[0];
   // finish_reason ("length" = ran out of tokens, "stop", "content_filter"…) explains most format failures
   const why = choice?.finish_reason ? `finish_reason: ${choice.finish_reason}` : undefined;
-  const bad = (message: string) => new AiError(message, "bad-response", r.status, why, id);
+  const cut = choice?.finish_reason === "length";
+  const bad = (message: string) => {
+    const e = new AiError(message, "bad-response", r.status, why, id);
+    return cut ? truncatedError(e) : e;
+  };
   if (call?.function?.arguments) {
+    let args: T;
     try {
-      return JSON.parse(call.function.arguments) as T;
+      args = JSON.parse(call.function.arguments) as T;
     } catch {
-      throw bad(choice?.finish_reason === "length" ? "The lesson was too long for one answer." : "The AI returned broken JSON.");
+      throw bad(cut ? "The lesson was too long for one answer." : "The AI returned broken JSON.");
     }
+    return args;
   }
   if (choice?.message?.content) {
     try {

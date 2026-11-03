@@ -44,12 +44,27 @@ describe("worm's garden — the calm waiting game", () => {
     expect(s.score).toBe(6); // …a spare apple counts as points
   });
 
-  it("things the worm misses scroll away", () => {
+  it("things the worm misses scroll away; a missed page or book costs one life, a missed apple doesn't (1.0)", () => {
     let s = quiet(newGame());
     s = { ...s, items: [{ id: 1, kind: "page", x: s.x + 100, y: WORM_Y }] };
     s = run(s, 3);
     expect(s.items).toHaveLength(0);
     expect(s.score).toBe(0);
+    expect(s.lives).toBe(LIVES_START - 1); // once, not on every frame it stays on screen
+    expect(s.event?.kind).toBe("miss");
+    s = { ...s, items: [{ id: 2, kind: "book", x: s.x - 100, y: WORM_Y }, { id: 3, kind: "apple", x: s.x + 100, y: WORM_Y }] };
+    s = run(s, 3);
+    expect(s.lives).toBe(LIVES_START - 2);
+    s = { ...s, items: [{ id: 4, kind: "page", x: s.x + 100, y: WORM_Y }] };
+    s = run(s, 3);
+    expect(s.mode).toBe("over"); // the last life
+  });
+
+  it("test mode without hazards never takes a life for a missed item", () => {
+    let s = quiet(newGame());
+    s = { ...s, items: [{ id: 1, kind: "book", x: s.x + 100, y: WORM_Y }] };
+    s = run(s, 3, seq(0.5), { hazards: false });
+    expect(s.lives).toBe(LIVES_START);
   });
 
   it("a bird's shadow warns first; staying under it costs a life, moving away doesn't", () => {

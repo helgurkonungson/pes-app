@@ -3,7 +3,7 @@
  * Lesson reports and error journals are stored in D1 (binding DB) and announced in Telegram
  * (secrets TG_BOT_TOKEN, TG_CHAT_ID). IP addresses are used for rate limiting only, never stored.
  */
-import { allowedOrigin, lessonNotice, logsNotice, parseBody } from "./report";
+import { allowedOrigin, lessonNotice, logsFile, logsNotice, parseBody } from "./report";
 
 interface D1Statement {
   bind(...values: unknown[]): D1Statement;
@@ -69,6 +69,19 @@ async function telegram(env: Env, text: string, fetcher: typeof fetch): Promise<
   }
 }
 
+/** The full error log as a file (the message itself lists only the first entries). */
+async function telegramFile(env: Env, file: { name: string; text: string }, fetcher: typeof fetch): Promise<void> {
+  if (!env.TG_BOT_TOKEN || !env.TG_CHAT_ID) return;
+  try {
+    const form = new FormData();
+    form.append("chat_id", env.TG_CHAT_ID);
+    form.append("document", new Blob([file.text], { type: "text/plain" }), file.name);
+    await fetcher(`https://api.telegram.org/bot${env.TG_BOT_TOKEN}/sendDocument`, { method: "POST", body: form });
+  } catch {
+    /* the report is stored anyway */
+  }
+}
+
 export async function handleReport(request: Request, env: Env, ctx: Ctx, fetcher: typeof fetch = fetch): Promise<Response> {
   const origin = allowedOrigin(request.headers.get("origin"));
   if (request.method === "OPTIONS") {
@@ -88,6 +101,7 @@ export async function handleReport(request: Request, env: Env, ctx: Ctx, fetcher
 
   const country = (request as Request & { cf?: { country?: string } }).cf?.country;
   const notices: string[] = [];
+  let file: { name: string; text: string } | undefined;
   const ids: (number | undefined)[] = [];
   try {
     for (const r of parsed.reports) {
@@ -100,11 +114,13 @@ export async function handleReport(request: Request, env: Env, ctx: Ctx, fetcher
       const id = await store(env.DB, { type: "log", version: l.version, platform: l.platform, lang: l.lang, country, auto: l.auto, summary: `${l.entries.length} entries · ${l.entries[0]?.message ?? ""}`, body: l });
       ids.push(id);
       notices.push(logsNotice(l, id, country));
+      if (l.entries.length > 5) file = logsFile(l, id, country);
     }
   } catch {
     return json({ ok: false, error: "storage" }, 500, origin);
   }
-  ctx.waitUntil(Promise.all(notices.map((t) => telegram(env, t, fetcher))));
+  // the file goes after its message, so it lands right under it in the chat
+  ctx.waitUntil(Promise.all(notices.map((t) => telegram(env, t, fetcher))).then(() => (file ? telegramFile(env, file, fetcher) : undefined)));
   return json({ ok: true, ids }, 200, origin);
 }
 

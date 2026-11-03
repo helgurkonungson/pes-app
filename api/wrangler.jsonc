@@ -20,6 +20,9 @@
     "FALLBACK_MODELS": "deepseek/deepseek-v4.1-flash-1017",
     // per learner per UTC day (prompt + answer tokens); ~60 000 per 15-minute AI lesson
     "DAILY_TOKENS": "600000",
+    // during the 7-day free trial (≈ 3 lessons a day) and for all users together per UTC day (a spending stop)
+    "TRIAL_DAILY_TOKENS": "180000",
+    "GLOBAL_DAILY_TOKENS": "6000000",
     "ENTITLEMENT": "pro"
   },
   // daily clean-up: usage older than 90 days, cached subscription answers unused for 30 days

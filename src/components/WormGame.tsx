@@ -169,7 +169,11 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   ctx.clearRect(0, 0, W, H);
   drawGround(ctx, s, p);
 
-  for (const it of s.items) drawItem(ctx, it.kind, it.x, it.y, p);
+  for (const it of s.items) {
+    ctx.globalAlpha = it.missed ? 0.3 : 1; // left behind: fades out
+    drawItem(ctx, it.kind, it.x, it.y, p);
+  }
+  ctx.globalAlpha = 1;
 
   // moles: a mound that swells, then the mole looks out
   for (const m of s.moles) {
@@ -284,7 +288,7 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   if (s.event && s.t - s.event.at < 0.35) {
     const f = (s.t - s.event.at) / 0.35;
     ctx.globalAlpha = 1 - f;
-    ctx.strokeStyle = s.event.kind === "hit" ? p.bad : s.event.kind === "apple" ? p.apple : p.accent;
+    ctx.strokeStyle = s.event.kind === "hit" || s.event.kind === "miss" ? p.bad : s.event.kind === "apple" ? p.apple : p.accent;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(s.x, WORM_Y, WORM_R + 4 + f * 16, 0, Math.PI * 2);

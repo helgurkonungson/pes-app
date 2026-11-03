@@ -7,6 +7,7 @@ import { useAiState } from "../ai/status";
 import { confirmDialog } from "../components/ui";
 import { WormGame } from "../components/WormGame";
 import { ReportButton } from "../components/ReportLesson";
+import { SendLogButton } from "../components/SendLogButton";
 import { BuildProgress } from "../components/BuildProgress";
 import { canAdvance, lessonPages, type Page, placementPages, stepsOf } from "../core/flow";
 import { nowIso } from "../core/ids";
@@ -322,6 +323,9 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
                   <button className="btn primary block" onClick={pop}>
                     {t("common.close")}
                   </button>
+                )}
+                {!(error instanceof CourseFinishedError) && !(error instanceof OfflineError && (error.code === "finished" || error.code === "no-sources")) && (
+                  <SendLogButton className="btn ghost block" what={`lesson could not be prepared — ${aiErrorText(error, t)}`} detail={[error instanceof Error ? error.message : String(error), aiErrorDetail(error, t)].filter(Boolean).join("\n")} />
                 )}
               </div>
             </>

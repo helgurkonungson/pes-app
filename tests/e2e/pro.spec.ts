@@ -62,7 +62,7 @@ test.describe("Chompbook Pro", () => {
     await expect(row).toContainText("Не оформлена");
     await row.click();
     await expect(page.getByRole("heading", { name: "Chompbook Pro" })).toBeVisible();
-    await expect(page.getByText("Около 10 ИИ-уроков в день")).toBeVisible();
+    await expect(page.getByText("Около 10 ИИ-уроков в день (в бесплатный период — около 3)")).toBeVisible();
     await expect(page.getByTestId("pro-play-only")).toContainText("Google Play");
     await expect(btn(page, "Открыть в Google Play")).toBeVisible();
   });
@@ -110,6 +110,8 @@ test.describe("Chompbook Pro", () => {
     await createSkillsetWithText(page);
     await btn(page, /Начать · 15 мин/).click();
     await expect(page.getByRole("alert")).toContainText("Дневной лимит Chompbook AI исчерпан", { timeout: 20_000 });
+    // 1.0: the error report can be sent right from the error screen
+    await expect(btn(page, "Отправить отчет об ошибке")).toBeVisible();
     await btn(page, "Заниматься без ИИ").click();
     await skipCountdown(page);
     await expect(page.getByText(/Чтение · часть 1 из/)).toBeVisible();

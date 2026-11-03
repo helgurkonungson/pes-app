@@ -6,6 +6,7 @@ import { modelOf } from "../../ai/providers";
 import { gradeAnswer } from "../../ai/tutor";
 import { FreeAiSheet } from "../../components/FreeAi";
 import { ExtLink, toast } from "../../components/ui";
+import { SendLogButton } from "../../components/SendLogButton";
 import { WormGame } from "../../components/WormGame";
 import { BuildProgress } from "../../components/BuildProgress";
 import { Markdown, ScoreRing } from "../../components/visuals";
@@ -77,6 +78,7 @@ export function PendingWait({ session, step, pending, onPlay, onDone }: { sessio
           {t("common.retry")}
         </button>
       )}
+      {pending && failed && <SendLogButton className="btn ghost block" what="lesson writing stopped" detail={b?.error} />}
     </div>
   );
 }

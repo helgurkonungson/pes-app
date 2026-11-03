@@ -28,19 +28,26 @@ CREATE TABLE IF NOT EXISTS entitlements (user_id TEXT PRIMARY KEY, active INTEGE
 CREATE TABLE IF NOT EXISTS usage (user_id TEXT NOT NULL, day TEXT NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, requests INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (user_id, day));
 `;
 
+// 1.0: the trial flag; ALTER fails harmlessly when the column is already there
+const MIGRATIONS = ["ALTER TABLE entitlements ADD COLUMN trial INTEGER NOT NULL DEFAULT 0", "CREATE INDEX IF NOT EXISTS usage_day ON usage (day)"];
+
 let schemaReady: Promise<unknown> | null = null;
 
 function d1Store(db: D1Database): Store {
   return {
     async getEntitlement(user) {
-      const r = await db.prepare("SELECT active, checked_at, expires_at FROM entitlements WHERE user_id = ?").bind(user).first<{ active: number; checked_at: number; expires_at: number | null }>();
-      return r ? { active: r.active === 1, checkedAt: r.checked_at, expiresAt: r.expires_at } : null;
+      const r = await db.prepare("SELECT active, checked_at, expires_at, trial FROM entitlements WHERE user_id = ?").bind(user).first<{ active: number; checked_at: number; expires_at: number | null; trial: number | null }>();
+      return r ? { active: r.active === 1, checkedAt: r.checked_at, expiresAt: r.expires_at, trial: r.trial === 1 } : null;
     },
-    async putEntitlement(user, active, checkedAt, expiresAt) {
+    async putEntitlement(user, active, checkedAt, expiresAt, trial) {
       await db
-        .prepare("INSERT INTO entitlements (user_id, active, checked_at, expires_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET active = excluded.active, checked_at = excluded.checked_at, expires_at = excluded.expires_at")
-        .bind(user, active ? 1 : 0, checkedAt, expiresAt)
+        .prepare("INSERT INTO entitlements (user_id, active, checked_at, expires_at, trial) VALUES (?, ?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET active = excluded.active, checked_at = excluded.checked_at, expires_at = excluded.expires_at, trial = excluded.trial")
+        .bind(user, active ? 1 : 0, checkedAt, expiresAt, trial ? 1 : 0)
         .run();
+    },
+    async getTotalUsage(day) {
+      const r = await db.prepare("SELECT COALESCE(SUM(tokens), 0) AS n FROM usage WHERE day = ?").bind(day).first<{ n: number }>();
+      return r?.n ?? 0;
     },
     async getUsage(user, day) {
       const r = await db.prepare("SELECT tokens FROM usage WHERE user_id = ? AND day = ?").bind(user, day).first<{ tokens: number }>();
@@ -60,10 +67,15 @@ function d1Store(db: D1Database): Store {
 }
 
 function ensureSchema(db: D1Database): Promise<unknown> {
-  schemaReady ??= db.exec(SCHEMA.trim()).catch((e) => {
-    schemaReady = null;
-    throw e;
-  });
+  schemaReady ??= db
+    .exec(SCHEMA.trim())
+    .then(async () => {
+      for (const sql of MIGRATIONS) await db.prepare(sql).run().catch(() => undefined);
+    })
+    .catch((e) => {
+      schemaReady = null;
+      throw e;
+    });
   return schemaReady;
 }
 

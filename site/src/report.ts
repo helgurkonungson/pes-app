@@ -58,7 +58,7 @@ export interface Parsed {
 }
 
 const REASONS = ["harmful", "inappropriate", "wrong", "quality", "other"];
-const KINDS = ["error", "ai", "import", "info"];
+const KINDS = ["error", "ai", "import", "info", "pro"];
 
 function report(r: unknown): LessonReportIn | undefined {
   if (!r || typeof r !== "object") return undefined;
@@ -127,8 +127,15 @@ export function logsNotice(l: LogsIn, id: number | undefined, country?: string):
   const errors = l.entries.filter((e) => e.kind === "error").length;
   const head = `🐞 Error log #${id ?? "?"} · ${l.auto ? "auto" : "sent by the learner"} · v${l.version ?? "?"} · ${l.platform ?? "?"}${l.lang ? ` · ${l.lang}` : ""}${country ? ` · ${country}` : ""}`;
   const lines = l.entries.slice(0, 5).map((e) => `[${e.kind}] ${cut(e.message, 300)}`);
-  const more = l.entries.length > 5 ? `…and ${l.entries.length - 5} more` : "";
-  return [head, `${l.entries.length} entries, ${errors} crashes`, ...lines, more].filter(Boolean).join("\n").slice(0, 3800);
+  const more = l.entries.length > 5 ? `…and ${l.entries.length - 5} more — the full log is in the attached file` : "";
+  return [head, `${l.entries.length} entries, ${errors} errors`, ...lines, more].filter(Boolean).join("\n").slice(0, 3800);
+}
+
+/** The whole journal as a text file for Telegram (1.0): every entry with its details, newest first as sent. */
+export function logsFile(l: LogsIn, id: number | undefined, country?: string): { name: string; text: string } {
+  const head = [`Chompbook error log #${id ?? "?"}`, `${l.auto ? "auto" : "sent by the learner"} · v${l.version ?? "?"} · ${l.platform ?? "?"}${l.lang ? ` · ${l.lang}` : ""}${country ? ` · ${country}` : ""}`, l.ua ?? "", `${l.entries.length} entries`, ""];
+  const rows = l.entries.map((e) => `${e.at ?? "?"} [${e.kind}] v${e.version ?? "?"} ${e.message}${e.detail ? `\n    ${e.detail.replace(/\n/g, "\n    ")}` : ""}`);
+  return { name: `chompbook-log-${id ?? "x"}.txt`, text: [...head, ...rows].join("\n") };
 }
 
 /** Origins the app runs on: the Android/iOS WebView, local dev and the site itself. */
