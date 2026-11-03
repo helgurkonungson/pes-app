@@ -115,6 +115,7 @@ describe("Chompbook AI server (ADR-037)", () => {
     const b = upstreamBody({ messages: [{ role: "user", content: "x" }], max_tokens: 500, model: "evil/expensive", temperature: 0.2 }, { ...env, MODEL: "m1", FALLBACK_MODELS: "m2, m1 ,m3" }, USER);
     expect(b).toMatchObject({ model: "m1", models: ["m1", "m2", "m3"], max_tokens: 500, temperature: 0.2 });
     expect(b.tools).toBeUndefined();
+    expect(b.provider).toEqual({ data_collection: "deny" });
     expect(String(b.user).length).toBeLessThanOrEqual(32);
     expect(upstreamBody({ messages: [] }, { ...env, FALLBACK_MODELS: "" }, USER).models).toBeUndefined();
     // everyone gets the privacy rules first; learners who may be minors also get the safety rules

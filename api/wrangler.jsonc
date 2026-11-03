@@ -10,8 +10,7 @@
     {
       "binding": "DB",
       "database_name": "chompbook-api",
-      // replace with the id shown after creating the D1 database "chompbook-api" (docs/PRO_SETUP.md, step 3)
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "666cf7f2-6837-4fb3-83e4-29e8b24b7928"
     }
   ],
   "vars": {

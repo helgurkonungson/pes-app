@@ -182,6 +182,8 @@ export function upstreamBody(body: Record<string, unknown>, env: Env, user: stri
     ...(fallbacks.length ? { models: [model, ...fallbacks.filter((m) => m !== model)] } : {}),
     max_tokens: Math.min(Number(body.max_tokens) || 4096, DEFAULTS.maxOutputTokens),
     user: user.slice(-32), // OpenRouter abuse tracking; no personal data
+    // only providers that neither store nor train on requests (privacy policy, section 3)
+    provider: { data_collection: "deny" },
   };
   if (Array.isArray(body.tools)) {
     out.tools = body.tools;
