@@ -1,5 +1,5 @@
 /** Lesson pages: theory with Listen, multiple choice, the open question and the waiting page for a part still being written (split out of Session.tsx, ADR-036). */
-import { Check, ExternalLink, Lightbulb, RotateCcw, Sparkles, Square, Volume2, X } from "lucide-react";
+import { Check, ExternalLink, Lightbulb, Mic, RotateCcw, Sparkles, Square, Volume2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { reportAiError, reportAiOk, useAiState } from "../../ai/status";
 import { modelOf } from "../../ai/providers";
@@ -10,7 +10,8 @@ import { SendLogButton } from "../../components/SendLogButton";
 import { WormGame } from "../../components/WormGame";
 import { BuildProgress } from "../../components/BuildProgress";
 import { Markdown, ScoreRing } from "../../components/visuals";
-import { answerWords } from "../../core/answerWords";
+import { answerWords, appendDictated } from "../../core/answerWords";
+import { dictate, dictationAvailable, DictationError } from "../../native/speech";
 import type { Page, StepKey } from "../../core/flow";
 import type { OpenGrade, Session, SessionProgress } from "../../core/types";
 import { db, getProfile } from "../../data/db";
@@ -45,6 +46,41 @@ function ListenButton({ text }: { text: string }) {
   return (
     <button className={`btn small listen-btn${on ? " on" : ""}`} onClick={toggle} aria-pressed={on}>
       {on ? <Square size={16} /> : <Volume2 size={16} />} {on ? t("tts.stop") : t("tts.listen")}
+    </button>
+  );
+}
+
+/** Whether the phone (or browser) can turn speech into text, checked once. */
+function useDictation(): boolean {
+  const [can, setCan] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    void dictationAvailable().then((v) => alive && setCan(v));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return can;
+}
+
+/** Speak the answer instead of typing it (1.1.0); shown only where speech can be recognised. */
+function DictateButton({ onText, disabled }: { onText: (said: string) => void; disabled?: boolean }) {
+  const t = useT();
+  const [on, setOn] = useState(false);
+  const go = async () => {
+    setOn(true);
+    haptic("tap");
+    try {
+      onText(await dictate(locale(), t("open.dictatePrompt")));
+    } catch (e) {
+      toast(t(e instanceof DictationError && e.code === "denied" ? "open.dictateDenied" : "open.dictateFailed"));
+    } finally {
+      setOn(false);
+    }
+  };
+  return (
+    <button className={`dictate-btn${on ? " on" : ""}`} onClick={go} disabled={disabled || on} aria-label={t("open.dictate")} aria-pressed={on}>
+      <Mic size={20} />
     </button>
   );
 }
@@ -131,8 +167,15 @@ export function PageView({ page, session, progress, update, onSkipPlacement }: {
       return (
         <div className="stack-lg">
           <div>
-            <p className="tiny muted" style={{ marginBottom: 4 }}>
+            <p className="tiny muted kicker" style={{ marginBottom: 4 }}>
               {t(offline ? "session.readingPart" : "session.theoryPart", { i: page.index + 1, n: page.of })}
+              {/* where the lesson comes from, as part of the kicker rather than a second badge (1.1.0) */}
+              {session.lesson && (
+                <>
+                  {" · "}
+                  <span className={`mode-tag ${session.lesson.mode ?? "ai"}`}>{t(session.lesson.mode === "course" ? "mode.course" : offline ? "mode.offline" : "report.aiTag")}</span>
+                </>
+              )}
             </p>
             <h2 className="q-title" style={{ marginBottom: 0 }}>
               {page.section.heading}
@@ -227,6 +270,14 @@ function McqView({ page, progress, update, allowDontKnow, checkpoint, test }: { 
       {answered && (
         <div className="explain" role="status">
           <b style={{ color: chosen === mcq.answer ? "var(--good)" : "var(--bad)" }}>{chosen === mcq.answer ? t("mcq.correct") : chosen === -1 ? t("mcq.answerIs") : t("mcq.wrong")}</b>
+          {/* a wrong pick names both answers, so the explanation reads against them (1.1.0) */}
+          {chosen !== mcq.answer && chosen >= 0 && (
+            <span className="explain-pair">
+              {t("mcq.youPicked", { a: mcq.options[chosen] ?? "" })}
+              <br />
+              {t("mcq.rightIs", { a: mcq.options[mcq.answer] ?? "" })}
+            </span>
+          )}
           {mcq.explanation}
         </div>
       )}
@@ -250,6 +301,7 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
   const canAi = ai === "ok";
   const hasModel = !!lesson.open.modelAnswer;
   const words = answerWords(text);
+  const canDictate = useDictation();
 
   const checkAi = async () => {
     setBusy(true);
@@ -298,7 +350,14 @@ function OpenView({ session, progress, update }: { session: Session; progress: S
       </div>
       {!grade && !skipped && (
         <>
-          <textarea className="textarea" aria-label={t("open.answerAria")} placeholder={t("open.placeholder")} value={text} onChange={(e) => setText(e.target.value)} disabled={busy} />
+          <div className="answer-box">
+            <textarea className="textarea" aria-label={t("open.answerAria")} placeholder={t("open.placeholder")} value={text} onChange={(e) => setText(e.target.value)} disabled={busy} />
+            {canDictate && <DictateButton onText={(said) => setText((cur) => appendDictated(cur, said))} disabled={busy} />}
+          </div>
+          <p className="faint small">
+            {t("open.lengthHint")}
+            {canDictate && ` ${t("open.dictateHint")}`}
+          </p>
           {!selfMode && lesson.open.rubric.length > 0 && <p className="faint small">{t("open.covers", { list: lesson.open.rubric.join(" · ") })}</p>}
           {err && (
             <div className="error-box" role="alert">

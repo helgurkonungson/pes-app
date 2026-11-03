@@ -4,7 +4,7 @@
 export const SITE = "https://chompbook.online";
 
 /** Date shown as "Effective …" on the documents (ISO). Update it when a document changes. */
-export const DOCS_DATE = "2026-10-30";
+export const DOCS_DATE = "2026-11-03";
 
 /** The seller / data controller (from the Armenian state register extract, 21.01.2026). */
 export const SELLER = {

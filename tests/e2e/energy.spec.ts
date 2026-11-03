@@ -48,9 +48,16 @@ test.describe("energy, freezes and rest days (ADR-029)", () => {
     expect(Number((await chip.innerText()).trim())).toBeGreaterThan(0);
     await expectNoHorizontalOverflow(page, "home with energy");
 
+    // 1.1.0: the chip opens a sheet that explains energy, "how to earn" already open
     await chip.click();
+    const sheet = page.getByRole("dialog", { name: "Энергия" });
+    await expect(sheet.getByRole("region", { name: "Энергия" })).toBeVisible();
+    await expect(sheet.getByRole("button", { name: /Еще \d+ энергии до заморозки/ })).toBeDisabled();
+    await expect(sheet.getByText(/Неделя без пропусков: \+15/)).toBeVisible();
+    // and leads on to Progress, where the same card lives
+    await sheet.getByRole("button", { name: "Календарь серии и награды" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("region", { name: "Энергия" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Еще \d+ энергии до заморозки/ })).toBeDisabled();
     await page.getByText("Как получить энергию").click();
     await expect(page.getByText(/Неделя без пропусков: \+15/)).toBeVisible();
 

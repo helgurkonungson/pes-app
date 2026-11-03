@@ -19,6 +19,7 @@ export const privacy = {
 <li>AI service keys, kept in the phone's secure storage (Android Keystore / iOS Keychain).</li>
 <li>An error log and your lesson reports, until you send or clear them.</li>
 <li>Automatic backups in the app's storage and, before updates, in <em>Documents/PES</em> on the phone.</li>
+<li>Photos of book pages you add as sources: the text is recognised on the phone; the photos themselves are not kept or sent anywhere.</li>
 <li>The phone's time zone is read on the device to suggest an AI service that works in your region; it is not sent anywhere.</li>
 </ul>
 <p>We have no copy of this data and cannot see it.</p>
@@ -46,6 +47,7 @@ export const privacy = {
 <h2>Other network requests</h2>
 <ul>
 <li><strong>Web pages you add as sources</strong> are downloaded from their sites.</li>
+<li><strong>Dictation</strong> (optional): when you tap the microphone under an open question, your phone's own speech recognition service (on most Android phones, Google's) turns what you say into text under its own terms and may send the audio to its provider for that. Chompbook asks for microphone permission the first time, receives only the text and records or keeps no audio.</li>
 <li><strong>Update check</strong> (only in the version installed from GitHub): once a day the app asks GitHub for the latest release. Versions from the stores are updated by the store.</li>
 <li><strong>This website</strong> sets no cookies and uses no analytics. It remembers your language choice only in your browser. Cloudflare serves it and processes IP addresses to deliver and protect it.</li>
 <li>Like any internet request, these reveal your IP address to the server you contact.</li>

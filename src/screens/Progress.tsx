@@ -1,73 +1,16 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, ChevronRight, Clock, Flame, Lock, Moon, Snowflake, Sparkles, Target, Trophy, Zap } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Flame, Lock, Moon, Snowflake, Sparkles, Target, Trophy } from "lucide-react";
 import { useState } from "react";
-import { Bar, PageTitle, SectionLabel, toast } from "../components/ui";
+import { Bar, PageTitle, SectionLabel } from "../components/ui";
+import { EnergyCard } from "../components/EnergyCard";
 import { BadgeIcon, LineChart } from "../components/visuals";
 import { BADGES } from "../core/badges";
 import { addDays, lastNDays, localDay, monthLabel, parseDay, shortDate, weekdayLetter, weekOf } from "../core/dates";
 import { levelProgress, pct, rankFor } from "../core/scoring";
-import { canBuyFreeze, ENERGY, FREEZE_COST, MAX_FREEZES } from "../core/energy";
 import { keptAs, liveStreak } from "../core/streak";
-import type { Profile } from "../core/types";
-import { buyStreakFreeze } from "../data/repo";
 import { db } from "../data/db";
 import { useProfile, useSkillsetSummaries } from "../data/hooks";
 import { type Key, locale, useT } from "../i18n";
-
-/** Energy balance, freezes and how to earn more (ADR-029). */
-function EnergyCard({ profile }: { profile: Profile }) {
-  const t = useT();
-  const energy = profile.energy ?? 0;
-  const freezes = profile.freezes ?? 0;
-  const full = freezes >= MAX_FREEZES;
-  const can = canBuyFreeze(energy, freezes);
-  const [m7, m30, m100] = ENERGY.milestones.map(([, e]) => e);
-  return (
-    <section className="card stack" aria-label={t("energy.title")}>
-      <div className="row-between">
-        <div>
-          <p className="small muted bold">{t("energy.title")}</p>
-          <div className="big-number energy-number">
-            <Zap size={24} aria-hidden /> {energy}
-          </div>
-        </div>
-        <div className="freeze-stock" aria-label={t("energy.freezesOf", { n: freezes, max: MAX_FREEZES })}>
-          <p className="small muted bold">{t("energy.freezes")}</p>
-          <div className="row" style={{ gap: 4, justifyContent: "flex-end" }} aria-hidden>
-            {Array.from({ length: MAX_FREEZES }, (_, i) => (
-              <span key={i} className={`frost${i < freezes ? " on" : ""}`}>
-                <Snowflake size={18} />
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-      <button
-        className={`btn ${can ? "primary" : "dark"} block`}
-        disabled={!can}
-        onClick={async () => {
-          if (await buyStreakFreeze()) toast(t("energy.bought"));
-        }}
-      >
-        <Snowflake size={18} /> {full ? t("energy.full") : can ? t("energy.buy", { cost: FREEZE_COST }) : t("energy.need", { n: FREEZE_COST - energy })}
-        {can && <Zap size={16} aria-hidden />}
-      </button>
-      <p className="small muted">{t("energy.freezeHint")}</p>
-      <details className="earn">
-        <summary className="small bold">{t("energy.how")}</summary>
-        <ul className="small muted">
-          <li>{t("energy.earn.session", { n: ENERGY.session })}</li>
-          <li>{t("energy.earn.review", { n: ENERGY.reviewCorrect })}</li>
-          <li>{t("energy.earn.perfect", { n: ENERGY.perfect })}</li>
-          <li>{t("energy.earn.test", { a: ENERGY.checkpoint, b: ENERGY.final })}</li>
-          <li>{t("energy.earn.streak", { a: m7, b: m30, c: m100 })}</li>
-          <li>{t("energy.earn.week", { n: ENERGY.cleanWeek })}</li>
-          <li>{t("energy.earn.comeback", { n: ENERGY.comeback })}</li>
-        </ul>
-      </details>
-    </section>
-  );
-}
 
 export function Progress() {
   const t = useT();

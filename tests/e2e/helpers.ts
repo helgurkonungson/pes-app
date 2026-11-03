@@ -117,11 +117,15 @@ export async function onboard(page: Page, opts: { lang?: "ru" | "en"; key?: stri
   await btn(page, lang === "ru" ? "Начать" : "Get started").click();
   await page.locator("#name").fill(opts.name ?? (lang === "ru" ? "Олег" : "Oleg"));
   await btn(page, lang === "ru" ? /Продолжить/ : /Continue/).click();
+  // 1.1.0: a ready example of the AI check, then the AI choice
+  await expect(page.getByTestId("onb-demo")).toBeVisible();
+  await btn(page, lang === "ru" ? /Продолжить/ : /Continue/).click();
   if (opts.key) {
+    await btn(page, lang === "ru" ? /свой ключ Claude API/ : /my own Claude API key/).click();
     await page.locator("#key").fill(opts.key);
     await btn(page, lang === "ru" ? /Сохранить и начать/ : /Save and start/).click();
   } else {
-    await btn(page, lang === "ru" ? "Продолжить без ИИ" : "Continue without AI").click();
+    await btn(page, lang === "ru" ? "Пока начать без ИИ" : "Start without AI for now").click();
   }
   await expect(page.getByRole("navigation")).toBeVisible();
   if (!opts.tutorial) await skipTutorial(page);

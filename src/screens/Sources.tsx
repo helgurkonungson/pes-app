@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowRight, FileText, Globe, Link as LinkIcon, Trash2, Type, Upload } from "lucide-react";
+import { ArrowRight, Camera, FileText, Globe, Link as LinkIcon, Trash2, Type, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { confirmDialog, Empty, Sheet, toast, TopBar } from "../components/ui";
 import type { Source } from "../core/types";
@@ -9,7 +9,7 @@ import { writeSnapshot } from "../data/safety";
 import { type Key, useT } from "../i18n";
 import { logEvent } from "../data/logs";
 import { useNav } from "../nav/store";
-import { ACCEPT, importFile, importText, importUrl, type Imported } from "../sources/importers";
+import { ACCEPT, ACCEPT_IMAGES, importFile, importPhotos, importText, importUrl, type Imported } from "../sources/importers";
 
 const KIND_LABEL: Record<Source["kind"], Key> = { pdf: "sources.kind.pdf", epub: "sources.kind.epub", docx: "sources.kind.docx", text: "sources.kind.text", url: "sources.kind.url" };
 
@@ -18,6 +18,7 @@ export function Sources({ id }: { id: string }) {
   const skillset = useLiveQuery(() => db.skillsets.get(id), [id]);
   const sources = useLiveQuery(() => db.sources.where("skillsetId").equals(id).sortBy("addedAt"), [id]);
   const fileRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<null | "text" | "url">(null);
@@ -55,6 +56,15 @@ export function Sources({ id }: { id: string }) {
     if (fileRef.current) fileRef.current.value = "";
   };
 
+  const onPhotos = (files: FileList | null) => {
+    if (!files?.length) return;
+    const list = [...files];
+    run(t("sources.reading"), async () => {
+      await save(await importPhotos(list, t("sources.photosTitle", { n: list.length }), (m) => setBusy(m)));
+    });
+    if (photoRef.current) photoRef.current.value = "";
+  };
+
   const remove = async (s: Source) => {
     if (await confirmDialog(t("sources.removeConfirm", { title: s.title }), { text: t("sources.removeText"), ok: t("common.remove"), danger: true })) {
       await deleteSource(s);
@@ -65,14 +75,22 @@ export function Sources({ id }: { id: string }) {
     <div className="screen">
       <TopBar title={t("sources.title")} />
       <div className="stack-lg">
-        <p className="muted small">{skillset ? t("sources.intro", { name: skillset.name }) : ""}</p>
+        <p className="muted small">{skillset ? t("sources.introShort", { name: skillset.name }) : ""}</p>
 
-        <div className="grid-3">
+        <div className="grid-2 source-tiles">
           <button className="action-tile center-col" onClick={() => fileRef.current?.click()} disabled={!!busy}>
             <span className="icon-dot accent">
               <Upload size={20} />
             </span>
             <span className="small bold">{t("sources.files")}</span>
+            <span className="tiny faint">{t("sources.formats")}</span>
+          </button>
+          <button className="action-tile center-col" onClick={() => photoRef.current?.click()} disabled={!!busy}>
+            <span className="icon-dot">
+              <Camera size={20} />
+            </span>
+            <span className="small bold">{t("sources.photo")}</span>
+            <span className="tiny faint">{t("sources.photoHint")}</span>
           </button>
           <button className="action-tile center-col" onClick={() => setSheet("text")} disabled={!!busy}>
             <span className="icon-dot">
@@ -88,7 +106,8 @@ export function Sources({ id }: { id: string }) {
           </button>
         </div>
         <input ref={fileRef} type="file" accept={ACCEPT} multiple hidden data-testid="source-file" onChange={(e) => onFiles(e.target.files)} />
-        <p className="faint tiny center">{t("sources.formats")}</p>
+        <input ref={photoRef} type="file" accept={ACCEPT_IMAGES} multiple hidden data-testid="source-photo" onChange={(e) => onPhotos(e.target.files)} />
+        <p className="faint tiny center">{t("sources.cloudHint")}</p>
 
         {busy && (
           <div className="banner" role="status">
@@ -108,7 +127,7 @@ export function Sources({ id }: { id: string }) {
         {sources && sources.length === 0 && !busy && skillset && (
           <div className="stack" style={{ gap: 8 }}>
             <button
-              className="btn dark block"
+              className="btn ghost block"
               onClick={() => {
                 const nav = useNav.getState();
                 nav.pop(); // back to the skillset, so closing the lesson lands there

@@ -77,10 +77,38 @@ test.describe("onboarding & language", () => {
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();
+    await btn(page, /Продолжить/).click();
+    await btn(page, /свой ключ Claude API/).click();
     await page.locator("#key").fill("sk-ant-wrong-0123456789abcdef");
     await btn(page, /Сохранить и начать/).click();
     await expect(page.getByRole("alert")).toContainText("Ключ API отклонен");
-    await btn(page, "Продолжить без ИИ").click();
+    await btn(page, "Пока начать без ИИ").click();
     await expect(page.getByRole("navigation")).toBeVisible();
+  });
+
+  test("1.1.0: name is optional, the sample shows an AI check, the key waits behind a link", async ({ page }) => {
+    await mockApis(page);
+    await page.goto("/");
+    await pickLang(page, "Русский");
+    await btn(page, "Начать").click();
+    // no name needed to go on
+    await expect(btn(page, /Продолжить/)).toBeEnabled();
+    await btn(page, /Продолжить/).click();
+    const demo = page.getByTestId("onb-demo");
+    await expect(demo.getByText(/Почему перечитывание кажется полезным/)).toBeVisible();
+    await expect(demo.getByText("из 10")).toHaveCount(0);
+    await btn(page, "Посмотреть, как проверяет ИИ").click();
+    await expect(demo.getByText(/Оценка ИИ/)).toBeVisible();
+    await expect(demo.getByText(/эффект тестирования/)).toBeVisible();
+    await btn(page, /Продолжить/).click();
+    await expect(page.getByRole("heading", { name: "Включите проверку ИИ" })).toBeVisible();
+    await expect(page.locator("#key")).toHaveCount(0);
+    await expect(btn(page, /Подключить бесплатный ИИ/)).toBeVisible();
+    // the web build doesn't sell Pro, so no Pro card here
+    await expect(page.locator(".onb-choice.pro")).toHaveCount(0);
+    await btn(page, "Пока начать без ИИ").click();
+    await expect(page.getByRole("navigation")).toBeVisible();
+    await page.locator(".tutorial").getByRole("button", { name: "Пропустить" }).click();
+    await expect(page.getByRole("heading", { name: "Привет, Ученик!" })).toBeVisible();
   });
 });

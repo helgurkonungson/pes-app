@@ -246,6 +246,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await btn(page, "Начать").click();
     await page.locator("#name").fill("Олег");
     await btn(page, /Продолжить/).click();
+    await btn(page, /Продолжить/).click(); // past the sample AI check
     await btn(page, /Подключить бесплатный ИИ/).click();
     const dialog = page.getByRole("dialog");
     // a neutral age screen first (the year isn't kept, only the age group)

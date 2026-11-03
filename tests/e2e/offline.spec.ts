@@ -154,6 +154,12 @@ test.describe("lessons without AI", () => {
     await btn(page, /^Начать$/).click();
     await skipCountdown(page);
     await expect(page.getByText("Коротко о прошлом уроке")).toBeVisible(); // lesson 2 starts with a review
+    // the lesson's source is named above the theory title (1.1.0)
+    for (let i = 0; i < 6 && !(await page.locator(".mode-tag.offline").isVisible().catch(() => false)); i++) {
+      const option = page.locator(".option:not([disabled])").first();
+      if (await option.isVisible().catch(() => false)) await option.click();
+      await btn(page, /^Далее/).click();
+    }
     await expect(page.locator(".mode-tag.offline")).toBeVisible();
     expect(api.calls.filter((c) => c.includes("/v1/messages")).length).toBe(before);
   });

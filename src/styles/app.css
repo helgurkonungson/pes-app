@@ -833,3 +833,73 @@ button.menu-row:active { opacity: .7; }
 /* sheets opened from the tutorial (free AI) sit above it */
 .tut-sheets > .scrim { z-index: 41; }
 .tut-sheets > .sheet { z-index: 42; }
+
+/* ---------- 1.1.0: UX pass ---------- */
+/* score rings fill in when they appear */
+.ring-fill { transition: stroke-dasharray .8s cubic-bezier(.2, .8, .2, 1), opacity .2s ease; }
+
+/* bottom bars: content fades out under the floating buttons and the tab bar instead of showing through */
+.cta-bar { padding-top: 30px; background: linear-gradient(to top, var(--bg) 72%, var(--bg-clear)); }
+.tabbar::before {
+  content: ""; position: absolute; z-index: -1; pointer-events: none;
+  left: calc(-1 * (var(--side) + var(--sal))); right: calc(-1 * (var(--side) + var(--sar)));
+  bottom: calc(-1 * (var(--sab) + 10px)); height: calc(var(--tabbar-h) + var(--sab) + 44px);
+  background: linear-gradient(to top, var(--bg) 55%, var(--bg-clear));
+}
+
+/* onboarding: the sample check and the AI choice */
+.onb .demo .display { font-size: 26px; }
+@media (max-width: 359px) { .onb .demo .display { font-size: 22px; } }
+.onb-choice { display: flex; gap: 12px; align-items: center; text-align: left; width: 100%; padding: 14px 16px; border-radius: var(--r-lg); background: var(--surface); color: var(--ink); min-height: var(--touch); }
+.onb-choice b { display: block; font-size: 15.5px; }
+.onb-choice .grow span { font-size: 13.5px; color: var(--muted); }
+.onb-choice.pro { background: var(--accent); color: var(--on-accent); }
+.onb-choice.pro .grow span { color: var(--on-accent); opacity: .78; }
+.onb-choice.pro .icon-dot.accent { background: var(--on-accent-a12); color: var(--on-accent); }
+.disclosure { display: inline-flex; align-items: center; gap: 8px; align-self: flex-start; color: var(--muted); font-weight: 600; min-height: var(--touch); }
+.disclosure .disc-chev { transition: transform .2s ease; }
+.disclosure[aria-expanded="true"] .disc-chev { transform: rotate(180deg); }
+
+/* lesson header: one label in the middle, a quiet counter on the right */
+.session-top .page-count { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: 0; line-height: 1; }
+.session-top .page-count small { font-size: 13px; margin-left: 2px; }
+.kicker .mode-tag { padding: 0; background: none; font-size: inherit; font-weight: 700; }
+.kicker .mode-tag.ai { background: none; }
+.kicker .mode-tag.course { background: none; }
+.explain-pair { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13.5px; }
+
+/* open answer: dictation sits inside the field */
+.answer-box { position: relative; }
+.answer-box .textarea { width: 100%; padding-bottom: 56px; }
+.dictate-btn { position: absolute; right: 10px; bottom: 10px; width: var(--touch); height: var(--touch); border-radius: 50%; display: grid; place-items: center; background: var(--surface-3); color: var(--accent-ink); }
+.dictate-btn.on { background: var(--accent); color: var(--on-accent); animation: pulse 1.2s ease-in-out infinite; }
+.dictate-btn:disabled:not(.on) { opacity: .5; }
+
+/* result screen: the Pro offer on the yellow card */
+.pro-offer { width: 100%; text-align: left; background: var(--on-accent-a10); border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.pro-offer .btn { margin-top: 4px; }
+
+/* Home: energy chip marks itself until explained; this week Mon–Sun with a state per day */
+.streak-chip.news { position: relative; }
+.streak-chip.news::after { content: ""; position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--bg); }
+ul.mini-week { list-style: none; padding: 0; }
+.mini-week li i { width: 18px; height: 18px; display: grid; place-items: center; margin: 0 auto 4px; border-radius: 50%; background: var(--surface-3); color: var(--on-accent); }
+.mini-week li.done i { background: var(--accent); }
+.mini-week li.freeze i { background: var(--info-soft); color: var(--info); }
+.mini-week li.rest i { background: var(--surface-2); color: var(--muted); }
+.mini-week li.missed i { background: transparent; box-shadow: inset 0 0 0 2px var(--surface-3); }
+.mini-week li.future i { background: var(--surface-2); }
+.mini-week li.today i { background: transparent; box-shadow: inset 0 0 0 2px var(--accent); }
+.mini-week li.is-today span { color: var(--ink); font-weight: 700; }
+.quick-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap); }
+.quick { background: var(--surface); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; gap: 10px; text-align: left; min-height: 112px; }
+.quick:active { background: var(--surface-2); }
+.quick b { font-size: 15px; }
+
+/* sources: four equal tiles */
+.source-tiles .action-tile { min-height: 104px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ring-fill, .disclosure .disc-chev { transition: none; }
+  .dictate-btn.on { animation: none; }
+}

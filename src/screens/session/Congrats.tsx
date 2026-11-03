@@ -1,5 +1,5 @@
 /** The result screen after a lesson or test: score, XP, energy, badges, placement summary (split out of Session.tsx, ADR-036). */
-import { Check, Flame, Zap } from "lucide-react";
+import { Check, Crown, Flame, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { BookBite } from "../../components/BookBite";
 import { BadgeIcon } from "../../components/visuals";
@@ -11,9 +11,47 @@ import { db } from "../../data/db";
 import { maybeAskForReview } from "../../data/androidSync";
 import { type Key, locale, useT } from "../../i18n";
 import { formatTokens } from "../../ai/usage";
+import { shouldOfferPro } from "../../core/pro";
+import { getProfile, updateProfile } from "../../data/db";
+import { proPurchasable, usePro } from "../../pro/purchases";
+
+/**
+ * Chompbook Pro, offered right after an open answer was checked (1.1.0) — the moment the main
+ * feature makes sense. Once a week at most, never to Pro users; the rule is `shouldOfferPro`.
+ */
+function ProOffer({ session, onPro }: { session: Session; onPro: () => void }) {
+  const t = useT();
+  const proActive = usePro((s) => s.status.active);
+  const [show, setShow] = useState(false);
+  const grade = session.progress.grade;
+  useEffect(() => {
+    let alive = true;
+    void getProfile().then((p) => {
+      const ok = shouldOfferPro({ purchasable: proPurchasable(), proActive: proActive || !!p.pro?.active, provider: p.provider, graded: !!grade, lastOffer: p.proOfferAt, now: new Date() });
+      if (!alive || !ok) return;
+      setShow(true);
+      void updateProfile({ proOfferAt: new Date().toISOString() });
+    });
+    return () => {
+      alive = false;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- decided once per result screen
+  if (!show) return null;
+  return (
+    <div className="pro-offer" data-testid="pro-offer">
+      <p className="bold">
+        <Crown size={16} style={{ verticalAlign: -2 }} /> {t(grade?.self ? "done.pro.self" : "done.pro.ai")}
+      </p>
+      <p className="small">{t("done.pro.text")}</p>
+      <button className="btn dark block" onClick={onPro}>
+        {t("done.pro.try")}
+      </button>
+    </div>
+  );
+}
 
 
-export function Congrats({ session, result, onClose }: { session: Session; result: SessionResult | null; onClose: () => void }) {
+export function Congrats({ session, result, onClose, onPro }: { session: Session; result: SessionResult | null; onClose: () => void; onPro?: () => void }) {
   const t = useT();
   const [placement, setPlacement] = useState<{ level: string; strengths: string[]; gaps: string[]; known?: string[] } | null>(null);
   const [final, setFinal] = useState<{ score: number; total: number; weak: string[] } | null>(null);
@@ -111,6 +149,7 @@ export function Congrats({ session, result, onClose }: { session: Session; resul
             })}
           </div>
         )}
+        {session.kind === "lesson" && onPro && <ProOffer session={session} onPro={onPro} />}
         <button className="btn" onClick={onClose}>
           {t("common.close")}
         </button>

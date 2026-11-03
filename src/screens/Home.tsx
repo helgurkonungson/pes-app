@@ -1,21 +1,23 @@
 import { needsPlacement } from "../core/scoring";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BuildProgress } from "../components/BuildProgress";
-import { BookOpen, CloudOff, Download, FileUp, Flame, KeyRound, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
+import { BookOpen, Check, CloudOff, Download, FileUp, Flame, GraduationCap, KeyRound, Moon, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
+import { useState } from "react";
 import { useUpdate } from "../app/App";
 import { useAiState } from "../ai/status";
 import { useCourseImport } from "../components/FilePickers";
-import { Bar, Chevron, SectionLabel } from "../components/ui";
+import { Bar, Chevron, SectionLabel, Sheet } from "../components/ui";
+import { EnergyCard } from "../components/EnergyCard";
 import { HeroBg } from "../components/visuals";
 import type { AiState } from "../core/aiStatus";
-import { lastNDays, localDay, longDate, parseDay, weekdayLetter } from "../core/dates";
+import { localDay, longDate, weekdayShort, weekOf } from "../core/dates";
 import { pct } from "../core/scoring";
 import { ENERGY } from "../core/energy";
-import { liveStreak, REPAIR_SESSIONS } from "../core/streak";
+import { type DayMark, liveStreak, REPAIR_SESSIONS, weekMarks } from "../core/streak";
 import type { Profile } from "../core/types";
-import { db } from "../data/db";
+import { db, updateProfile } from "../data/db";
 import { pickCurrent, type SkillsetSummary, useProfile, useSkillsetSummaries, useToday } from "../data/hooks";
-import { locale, type T, useT } from "../i18n";
+import { type Key, locale, type T, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { installUpdateSafely } from "../update/updater";
 
@@ -141,11 +143,15 @@ function NextUp({ x, ai }: { x: SkillsetSummary; ai: AiState | undefined }) {
   );
 }
 
+const MARK_ICON: Partial<Record<DayMark, typeof Check>> = { done: Check, freeze: Snowflake, rest: Moon };
+
 function Today() {
   const t = useT();
   const profile = useProfile();
   const today = useToday();
-  const days = lastNDays(7);
+  const day = localDay();
+  // this week, Monday to Sunday (1.1.0): the same order every day, today highlighted
+  const days = weekOf(day);
   const activity = useLiveQuery(() => db.activity.where("day").between(days[0], days[6], true, true).toArray(), [days[0]]) ?? [];
   const active = new Set(activity.filter((a) => a.sessions > 0).map((a) => a.day));
   if (!profile) return null;
@@ -153,6 +159,7 @@ function Today() {
   const ratio = today.minutes / goal;
   const left = Math.max(0, goal - today.minutes);
   const acc = today.total ? today.correct / today.total : null;
+  const marks = weekMarks(days, day, active, profile.streak, profile.restDays);
   return (
     <section className="card" aria-label={t("home.today")}>
       <div className="row-between" style={{ marginBottom: 10 }}>
@@ -176,14 +183,47 @@ function Today() {
         </div>
       </div>
       <Bar value={ratio} label={t("home.today")} />
-      <div className="mini-week" aria-label={t("home.last7")}>
-        {days.map((d) => (
-          <div key={d} className={`${active.has(d) ? "on" : ""}${d === localDay() ? " today" : ""}`}>
-            <i />
-            <span>{weekdayLetter((parseDay(d).getDay() + 6) % 7, locale())}</span>
-          </div>
-        ))}
-      </div>
+      <ul className="mini-week" aria-label={t("home.thisWeek")}>
+        {days.map((d, i) => {
+          const m = marks[i];
+          const Icon = MARK_ICON[m];
+          return (
+            <li key={d} className={`${m}${d === day ? " is-today" : ""}`} aria-label={`${weekdayShort(i, locale())}: ${t(`home.day.${m}` as Key)}`}>
+              <i aria-hidden>{Icon && <Icon size={11} strokeWidth={3} />}</i>
+              <span aria-hidden>{weekdayShort(i, locale())}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/** Two shortcuts under "Today", so Home never ends in empty space (1.1.0). */
+function QuickActions() {
+  const t = useT();
+  const push = useNav((s) => s.push);
+  const setTab = useNav((s) => s.setTab);
+  return (
+    <section className="quick-actions" aria-label={t("home.quick")}>
+      <button className="quick" onClick={() => push({ name: "skillsetEdit" })}>
+        <span className="icon-dot accent">
+          <Plus size={20} />
+        </span>
+        <span className="grow">
+          <b>{t("home.quick.add")}</b>
+          <span className="small muted block">{t("home.quick.addHint")}</span>
+        </span>
+      </button>
+      <button className="quick" onClick={() => setTab("skillsets")}>
+        <span className="icon-dot">
+          <GraduationCap size={20} />
+        </span>
+        <span className="grow">
+          <b>{t("home.quick.courses")}</b>
+          <span className="small muted block">{t("home.quick.coursesHint")}</span>
+        </span>
+      </button>
     </section>
   );
 }
@@ -197,6 +237,7 @@ export function Home() {
   const setTab = useNav((s) => s.setTab);
   const update = useUpdate((s) => s.info);
   const course = useCourseImport();
+  const [energyOpen, setEnergyOpen] = useState(false);
   if (!profile || !list) return <div className="screen with-tabbar" />;
 
   const streak = liveStreak(profile.streak, localDay());
@@ -214,7 +255,16 @@ export function Home() {
             <h1>{firstName ? t("home.hello", { name: firstName }) : t("home.helloAnon")}</h1>
           </div>
           <div className="head-chips">
-            <button className="streak-chip on" onClick={() => setTab("progress")} aria-label={t("home.energyAria", { n: profile.energy ?? 0 })}>
+            {/* energy explains itself on tap (1.1.0); a dot marks it until the learner has looked once */}
+            <button
+              className={`streak-chip on${profile.energySeen ? "" : " news"}`}
+              onClick={() => {
+                setEnergyOpen(true);
+                if (!profile.energySeen) void updateProfile({ energySeen: true });
+              }}
+              aria-label={t("home.energyAria", { n: profile.energy ?? 0 })}
+              aria-haspopup="dialog"
+            >
               <Zap size={17} /> {profile.energy ?? 0}
             </button>
             <button className={`streak-chip${streak ? " on" : ""}`} onClick={() => setTab("progress")} aria-label={t("home.streakAria", { n: streak })}>
@@ -261,6 +311,8 @@ export function Home() {
 
         <Today />
 
+        {current && others.length === 0 && <QuickActions />}
+
         {others.length > 0 && (
           <section className="stack">
             <SectionLabel>{t("home.others")}</SectionLabel>
@@ -289,6 +341,20 @@ export function Home() {
           </section>
         )}
       </div>
+      {energyOpen && (
+        <Sheet title={t("energy.title")} onClose={() => setEnergyOpen(false)}>
+          <EnergyCard profile={profile} open bare />
+          <button
+            className="btn ghost block"
+            onClick={() => {
+              setEnergyOpen(false);
+              setTab("progress");
+            }}
+          >
+            {t("home.energyMore")}
+          </button>
+        </Sheet>
+      )}
     </div>
   );
 }

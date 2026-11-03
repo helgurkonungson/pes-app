@@ -56,6 +56,8 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
   const autoResumesRef = useRef(0);
   const progressRef = useRef(progress);
   progressRef.current = progress;
+  /** The session with its live progress, for the result screen (the Pro offer needs the open answer's grade). */
+  const doneSession = useMemo(() => (session ? { ...session, progress } : null), [session, progress]);
 
   // ---- load / generate ----
   useEffect(() => {
@@ -350,8 +352,8 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
     );
   }
 
-  if ((phase === "done" || phase === "finishing") && session) {
-    return <Congrats session={session} result={result} onClose={pop} />;
+  if ((phase === "done" || phase === "finishing") && doneSession) {
+    return <Congrats session={doneSession} result={result} onClose={pop} onPro={() => useNav.getState().replace({ name: "pro" })} />;
   }
 
   if (!session || !pages.length) return <div className="session" />;
@@ -362,6 +364,10 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
   const stepIdx = steps.findIndex((s, i) => pageIndex >= s.first && (i === steps.length - 1 || pageIndex < steps[i + 1].first));
   const isLast = pageIndex === pages.length - 1;
   const ok = canAdvance(page, progress);
+  // a test counts its questions (the intro page is not one); a lesson counts its pages
+  const isTest = session.kind !== "lesson";
+  const pageCounter =
+    isTest && page.kind !== "mcq" ? null : isTest && page.kind === "mcq" ? { test: true, i: page.index + 1, n: page.of } : { test: false, i: pageIndex + 1, n: pages.length };
 
   const go = (d: number) => {
     haptic("tap");
@@ -378,9 +384,13 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
           </button>
           <span className="pill accent">{t(stepLabel(page, session))}</span>
           <span className="row top-right">
-            <span className="small muted timer" aria-label={t("session.timeAria")}>
-              {Math.floor(progress.seconds / 60)}:{String(progress.seconds % 60).padStart(2, "0")}
-            </span>
+            {/* a small position counter instead of the clock (1.1.0): time still counts, it just doesn't rush you */}
+            {pageCounter && (
+              <span className="page-count" aria-label={t(pageCounter.test ? "session.questionAria" : "session.pageAria", { i: pageCounter.i, n: pageCounter.n })}>
+                {pageCounter.i}
+                <small>/ {pageCounter.n}</small>
+              </span>
+            )}
             <ReportButton session={session} page={page} />
           </span>
         </div>
@@ -389,7 +399,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             <BuildProgress building={session.lesson.building} compact />
           </div>
         )}
-        <div className="steps" aria-hidden>
+        <div className="steps" role="progressbar" aria-label={t("session.progressAria")} aria-valuemin={1} aria-valuemax={pages.length} aria-valuenow={pageIndex + 1}>
           {steps.map((s, i) => {
             const end = i === steps.length - 1 ? pages.length : steps[i + 1].first;
             const fill = i < stepIdx ? 1 : i > stepIdx ? 0 : (pageIndex - s.first + 1) / (end - s.first);
@@ -403,24 +413,6 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
       </div>
 
       <div className="session-body" tabIndex={0} role="region" aria-label={t(stepLabel(page, session))}>
-        <div className="row-between" style={{ marginBottom: 10 }}>
-          {(() => {
-            // a test counts its questions (the intro page is not one); a lesson counts its pages
-            const test = session.kind !== "lesson";
-            if (test && page.kind !== "mcq") return <span />;
-            const i = test && page.kind === "mcq" ? page.index + 1 : pageIndex + 1;
-            const n = test && page.kind === "mcq" ? page.of : pages.length;
-            return (
-              <div className="page-count" aria-label={t(test ? "session.questionAria" : "session.pageAria", { i, n })}>
-                {i}
-                <small>/ {n}</small>
-              </div>
-            );
-          })()}
-          {pageIndex === 0 && session.lesson && (
-            <span className={`mode-tag ${session.lesson.mode ?? "ai"}`}>{t(session.lesson.mode === "course" ? "mode.course" : session.lesson.mode === "offline" ? "mode.offline" : "report.aiTag")}</span>
-          )}
-        </div>
         {pageIndex === 0 && session.lesson?.mode === "offline" && session.lesson.fallback && session.lesson.fallback !== "offline-mode" && (
           <div className="banner warn small" style={{ marginBottom: 14 }}>
             <CloudOff size={18} /> <span className="grow">{t(session.lesson.fallback === "credits" && proProvider ? "session.fallback.proInactive" : session.lesson.fallback === "credits" ? "session.fallback.credits" : session.lesson.fallback === "auth" ? "session.fallback.auth" : "session.fallback.noKey")}</span>

@@ -11,3 +11,13 @@ export function answerWords(text: string): number {
   const spaced = rest ? rest.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length : 0;
   return spaced + Math.ceil(cjk / 2);
 }
+
+/** Adds dictated text to what is already typed (1.1.0): a space between, CJK glued without one. */
+export function appendDictated(current: string, said: string): string {
+  const add = said.trim();
+  if (!add) return current;
+  const base = current.replace(/\s+$/, "");
+  if (!base) return add;
+  const cjk = new RegExp(CJK.source); // without the global flag: no state between calls
+  return base + (cjk.test(base.slice(-1)) && cjk.test(add[0]) ? "" : " ") + add;
+}

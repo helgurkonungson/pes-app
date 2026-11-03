@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isoDays, kindOf, manageSubscriptionUrl, proStatus, type StorePackage, toPlans, trialDays, usageView } from "./pro";
+import { isoDays, kindOf, manageSubscriptionUrl, proStatus, shouldOfferPro, type StorePackage, toPlans, trialDays, usageView } from "./pro";
 
 const pkg = (id: string, type: string, price: number, extra: Partial<StorePackage["product"]> = {}): StorePackage => ({
   identifier: id,
@@ -51,5 +51,22 @@ describe("Pro paywall (ADR-037)", () => {
     expect(manageSubscriptionUrl("io.github.helgurkonungson.pes", "pro_monthly")).toBe(
       "https://play.google.com/store/account/subscriptions?package=io.github.helgurkonungson.pes&sku=pro_monthly",
     );
+  });
+});
+
+describe("Pro offer after a lesson (1.1.0)", () => {
+  const now = new Date("2026-11-10T12:00:00Z");
+  const base = { purchasable: true, proActive: false, graded: true, now };
+  it("shows after a checked open answer, at most once a week", () => {
+    expect(shouldOfferPro(base)).toBe(true);
+    expect(shouldOfferPro({ ...base, lastOffer: "2026-11-05T12:00:00Z" })).toBe(false);
+    expect(shouldOfferPro({ ...base, lastOffer: "2026-11-03T12:00:00Z" })).toBe(true);
+    expect(shouldOfferPro({ ...base, lastOffer: "garbage" })).toBe(true);
+  });
+  it("never to Pro users, without a checked answer, or where Pro isn't sold", () => {
+    expect(shouldOfferPro({ ...base, proActive: true })).toBe(false);
+    expect(shouldOfferPro({ ...base, provider: "chompbook" })).toBe(false);
+    expect(shouldOfferPro({ ...base, graded: false })).toBe(false);
+    expect(shouldOfferPro({ ...base, purchasable: false })).toBe(false);
   });
 });

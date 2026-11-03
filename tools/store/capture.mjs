@@ -221,8 +221,11 @@ async function run(browser, lang, device) {
   await page.locator(".onb-actions .btn.primary").first().click();
   await page.locator("#name").fill(NAME[lang]);
   await page.locator(".onb-actions .btn.primary").first().click();
-  await page.locator("#key").fill("sk-ant-demo-0123456789abcdef");
+  // 1.1.0: the sample AI check, then the AI choice with the own key behind "I have my own key"
   await page.locator(".onb-actions .btn.primary").first().click();
+  await page.locator(".onb .disclosure").click();
+  await page.locator("#key").fill("sk-ant-demo-0123456789abcdef");
+  await page.locator(".onb .disclosure + .stack .btn").click();
   await page.locator(".tut-skip").click();
   await pause(page, 500);
 

@@ -4,7 +4,7 @@ import {
   CalendarCheck, BookOpenCheck, Brain, Flame, Footprints, Layers, Medal, Repeat, Target, Timer, Zap,
   type LucideIcon,
 } from "lucide-react";
-import { Fragment, type ReactNode } from "react";
+import { Fragment, type ReactNode, useEffect, useState } from "react";
 
 // ---------- concentric rings ----------
 
@@ -28,20 +28,19 @@ export function Rings({ values, size = 128, stroke = 13 }: { values: number[]; s
         return (
           <g key={i} transform={`rotate(-90 ${c} ${c})`}>
             <circle cx={c} cy={c} r={r} fill="none" style={{ stroke: "var(--track)" }} strokeWidth={stroke} />
-            {val > 0 && (
-              <circle
-                cx={c}
-                cy={c}
-                r={r}
-                fill="none"
-                stroke="url(#ringGrad)"
-                strokeWidth={stroke}
-                strokeLinecap="round"
-                strokeDasharray={`${Math.max(0.001, val * len)} ${len}`}
-                style={{ transition: "stroke-dasharray .6s ease" }}
-                opacity={1 - i * 0.12}
-              />
-            )}
+            {/* always drawn (empty at 0) so a value that appears later fills in smoothly */}
+            <circle
+              className="ring-fill"
+              cx={c}
+              cy={c}
+              r={r}
+              fill="none"
+              stroke="url(#ringGrad)"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={`${Math.max(0.001, val * len)} ${len}`}
+              opacity={val > 0 ? 1 - i * 0.12 : 0}
+            />
           </g>
         );
       })}
@@ -49,10 +48,16 @@ export function Rings({ values, size = 128, stroke = 13 }: { values: number[]; s
   );
 }
 
+/** The score out of 10; the ring fills up when it appears (instantly with reduced motion). */
 export function ScoreRing({ score, max = 10 }: { score: number; max?: number }) {
+  const [shown, setShown] = useState(0);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(score));
+    return () => cancelAnimationFrame(id);
+  }, [score]);
   return (
     <div className="score-ring">
-      <Rings values={[score / max]} size={92} stroke={10} />
+      <Rings values={[shown / max]} size={92} stroke={10} />
       <div className="n">{score}</div>
     </div>
   );

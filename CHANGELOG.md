@@ -2,6 +2,23 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## 1.1.0 — 2026-11-03
+
+A design pass over the first run, the lesson and Home.
+
+- **A first run that shows the point:** no API key on the way in. After a few words about you (the name is now optional) you see a ready example of the main feature — an answer in your own words, scored by AI with what worked and what to improve — and then choose how to switch AI on: Chompbook Pro with its 7-day trial, a free AI, or later. Your own Claude key is still there, behind "I have my own Claude API key".
+- **Pro at the right moment:** after a lesson with a checked open answer, the result screen may offer Chompbook Pro — at most once a week, never to Pro subscribers, only where Pro is sold.
+- **A calmer lesson screen:** one label at the top, a small "3 / 7" counter instead of the big number and the clock (time is still counted), and the lesson's source (AI, course, without AI) is part of the line above the title instead of another badge.
+- **Wrong answers explained:** a wrong pick in a quiz now shows your answer next to the right one before the explanation.
+- **Say your answer:** a microphone in the open question lets you dictate it — the phone's speech recognition writes the text, Chompbook keeps no audio (the app asks for microphone access the first time). The hint under the field says how long an answer should be.
+- **Energy explains itself:** tap ⚡ on Home to see what energy is, how to earn it and buy a streak freeze. A dot marks the chip until you've looked once.
+- **This week, Monday to Sunday:** the week on Home always starts on Monday and shows each day's state — studied, kept by a freeze, rest day, missed, today, still ahead.
+- **Home never ends in empty space:** with one skillset, "Add a book" and "Free courses" sit under Today.
+- **Free courses without doubles:** a course you've added moves to "Yours" and leaves the catalog, now called "Add a free course".
+- **Photos of pages:** Sources has a fourth tile — pick photos of book pages and their text is recognised on the phone, a part per photo. The intro is one line; "Continue without sources" is now a quiet link.
+- **Smoother details:** the score ring fills in, content fades under the floating buttons and the tab bar instead of showing through.
+- The privacy policy and the RuStore documents mention dictation and photos of pages.
+
 ## 1.0.0 — 2026-11-03
 
 The first public release on Google Play.
