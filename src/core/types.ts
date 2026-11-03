@@ -285,6 +285,10 @@ export interface Profile {
   logsSentId?: number;
   /** Last automatic error report. */
   logsAutoAt?: string;
+  /** When the Chompbook Pro offer was last shown after a lesson (1.1.0). */
+  proOfferAt?: string;
+  /** The learner has opened the energy explanation (the chip stops pulsing, 1.1.0). */
+  energySeen?: boolean;
 }
 
 export interface TokenUsage {

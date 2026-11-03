@@ -16,9 +16,15 @@ for (const size of [
     await page.locator("#name").fill("Олег");
     await expect(btn(page, /Продолжить/)).toBeInViewport({ ratio: 1 });
     await btn(page, /Продолжить/).click();
-    await expect(btn(page, "Продолжить без ИИ")).toBeInViewport({ ratio: 1 });
-    await expect(btn(page, /Сохранить и начать/)).toBeInViewport({ ratio: 1 });
-    await btn(page, "Продолжить без ИИ").click();
+    await btn(page, "Посмотреть, как проверяет ИИ").click();
+    await expect(btn(page, /Продолжить/)).toBeInViewport({ ratio: 1 });
+    await btn(page, /Продолжить/).click();
+    await expect(btn(page, "Пока начать без ИИ")).toBeInViewport({ ratio: 1 });
+    await btn(page, /свой ключ Claude API/).click();
+    await page.locator("#key").fill("sk-ant-test-0123456789abcdef");
+    await btn(page, /Сохранить и начать/).scrollIntoViewIfNeeded();
+    await expect(btn(page, /Сохранить и начать/)).toBeInViewport();
+    await btn(page, "Пока начать без ИИ").click();
     await expect(page.getByRole("navigation")).toBeVisible();
     await ctx.close();
   });

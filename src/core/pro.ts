@@ -125,3 +125,18 @@ export function manageSubscriptionUrl(appId: string, productId?: string): string
   const base = `https://play.google.com/store/account/subscriptions?package=${encodeURIComponent(appId)}`;
   return productId ? `${base}&sku=${encodeURIComponent(productId)}` : base;
 }
+
+/** Days between two Pro offers after a lesson. */
+export const PRO_OFFER_EVERY_DAYS = 7;
+
+/**
+ * Whether to offer Chompbook Pro on the result screen (1.1.0): right after the learner saw an
+ * open answer checked — the moment the main feature makes sense — in a build that sells Pro, to
+ * someone without it, adult or not asked yet, and at most once every PRO_OFFER_EVERY_DAYS days.
+ */
+export function shouldOfferPro(x: { purchasable: boolean; proActive: boolean; provider?: string; graded: boolean; lastOffer?: string; now: Date }): boolean {
+  if (!x.purchasable || x.proActive || x.provider === "chompbook" || !x.graded) return false;
+  if (!x.lastOffer) return true;
+  const last = Date.parse(x.lastOffer);
+  return !Number.isFinite(last) || x.now.getTime() - last >= PRO_OFFER_EVERY_DAYS * 86_400_000;
+}

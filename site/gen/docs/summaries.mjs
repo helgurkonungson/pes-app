@@ -5,6 +5,7 @@ export default {
     privacy: [
       "Ваші матеріали, уроки, прогрес і ключі AI зберігаються лише на телефоні. У нас немає акаунтів, аналітики й реклами.",
       "Текст іде лише туди, куди ви вирішите: у підключений вами сервіс AI (напряму з телефона), у Chompbook AI за передплатою Pro або до нас, коли ви надсилаєте скаргу на урок чи звіт про помилку.",
+      "Диктовка (за бажанням): мовлення в текст перетворює служба розпізнавання мовлення телефона (зазвичай Google); застосунок отримує лише текст і не зберігає звук. Фото сторінок розпізнаються на телефоні й не зберігаються.",
       "Для Pro ми бачимо лише випадковий анонімний ідентифікатор, статус передплати й денні лічильники. Покупки перевіряє RevenueCat; дані картки ми не бачимо.",
       "Звіти зберігаються до 12 місяців, дані Pro — до 90 днів. IP-адреси не зберігаються.",
       "Ви можете будь-коли видалити все в Налаштуваннях, а нас попросити надати чи видалити наші дані: privacy@chompbook.online.",
@@ -34,6 +35,7 @@ export default {
     privacy: [
       "Вашы матэрыялы, урокі, прагрэс і ключы AI захоўваюцца толькі на тэлефоне. У нас няма акаўнтаў, аналітыкі і рэкламы.",
       "Тэкст ідзе толькі туды, куды вы вырашыце: у падключаны вамі сэрвіс AI (наўпрост з тэлефона), у Chompbook AI па падпісцы Pro або да нас, калі вы адпраўляеце скаргу на ўрок ці справаздачу пра памылку.",
+      "Дыктоўка (па жаданні): маўленне ў тэкст ператварае служба распазнавання маўлення тэлефона (звычайна Google); праграма атрымлівае толькі тэкст і не захоўвае гук. Фота старонак распазнаюцца на тэлефоне і не захоўваюцца.",
       "Для Pro мы бачым толькі выпадковы ананімны ідэнтыфікатар, статус падпіскі і дзённыя лічыльнікі. Пакупкі правярае RevenueCat; даныя карткі мы не бачым.",
       "Справаздачы захоўваюцца да 12 месяцаў, даныя Pro — да 90 дзён. IP-адрасы не захоўваюцца.",
       "Вы можаце ў любы момант выдаліць усё ў Наладах, а нас папрасіць даць ці выдаліць нашы даныя: privacy@chompbook.online.",
@@ -63,6 +65,7 @@ export default {
     privacy: [
       "Tus materiales, lecciones, progreso y claves de IA se guardan solo en el teléfono. No tenemos cuentas, analítica ni publicidad.",
       "El texto solo va adonde tú decides: al servicio de IA que conectas (directamente desde el teléfono), a Chompbook AI si tienes Pro, o a nosotros cuando envías un reporte de lección o de errores.",
+      "Dictado (opcional): el servicio de reconocimiento de voz del teléfono (normalmente el de Google) convierte tu voz en texto; la app recibe solo el texto y no guarda audio. Las fotos de páginas se leen en el teléfono y no se guardan.",
       "Para Pro solo vemos un ID anónimo aleatorio, el estado de la suscripción y contadores diarios. RevenueCat confirma las compras; nunca vemos los datos de tu tarjeta.",
       "Los reportes se guardan hasta 12 meses y los datos de Pro hasta 90 días. No guardamos direcciones IP.",
       "Puedes borrarlo todo en Ajustes y pedirnos acceso o eliminación de nuestros datos: privacy@chompbook.online.",
@@ -92,6 +95,7 @@ export default {
     privacy: [
       "Deine Materialien, Lektionen, dein Fortschritt und deine KI-Schlüssel bleiben nur auf dem Handy. Wir haben keine Konten, keine Analyse, keine Werbung.",
       "Text geht nur dorthin, wo du es willst: an den KI-Dienst, den du verbindest (direkt vom Handy), an Chompbook AI mit Pro, oder an uns, wenn du eine Lektion meldest oder ein Fehlerprotokoll schickst.",
+      "Diktieren (optional): Der Spracherkennungsdienst deines Handys (meist der von Google) wandelt Sprache in Text um; die App erhält nur den Text und speichert keinen Ton. Fotos von Seiten werden auf dem Handy gelesen und nicht gespeichert.",
       "Für Pro sehen wir nur eine zufällige anonyme ID, den Abostatus und Tageszähler. RevenueCat bestätigt Käufe; deine Kartendaten sehen wir nie.",
       "Meldungen werden bis zu 12 Monate, Pro-Daten bis zu 90 Tage gespeichert. IP-Adressen speichern wir nicht.",
       "Du kannst jederzeit alles in den Einstellungen löschen und Auskunft oder Löschung unserer Daten verlangen: privacy@chompbook.online. Rechtsgrundlagen: Art. 6 Abs. 1 lit. b und f DSGVO.",
@@ -121,6 +125,7 @@ export default {
     privacy: [
       "Tes supports, leçons, ta progression et tes clés d'IA restent uniquement sur le téléphone. Pas de comptes, pas d'analyse, pas de pub.",
       "Le texte ne part que là où tu le décides : vers le service d'IA que tu connectes (directement depuis le téléphone), vers Chompbook AI avec Pro, ou vers nous quand tu signales une leçon ou envoies un journal d'erreurs.",
+      "Dictée (facultative) : le service de reconnaissance vocale du téléphone (en général celui de Google) transforme ta voix en texte ; l'appli ne reçoit que le texte et ne garde aucun son. Les photos de pages sont lues sur le téléphone et ne sont pas conservées.",
       "Pour Pro, nous ne voyons qu'un identifiant anonyme aléatoire, l'état de l'abonnement et des compteurs quotidiens. RevenueCat confirme les achats ; nous ne voyons jamais ta carte.",
       "Les signalements sont conservés jusqu'à 12 mois, les données Pro jusqu'à 90 jours. Les adresses IP ne sont pas conservées.",
       "Tu peux tout effacer dans les Réglages et nous demander l'accès ou la suppression de nos données : privacy@chompbook.online. Bases légales : art. 6(1)(b) et (f) du RGPD.",
@@ -150,6 +155,7 @@ export default {
     privacy: [
       "你的资料、课程、进度和 AI 密钥只保存在手机上。我们没有账号、分析或广告。",
       "文本只会去你决定的地方：你连接的 AI 服务（直接从手机发送）、订阅 Pro 后的 Chompbook AI，或在你举报课程、发送错误日志时发给我们。",
+      "语音输入（可选）：由手机自带的语音识别服务（通常是 Google）把语音转成文字；应用只收到文字，不保存录音。页面照片在手机上识别，不会保存。",
       "对于 Pro，我们只看到一个随机的匿名 ID、订阅状态和每日计数。购买由 RevenueCat 确认；我们看不到你的银行卡信息。",
       "举报和错误报告最多保存 12 个月，Pro 数据最多 90 天。我们不保存 IP 地址。",
       "你可以随时在设置中删除全部数据，也可以要求我们提供或删除我们持有的数据：privacy@chompbook.online。",
@@ -179,6 +185,7 @@ export default {
     privacy: [
       "आपकी सामग्री, पाठ, प्रगति और AI keys सिर्फ़ फ़ोन पर रहती हैं। हमारे पास न अकाउंट हैं, न एनालिटिक्स, न विज्ञापन।",
       "टेक्स्ट सिर्फ़ वहीं जाता है जहाँ आप चाहें: आपकी जोड़ी गई AI सेवा में (सीधे फ़ोन से), Pro होने पर Chompbook AI में, या हमें — जब आप किसी पाठ की शिकायत या एरर लॉग भेजते हैं।",
+      "बोलकर लिखना (वैकल्पिक): फ़ोन की आवाज़ पहचानने वाली सेवा (आमतौर पर Google की) आवाज़ को पाठ में बदलती है; ऐप को सिर्फ़ पाठ मिलता है और वह कोई ऑडियो नहीं रखता। पन्नों की फ़ोटो फ़ोन पर पढ़ी जाती हैं और रखी नहीं जातीं।",
       "Pro के लिए हम सिर्फ़ एक रैंडम अनाम ID, सब्सक्रिप्शन की स्थिति और रोज़ के काउंटर देखते हैं। ख़रीदारी RevenueCat पुष्टि करता है; आपके कार्ड की जानकारी हम कभी नहीं देखते।",
       "रिपोर्ट 12 महीने तक और Pro डेटा 90 दिन तक रखा जाता है। IP पते सेव नहीं होते।",
       "आप सेटिंग्स में कभी भी सब कुछ मिटा सकते हैं और हमसे हमारा डेटा देखने या मिटाने को कह सकते हैं: privacy@chompbook.online।",

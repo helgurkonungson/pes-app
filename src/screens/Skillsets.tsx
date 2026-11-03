@@ -1,7 +1,7 @@
 import { BookOpen, FileUp, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useAiState } from "../ai/status";
-import { BuiltinCourseList, useOpenBuiltin } from "../components/BuiltinCourses";
+import { BuiltinCourseList, useCoursesToAdd, useOpenBuiltin } from "../components/BuiltinCourses";
 import { useCourseImport } from "../components/FilePickers";
 import { Bar, PageTitle, SectionLabel } from "../components/ui";
 import { HeroBg } from "../components/visuals";
@@ -20,6 +20,7 @@ export function Skillsets() {
   const builtin = useOpenBuiltin();
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
+  const toAdd = useCoursesToAdd();
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,6 +65,7 @@ export function Skillsets() {
         {/* no skillsets yet: the free courses below fill the screen instead of an empty state */}
 
         <div className="stack">
+          {shown.length > 0 && <SectionLabel>{t("skillsets.mine")}</SectionLabel>}
           {shown.map((x) => {
             const mode = modeOf(x, ai);
             return (
@@ -91,13 +93,14 @@ export function Skillsets() {
           {list && list.length > 0 && shown.length === 0 && <p className="muted center small">{t("skillsets.nothingFound")}</p>}
         </div>
 
-        {!query.trim() && (
+        {/* added courses are in the list above; the catalog shows only what can still be added (1.1.0) */}
+        {!query.trim() && toAdd.length > 0 && (
           <section className="stack" data-testid="builtin-courses">
             <SectionLabel>{t("courses.section")}</SectionLabel>
             <p className="small muted" style={{ marginTop: -6 }}>
               {t("courses.sectionHint")}
             </p>
-            <BuiltinCourseList busy={builtin.busy} onPick={(slug) => void builtin.open(slug)} />
+            <BuiltinCourseList busy={builtin.busy} onPick={(slug) => void builtin.open(slug)} hideAdded />
           </section>
         )}
       </div>

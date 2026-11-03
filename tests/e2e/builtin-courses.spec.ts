@@ -58,19 +58,19 @@ test.describe("built-in courses (ADR-031)", () => {
     await onboard(page);
     await page.getByRole("navigation").getByRole("button", { name: "Навыки" }).click();
     const section = page.getByTestId("builtin-courses");
-    await expect(section.getByRole("heading", { name: "Бесплатные курсы" })).toBeVisible();
+    await expect(section.getByRole("heading", { name: "Добавить бесплатный курс" })).toBeVisible();
+    await expect(section.locator("[data-course]")).toHaveCount(5);
     await section.locator('[data-course="learning"]').click();
     await skipCountdown(page);
     await expect(page.locator(".mode-tag.course")).toBeVisible();
     await leaveLesson(page);
     await btn(page, "Назад").click();
     await expect(page.locator(".skill-card")).toHaveCount(1);
-    await expect(section.locator('[data-course="learning"]')).toContainText("Добавлен");
-    await section.locator('[data-course="learning"]').click();
-    await skipCountdown(page);
-    await leaveLesson(page);
-    await btn(page, "Назад").click();
-    await expect(page.locator(".skill-card")).toHaveCount(1);
+    // 1.1.0: an added course lives in "Yours" and leaves the catalog, so it can't be added twice
+    await expect(section.locator('[data-course="learning"]')).toHaveCount(0);
+    await expect(section.locator("[data-course]")).toHaveCount(4);
+    await page.locator(".skill-card").first().click();
+    await expect(page.getByRole("heading", { name: "Как учиться эффективно" })).toBeVisible();
   });
 });
 

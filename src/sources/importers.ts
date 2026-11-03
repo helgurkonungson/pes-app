@@ -52,6 +52,51 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
   return { kind, title, origin: name, drafts, ...(ocrPages ? { ocrPages } : {}) };
 }
 
+/** Accepted photo types for "Photo of pages" (1.1.0). */
+export const ACCEPT_IMAGES = "image/jpeg,image/png,image/webp,image/heic,image/heif";
+
+/**
+ * Photos of book pages (1.1.0): the text is recognised on the phone (the same engine as scanned
+ * PDFs) and the photos become one source, a part per photo, in the order picked.
+ */
+export async function importPhotos(files: File[], title: string, onProgress?: ImportProgress): Promise<Imported> {
+  const { looksScanned, startOcr, withTimeout, OCR_START_MS, OCR_PAGE_MS } = await import("./ocr");
+  onProgress?.(t("import.ocrPrep"), 0);
+  const canvas = document.createElement("canvas");
+  const starting = startOcr();
+  const sections: TextSection[] = [];
+  let ocr: Awaited<ReturnType<typeof startOcr>> | null = null;
+  try {
+    ocr = await withTimeout(starting, OCR_START_MS, "Text recognition start");
+    for (let i = 0; i < files.length; i++) {
+      onProgress?.(t("import.ocrPhoto", { i: i + 1, n: files.length }), i / files.length);
+      const bmp = await createImageBitmap(files[i]);
+      // ~2000 px on the long side, as for scanned PDF pages
+      const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+      canvas.width = Math.round(bmp.width * scale);
+      canvas.height = Math.round(bmp.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) break;
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      bmp.close();
+      const text = (await withTimeout(ocr.recognize(canvas), OCR_PAGE_MS, `Text recognition of photo ${i + 1}`)).trim();
+      if (!looksScanned(text)) sections.push({ label: t("import.photoN", { n: i + 1 }), text: reflowPdfText(text) });
+    }
+  } catch (e) {
+    if (!ocr) void starting.then((late) => late.close()).catch(() => undefined);
+    throw new Error(`${t("import.err.photo")} (${e instanceof Error ? e.message : String(e)})`);
+  } finally {
+    canvas.width = canvas.height = 0;
+    await ocr?.close().catch(() => undefined);
+  }
+  onProgress?.(t("import.splitting"), 1);
+  const drafts = buildChunks(sections, title);
+  if (!drafts.length) throw new Error(t("import.err.photoEmpty"));
+  return { kind: "text", title, origin: "photos", drafts, ocrPages: sections.length };
+}
+
 export function importText(title: string, text: string): Imported {
   const drafts = buildChunks(sectionsFromPlainText(text), title || "Notes");
   if (!drafts.length) throw new Error(t("import.err.textEmpty"));

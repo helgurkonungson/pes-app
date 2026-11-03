@@ -24,7 +24,13 @@ test.describe("interface languages", () => {
       await page.getByRole("button", { name: l.start }).click();
       await page.locator("#name").fill("Oleg");
       await page.locator(".onb-actions .btn.primary").click();
-      await page.locator(".onb-actions .btn.dark").click(); // continue without AI
+      await expectNoHorizontalOverflow(page, `${l.lang} onboarding sample`);
+      await page.getByTestId("onb-demo").locator(".btn").click(); // reveal the sample AI check
+      await expectNoHorizontalOverflow(page, `${l.lang} onboarding sample checked`);
+      await page.locator(".onb-actions .btn.primary").click();
+      await page.locator(".disclosure").click(); // the own-key field fits too
+      await expectNoHorizontalOverflow(page, `${l.lang} onboarding AI choice`);
+      await page.locator(".onb-actions .btn.primary").click(); // start without AI for now
       // tutorial in this language, then skipped
       await expect(page.locator(".tutorial")).toBeVisible();
       for (let i = 0; i < 5; i++) {

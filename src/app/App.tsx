@@ -241,7 +241,8 @@ export function App() {
   }
 
   const top = stack[stack.length - 1];
-  const tutorial = replay || profile.tutorial === "pending";
+  // the first-run tutorial waits while a pushed screen is open (e.g. Pro chosen during onboarding)
+  const tutorial = replay || (profile.tutorial === "pending" && !top);
   return (
     <div className="app">
       <Suspense fallback={<div className="screen" />}>

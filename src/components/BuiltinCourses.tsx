@@ -58,13 +58,21 @@ function useAddedCourseIds(): Set<string> {
   return useLiveQuery(async () => new Set((await db.skillsets.toArray()).map((s) => s.courseId).filter((x): x is string => !!x)), [], new Set<string>());
 }
 
-export function BuiltinCourseList({ onPick, busy, compact }: { onPick: (slug: string) => void; busy?: string | null; compact?: boolean }) {
+/** The free courses not added yet in the interface language (1.1.0: added ones live in the list above). */
+export function useCoursesToAdd(): BuiltinCourse[] {
+  const lang = useLang((s) => s.lang);
+  const added = useAddedCourseIds();
+  return BUILTIN_COURSES.filter((c) => !added.has(builtinCourseId(c.slug, lang)));
+}
+
+export function BuiltinCourseList({ onPick, busy, compact, hideAdded }: { onPick: (slug: string) => void; busy?: string | null; compact?: boolean; hideAdded?: boolean }) {
   const t = useT();
   const lang = useLang((s) => s.lang);
   const added = useAddedCourseIds();
+  const courses = hideAdded ? BUILTIN_COURSES.filter((c) => !added.has(builtinCourseId(c.slug, lang))) : BUILTIN_COURSES;
   return (
     <div className={`stack course-list${compact ? " compact" : ""}`}>
-      {BUILTIN_COURSES.map((c) => {
+      {courses.map((c) => {
         const has = added.has(builtinCourseId(c.slug, lang));
         return (
           <button key={c.slug} className="list-card inner course-card" disabled={!!busy} aria-busy={busy === c.slug} onClick={() => onPick(c.slug)} data-course={c.slug}>

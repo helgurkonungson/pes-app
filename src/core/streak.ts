@@ -112,3 +112,20 @@ export function liveStreak(state: StreakState, today: string): number {
 export function keptAs(state: StreakState, day: string): "rest" | "freeze" | undefined {
   return state.kept?.[day];
 }
+
+export type DayMark = "done" | "freeze" | "rest" | "missed" | "today" | "future";
+
+/**
+ * What each day of a week shows on Home (1.1.0): a lesson, a day kept by a freeze or a rest day,
+ * a missed day, today still open, or a day to come (a planned rest day shows as rest).
+ */
+export function weekMarks(days: readonly string[], today: string, active: ReadonlySet<string>, state: StreakState, restDays?: readonly number[]): DayMark[] {
+  return days.map((d) => {
+    if (active.has(d)) return "done";
+    if (d > today) return isRestDay(d, restDays) ? "rest" : "future";
+    if (d === today) return isRestDay(d, restDays) ? "rest" : "today";
+    const kept = keptAs(state, d);
+    if (kept) return kept;
+    return isRestDay(d, restDays) ? "rest" : "missed";
+  });
+}
