@@ -574,8 +574,11 @@ button.menu-row:active { opacity: .7; }
 .err-art { width: 84px; height: 84px; border-radius: 28px; background: var(--bad-soft); color: var(--bad); display: grid; place-items: center; }
 .timer { width: var(--touch); text-align: right; font-variant-numeric: tabular-nums; }
 .link-row { padding: 8px 0; text-decoration: none; min-height: var(--touch); }
-.checklist { border: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
-.checklist legend { padding: 0; margin-bottom: 8px; }
+.checklist { border: 0; margin: 0; display: block; min-width: 0; }
+/* a floated legend is laid out inside the card like a heading, not on its top border (1.1.0 fix) */
+.checklist legend { float: left; width: 100%; padding: 0; margin: 0 0 8px; }
+.checklist legend + * { clear: both; }
+.checklist .check-row + .check-row { margin-top: 4px; }
 .check-row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; min-height: var(--touch); font-size: 14.5px; line-height: 1.4; }
 .check-row input { width: 22px; height: 22px; accent-color: var(--accent); flex: none; margin: 0; }
 .placement-box { width: 100%; text-align: left; background: var(--on-accent-a10); border-radius: 18px; padding: 12px 14px; }
