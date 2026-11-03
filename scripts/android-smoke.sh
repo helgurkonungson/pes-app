@@ -20,8 +20,9 @@ shopt -s nocasematch   # all UI regexes below match case-insensitively
 # ---------------------------------------------------------------------------------------------
 TXT_ONB_START=${TXT_ONB_START:-'^Get started'}                 # first onboarding button; proves the WebView rendered
 TXT_ONB_NAME_FIELD=${TXT_ONB_NAME_FIELD:-'^android\.widget\.EditText$'}  # name input: matched against the node CLASS
-TXT_ONB_CONTINUE=${TXT_ONB_CONTINUE:-'^Continue'}              # "About you" step button (enabled once a name is typed)
-TXT_ONB_SKIP=${TXT_ONB_SKIP:-'^Continue without AI'}           # "AI key" step: continue without a key
+TXT_ONB_CONTINUE=${TXT_ONB_CONTINUE:-'^Continue'}              # "About you" and sample steps: next (the name is optional since 1.1.0)
+TXT_ONB_DEMO=${TXT_ONB_DEMO:-'^See how AI checks it'}          # sample step (1.1.0): reveals the example AI check
+TXT_ONB_SKIP=${TXT_ONB_SKIP:-'^Start without AI for now'}      # "Switch on the AI check" step (1.1.0): start without AI
 TXT_TUT_SKIP=${TXT_TUT_SKIP:-'^Skip$'}                         # first-run tutorial (0.13+): "Skip" in its top corner
 TXT_HOME_MARK=${TXT_HOME_MARK:-'^Today$'}                      # heading shown only on the home screen
 TXT_APP_TITLE=${TXT_APP_TITLE:-'^PES$'}                        # title a native ActionBar would show (must be absent)
@@ -545,18 +546,25 @@ step_onboarding() {  # f
   snap onb-name-typed
   hide_keyboard
   tap_text "$TXT_ONB_CONTINUE" || return 1
-  if ! wait_text "$TXT_ONB_SKIP" 15; then
-    log "  '$TXT_ONB_SKIP' not visible: the keyboard may cover the button; BACK and retry"
-    ash input keyevent 4 >/dev/null || true
-    sleep 1
+  # 1.1.0: a sample of the AI check comes next (no network, no AI); reveal it, then go on
+  if ! wait_text "$TXT_ONB_DEMO" 15; then
+    log "  '$TXT_ONB_DEMO' not visible: the keyboard may cover the button; retry continue"
     ensure_foreground
     tap_text "$TXT_ONB_CONTINUE" || return 1
-    if ! wait_text "$TXT_ONB_SKIP" "$STEP_TIMEOUT"; then
-      fail "'$TXT_ONB_SKIP' did not appear after tapping continue"
+    if ! wait_text "$TXT_ONB_DEMO" "$STEP_TIMEOUT"; then
+      fail "sample step ('$TXT_ONB_DEMO') did not appear after tapping continue"
       return 1
     fi
   fi
-  snap onb-ai-key
+  snap onb-sample
+  tap_text "$TXT_ONB_DEMO" || return 1
+  snap onb-sample-checked
+  tap_text "$TXT_ONB_CONTINUE" || return 1
+  if ! wait_text "$TXT_ONB_SKIP" "$STEP_TIMEOUT"; then
+    fail "'$TXT_ONB_SKIP' did not appear on the AI step"
+    return 1
+  fi
+  snap onb-ai-choice
   tap_text "$TXT_ONB_SKIP" || return 1
   # the first-run tutorial opens over Home; skip it (the "watch later" note is a toast)
   if wait_text "$TXT_TUT_SKIP" 20; then
