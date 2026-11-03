@@ -1,5 +1,6 @@
 // Chompbook AI server (Pro) — api.chompbook.online. ADR-037, setup: docs/PRO_SETUP.md.
-// Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "api".
+// Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "api",
+// production branch "pro" until 1.0.0 is merged into main (main has no api/ before that).
 // Secrets (dashboard → the Worker → Settings → Variables and secrets): OPENROUTER_KEY, REVENUECAT_SECRET.
 {
   "name": "chompbook-api",
