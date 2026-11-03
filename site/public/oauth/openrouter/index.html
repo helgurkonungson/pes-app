@@ -25,10 +25,16 @@
     document.getElementById("open").textContent = "Открыть Грызи";
   }
   var q = location.search;
-  // 0.19+ (Google Play, online.chompbook.app) says which app to open; earlier GitHub builds used io.github.helgurkonungson.pes
-  var id = /[?&]app=online\.chompbook\.app(&|$)/.test(q) ? "online.chompbook.app" : "io.github.helgurkonungson.pes";
-  var app = id + "://oauth/openrouter" + q;
-  var intent = "intent://oauth/openrouter" + q + "#Intent;scheme=" + id + ";package=" + id + ";end";
+  // The Google Play app (online.chompbook.app, 0.19+) comes first: OpenRouter may drop our own `app=` parameter
+  // from the callback, so it can't be relied on. Only when that app isn't installed does Chrome follow the
+  // fallback back here with `legacy=1`, and the page opens the old GitHub build (io.github.helgurkonungson.pes).
+  var PLAY = "online.chompbook.app", OLD = "io.github.helgurkonungson.pes";
+  var legacy = /[?&]legacy=1(&|$)/.test(q);
+  var id = legacy ? OLD : PLAY;
+  var qs = q.replace(/([?&])legacy=1(&|$)/, "$1").replace(/[?&]$/, "");
+  var app = id + "://oauth/openrouter" + qs;
+  var fallback = legacy ? "" : ";S.browser_fallback_url=" + encodeURIComponent(location.origin + location.pathname + (qs ? qs + "&" : "?") + "legacy=1");
+  var intent = "intent://oauth/openrouter" + qs + "#Intent;scheme=" + id + ";package=" + id + fallback + ";end";
   var android = /Android/i.test(navigator.userAgent);
   var link = android ? intent : app;
   document.getElementById("open").href = link;
