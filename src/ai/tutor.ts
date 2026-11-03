@@ -1,5 +1,5 @@
 /** Prompts, tool schemas and the three AI jobs: placement test, lesson, grading. */
-import { normalizeGrade, normalizeMcqs, normalizePlacement, rng } from "../core/normalize";
+import { cleanAi, normalizeGrade, normalizeMcqs, normalizePlacement, rng } from "../core/normalize";
 import { type SessionPlan, truncateWords } from "../core/planner";
 import { languageForPrompt } from "../core/languages";
 import type { Chunk, LessonContent, LessonDraft, LessonLanguage, Mcq, OpenGrade, PlacementContent, Skillset, TokenUsage } from "../core/types";
@@ -225,7 +225,7 @@ function numberedExcerpts(chunks: Chunk[], sourceTitles: Map<string, string>, ma
 }
 
 const isStr = (v: unknown): v is string => typeof v === "string" && v.trim().length > 0;
-const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter(isStr).map((x) => x.trim()) : []);
+const strList = (v: unknown): string[] => (Array.isArray(v) ? v.filter(isStr).map(cleanAi) : []);
 
 /** Re-asks once when an answer comes back malformed; other errors (and the second failure) go up. */
 async function step<T>(run: () => Promise<unknown>, check: (raw: unknown) => T | null): Promise<T> {
@@ -401,15 +401,15 @@ export async function generateLesson(opts: {
         const o = (raw ?? {}) as Record<string, any>;
         const sections = (Array.isArray(o.sections) ? o.sections : [])
           .map((x: any) => ({
-            heading: isStr(x?.heading) ? x.heading.trim() : "",
-            focus: isStr(x?.focus) ? x.focus.trim() : "",
+            heading: isStr(x?.heading) ? cleanAi(x.heading) : "",
+            focus: isStr(x?.focus) ? cleanAi(x.focus) : "",
             excerpts: (Array.isArray(x?.excerpts) ? x.excerpts : []).map(Number).filter((n: number) => Number.isInteger(n) && n >= 1 && n <= opts.chunks.length),
           }))
           .filter((x: { heading: string }) => x.heading)
           .slice(0, 8);
-        const q = isStr(o.open?.q) ? o.open.q.trim() : "";
+        const q = isStr(o.open?.q) ? cleanAi(o.open.q) : "";
         if (!sections.length || !q) return null;
-        const result = { title: isStr(o.title) ? o.title.trim() : "Today's lesson", sections, keyPoints: strList(o.keyPoints).slice(0, 8), open: { q, rubric: strList(o.open?.rubric).slice(0, 6) } };
+        const result = { title: isStr(o.title) ? cleanAi(o.title) : "Today's lesson", sections, keyPoints: strList(o.keyPoints).slice(0, 8), open: { q, rubric: strList(o.open?.rubric).slice(0, 6) } };
         sane([result.title, ...sections.map((x: { heading: string; focus: string }) => `${x.heading}. ${x.focus}`), ...result.keyPoints, q, ...result.open.rubric].join("\n"), script, "a lesson plan");
         return result;
       },
@@ -460,7 +460,7 @@ export async function generateLesson(opts: {
         const body = (raw as { body?: unknown } | null)?.body;
         if (!isStr(body) || body.trim().length < 40) return null;
         sane(body, script, "a lesson part");
-        return body.trim();
+        return cleanAi(body);
       },
     );
     await save();

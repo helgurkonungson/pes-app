@@ -17,6 +17,7 @@ A design pass over the first run, the lesson and Home.
 - **Free courses without doubles:** a course you've added moves to "Yours" and leaves the catalog, now called "Add a free course".
 - **Photos of pages:** Sources has a fourth tile — pick photos of book pages and their text is recognised on the phone, a part per photo. The intro is one line; "Continue without sources" is now a quiet link.
 - **Smoother details:** the score ring fills in, content fades under the floating buttons and the tab bar instead of showing through.
+- **No more "&gt;" in lessons:** symbols the AI wrote as HTML codes (like `&gt;` for >) are shown as the symbols themselves.
 - The privacy policy and the RuStore documents mention dictation and photos of pages.
 
 ## 1.0.0 — 2026-11-03

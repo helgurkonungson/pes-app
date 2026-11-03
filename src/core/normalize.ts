@@ -15,7 +15,31 @@ export function rng(seed: number): () => number {
   };
 }
 
-const str = (v: unknown, fallback = ""): string => (typeof v === "string" ? v.trim() : fallback);
+const NAMED: Record<string, string> = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", nbsp: "\u00a0", laquo: "«", raquo: "»", mdash: "—", ndash: "–", hellip: "…", le: "≤", ge: "≥", ne: "≠", times: "×", minus: "−", deg: "°" };
+
+/**
+ * Some models write HTML entities in plain JSON text ("k &gt; 1", even "&amp;gt;"). Lessons are
+ * shown as text, so they would appear literally (1.1.0 bug). Decodes named and numeric entities,
+ * at most twice (for double escaping); unknown names stay as they are.
+ */
+export function decodeEntities(text: string): string {
+  let out = text;
+  for (let pass = 0; pass < 2 && out.includes("&"); pass++) {
+    out = out.replace(/&(#x[0-9a-f]{1,6}|#\d{1,7}|[a-z]{2,8});/gi, (m, code: string) => {
+      if (code[0] === "#") {
+        const n = code[1] === "x" || code[1] === "X" ? parseInt(code.slice(2), 16) : parseInt(code.slice(1), 10);
+        return n > 0 && n <= 0x10ffff && !(n >= 0xd800 && n <= 0xdfff) ? String.fromCodePoint(n) : m;
+      }
+      return NAMED[code.toLowerCase()] ?? m;
+    });
+  }
+  return out;
+}
+
+/** AI text for the UI: entities decoded, trimmed. */
+export const cleanAi = (v: string): string => decodeEntities(v).trim();
+
+const str = (v: unknown, fallback = ""): string => (typeof v === "string" ? cleanAi(v) : fallback);
 const strArr = (v: unknown): string[] => (Array.isArray(v) ? v.map((x) => str(x)).filter(Boolean) : []);
 
 export function normalizeMcqs(raw: unknown, prefix: string, rand: () => number = Math.random): Mcq[] {

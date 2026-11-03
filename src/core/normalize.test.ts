@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeGrade, normalizeLesson, normalizeMcqs, normalizePlacement, rng } from "./normalize";
+import { decodeEntities, normalizeGrade, normalizeLesson, normalizeMcqs, normalizePlacement, rng } from "./normalize";
 
 describe("normalize", () => {
   it("keeps the right answer after shuffling", () => {
@@ -35,5 +35,19 @@ describe("normalize", () => {
   it("clamps grades", () => {
     expect(normalizeGrade({ score: 14 }).score).toBe(10);
     expect(normalizeGrade({ score: "7.6", model_answer: "m" })).toMatchObject({ score: 8, modelAnswer: "m" });
+  });
+});
+
+describe("HTML entities in AI text (1.1.0 fix)", () => {
+  it("decodes named, numeric and double-escaped entities; leaves the rest alone", () => {
+    expect(decodeEntities("k &gt; 1 и k &lt; 1")).toBe("k > 1 и k < 1");
+    expect(decodeEntities("k &amp;gt; 1")).toBe("k > 1");
+    expect(decodeEntities("&laquo;цитата&raquo; &#8212; &#x2014;")).toBe("«цитата» — —");
+    expect(decodeEntities("AT&T, R&D, &unknown; &#0;")).toBe("AT&T, R&D, &unknown; &#0;");
+  });
+  it("cleans the rubric of an AI lesson", () => {
+    const g = normalizeGrade({ score: 7, verdict: "Почти &quot;да&quot;", strengths: ["k &gt; 1"], gaps: [], modelAnswer: "" });
+    expect(g.verdict).toBe('Почти "да"');
+    expect(g.strengths).toEqual(["k > 1"]);
   });
 });
