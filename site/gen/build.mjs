@@ -106,8 +106,7 @@ function footer(lang) {
 <div><h4>${t.foot.app}</h4><ul>
 <li><a href="${docHref(lang, "support")}">${dn.support[0]}</a></li>
 <li><a href="${p}/#faq">${t.nav.faq}</a></li>
-<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>
-<li><a href="${p}/docs/">${t.nav.docs}</a></li>
+${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
 </div>
 <p class="seller">© 2026 ${esc(s.nameShort || s.name)}</p>
@@ -239,8 +238,7 @@ function landing(lang) {
 <h1>${h1}</h1>
 <p class="lead">${esc(t.hero.lead)}</p>
 ${storeButtons(lang)}
-<p class="apk">${esc(t.hero.apk)} <a href="${STORES.apk.url}" rel="noopener">${esc(t.hero.apkLink)}</a></p>
-<ul class="ticks">${t.hero.ticks.map((x) => `<li>${I.check}${esc(x)}</li>`).join("")}</ul>
+${STORES.apk.status === "live" ? `<p class="apk">${esc(t.hero.apk)} <a href="${STORES.apk.url}" rel="noopener">${esc(t.hero.apkLink)}</a></p>\n` : ""}<ul class="ticks">${t.hero.ticks.map((x) => `<li>${I.check}${esc(x)}</li>`).join("")}</ul>
 </div>
 <div class="stage" aria-hidden="true">
 <div class="phone back"><div class="screen">${shot(5, "on")}</div></div>

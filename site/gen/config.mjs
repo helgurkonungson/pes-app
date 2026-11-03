@@ -29,12 +29,12 @@ export const SELLER = {
 
 export const APP_ID = "online.chompbook.app";
 
-/** Store links. status: "live" shows a normal button, "soon" a dimmed "coming soon" one. */
+/** Store links. status: "live" shows a normal button, "soon" a dimmed "coming soon" one; for the APK, "off" hides the GitHub link (the repository is private from 1.1.0). */
 export const STORES = {
-  play: { status: "soon", url: `https://play.google.com/store/apps/details?id=${APP_ID}` },
+  play: { status: "live", url: `https://play.google.com/store/apps/details?id=${APP_ID}` },
   appStore: { status: "soon", url: "" },
   ruStore: { status: "soon", url: `https://www.rustore.ru/catalog/app/${APP_ID}` },
-  apk: { status: "live", url: "https://github.com/helgurkonungson/pes-app/releases/latest" },
+  apk: { status: "off", url: "https://github.com/helgurkonungson/pes-app/releases/latest" },
 };
 
 /** Interface languages of the app, in the app's order (src/i18n/index.ts). */
