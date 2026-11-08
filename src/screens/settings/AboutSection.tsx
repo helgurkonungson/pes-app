@@ -1,9 +1,9 @@
-/** Settings → About: version and updates (GitHub builds) or the Play page (store builds), tutorial, reports, error log, source (ADR-036). */
-import { Bug, Code, Download, Flag, GraduationCap, RefreshCw } from "lucide-react";
+/** Settings → About: version and updates (GitHub builds) or the Play page (store builds), tutorial, reports, error log (ADR-036). */
+import { Bug, Download, Flag, GraduationCap, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useUpdate } from "../../app/App";
 import { useTutorial } from "../../app/tutorialStore";
-import { APP_REPO, APP_VERSION, PLAY_URL } from "../../build";
+import { APP_VERSION, PLAY_URL } from "../../build";
 import { Group, MenuRow, openExternal, SectionLabel, toast } from "../../components/ui";
 import { locale, useT } from "../../i18n";
 import { useNav } from "../../nav/store";
@@ -49,7 +49,6 @@ export function AboutSection() {
           <MenuRow icon={<GraduationCap size={20} />} label={t("settings.tutorial")} onClick={() => useTutorial.getState().show()} />
           <MenuRow icon={<Flag size={20} />} label={t("settings.reports")} onClick={() => useNav.getState().push({ name: "reports" })} />
           <MenuRow icon={<Bug size={20} />} label={t("settings.logs")} onClick={() => useNav.getState().push({ name: "logs" })} />
-          <MenuRow icon={<Code size={20} />} label={t("settings.source")} value={APP_REPO.split("/")[1]} onClick={() => openExternal(`https://github.com/${APP_REPO}`)} />
         </Group>
       </section>
       <p className="faint tiny center">{t("settings.footer", { v: APP_VERSION })}</p>

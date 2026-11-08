@@ -660,7 +660,6 @@ export const zh: Dict = {
   "settings.checkingUpdates": "正在检查 GitHub…",
   "settings.latest": "已是最新版本",
   "settings.githubFailed": "无法连接 GitHub",
-  "settings.source": "源代码",
   "settings.footer": "Chompbook v{v} · 你的数据只保存在这部手机上",
 
   // backup

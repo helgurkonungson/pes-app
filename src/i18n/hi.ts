@@ -660,7 +660,6 @@ export const hi: Dict = {
   "settings.checkingUpdates": "GitHub जाँचा जा रहा है…",
   "settings.latest": "आपके पास नवीनतम संस्करण है",
   "settings.githubFailed": "GitHub तक नहीं पहुँच सके",
-  "settings.source": "सोर्स कोड",
   "settings.footer": "Chompbook v{v} · आपका डेटा इसी फ़ोन पर रहता है",
 
   // backup

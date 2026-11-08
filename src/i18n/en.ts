@@ -660,7 +660,6 @@ export const en = {
   "settings.checkingUpdates": "Checking GitHub…",
   "settings.latest": "You have the latest version",
   "settings.githubFailed": "Couldn't reach GitHub",
-  "settings.source": "Source code",
   "settings.footer": "Chompbook v{v} · your data stays on this phone",
 
   // backup

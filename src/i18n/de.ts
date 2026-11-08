@@ -660,7 +660,6 @@ export const de: Dict = {
   "settings.checkingUpdates": "GitHub wird geprüft…",
   "settings.latest": "Du hast die neueste Version",
   "settings.githubFailed": "GitHub nicht erreichbar",
-  "settings.source": "Quellcode",
   "settings.footer": "Chompbook v{v} · deine Daten bleiben auf diesem Telefon",
 
   // backup

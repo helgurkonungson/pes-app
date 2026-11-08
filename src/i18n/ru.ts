@@ -670,7 +670,6 @@ export const ru: Dict = {
   "settings.checkingUpdates": "Проверяю GitHub…",
   "settings.latest": "У вас последняя версия",
   "settings.githubFailed": "Не удалось связаться с GitHub",
-  "settings.source": "Исходный код",
   "settings.footer": "«Грызи» v{v} · данные хранятся только на этом телефоне",
 
   // backup

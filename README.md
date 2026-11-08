@@ -13,7 +13,7 @@ PES uses **your own Claude API key** (stored in the phone's secure storage). All
 
 ## Install on Android
 
-Chompbook is published on Google Play as `online.chompbook.app`. Test builds: every [Release](https://github.com/helgurkonungson/pes-app/releases/latest) has `PES-x.y.z.apk` (direct install) and `Chompbook-x.y.z-play.aab` (the Google Play upload). Builds don't update themselves — Google Play does (ADR-034).
+Chompbook is published on Google Play as `online.chompbook.app` (https://play.google.com/store/apps/details?id=online.chompbook.app). The repository is private. Test builds for the team: every [Release](https://github.com/helgurkonungson/pes-app/releases/latest) has `PES-x.y.z.apk` (direct install) and `Chompbook-x.y.z-play.aab` (the Google Play upload). Builds don't update themselves — Google Play does (ADR-034).
 
 ## Develop
 

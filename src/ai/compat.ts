@@ -59,7 +59,7 @@ function headers(id: ProviderId, key: string, cfg: Cfg): Record<string, string> 
   if (id === "yandex" && cfg.yandexFolder) h["OpenAI-Project"] = cfg.yandexFolder.trim();
   if (id === "openrouter") {
     // optional attribution headers OpenRouter asks apps to send
-    h["HTTP-Referer"] = "https://github.com/helgurkonungson/pes-app";
+    h["HTTP-Referer"] = "https://chompbook.online";
     h["X-Title"] = "Chompbook";
   }
   // Chompbook AI adds safety rules unless the learner said they are an adult (ADR-037)

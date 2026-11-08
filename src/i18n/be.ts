@@ -660,7 +660,6 @@ export const be: Dict = {
   "settings.checkingUpdates": "Правяраем GitHub…",
   "settings.latest": "У вас апошняя версія",
   "settings.githubFailed": "Не ўдалося звязацца з GitHub",
-  "settings.source": "Зыходны код",
   "settings.footer": "Chompbook v{v} · вашы даныя захоўваюцца толькі на гэтым тэлефоне",
 
   // backup
