@@ -49,7 +49,7 @@ export const privacy = {
 <li><strong>Web pages you add as sources</strong> are downloaded from their sites.</li>
 <li><strong>Dictation</strong> (optional): when you tap the microphone under an open question, your phone's own speech recognition service (on most Android phones, Google's) turns what you say into text under its own terms and may send the audio to its provider for that. Chompbook asks for microphone permission the first time, receives only the text and records or keeps no audio.</li>
 <li><strong>Update check</strong> (only in the version installed from GitHub): once a day the app asks GitHub for the latest release. Versions from the stores are updated by the store.</li>
-<li><strong>This website</strong> sets no cookies and uses no analytics. It remembers your language choice only in your browser. Cloudflare serves it and processes IP addresses to deliver and protect it.</li>
+<li><strong>This website</strong> remembers your language choice only in your browser. Cloudflare serves it and processes IP addresses to deliver and protect it; Cloudflare Web Analytics counts page views without cookies and without identifying visitors. The Russian-language pages (<code>/ru/</code> and the RuStore documents) also use <strong>Yandex Metrica</strong> (YANDEX LLC, Russia): it sets cookies and receives your IP address, browser and device details, the pages you view and the page you came from, so we can see which pages and searches bring visitors. We don't use its session recording and don't link this data to the app. You can block or delete cookies in your browser; the site works without them.</li>
 <li>Like any internet request, these reveal your IP address to the server you contact.</li>
 </ul>
 
@@ -67,10 +67,11 @@ export const privacy = {
 <tr><td>Pro: daily usage counts</td><td>Our server</td><td>90 days</td></tr>
 <tr><td>Pro: cached subscription status</td><td>Our server</td><td>30 days after you last used Chompbook AI</td></tr>
 <tr><td>Purchase records</td><td>RevenueCat, the store</td><td>Under their policies and tax law</td></tr>
+<tr><td>Website visit statistics (Russian-language pages)</td><td>Yandex Metrica</td><td>Under Yandex's terms; the cookies last up to 1 year</td></tr>
 </table>
 
 <h2>Why we process data and where</h2>
-<p>We process data to provide what you asked for (lessons, AI features, the Pro subscription), to keep the service working and fair (the daily limit, preventing abuse), and to review lesson and error reports you choose to send. Where the GDPR, the UK GDPR or a similar law applies, the legal bases are the performance of our contract with you (Art. 6(1)(b)) and our legitimate interests in a secure and working service (Art. 6(1)(f)). RevenueCat, OpenRouter, Cloudflare and AI model providers may process data in the USA and other countries; where required, transfers rely on safeguards such as the EU Standard Contractual Clauses in their data-processing terms.</p>
+<p>We process data to provide what you asked for (lessons, AI features, the Pro subscription), to keep the service working and fair (the daily limit, preventing abuse), and to review lesson and error reports you choose to send. Where the GDPR, the UK GDPR or a similar law applies, the legal bases are the performance of our contract with you (Art. 6(1)(b)) and our legitimate interests in a secure and working service and in knowing how visitors find the website (Art. 6(1)(f)). RevenueCat, OpenRouter, Cloudflare and AI model providers may process data in the USA and other countries, and Yandex processes website statistics in Russia; where required, transfers rely on safeguards such as the EU Standard Contractual Clauses in their data-processing terms.</p>
 
 <h2>Your choices and rights</h2>
 <ul>

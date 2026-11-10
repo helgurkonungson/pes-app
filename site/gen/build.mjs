@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, DOCS_DATE, SELLER, STORES, LANGS } from "./config.mjs";
+import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID } from "./config.mjs";
 import { I } from "./icons.mjs";
 import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
@@ -72,7 +72,7 @@ ${links}
 <link rel="preload" href="/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script>document.documentElement.classList.remove("no-js")</script>
-</head>`;
+${lang === "ru" ? metrikaHead : ""}</head>`;
 }
 
 function header(lang, alternates, homeHref) {
@@ -146,8 +146,16 @@ function typo(lang, html) {
   });
 }
 
+// Yandex Metrica: Russian-language pages only (lang "ru": /ru/… and /cis/…); no Session Replay, plus a cookie notice.
+const metrikaHead = `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=${METRIKA_ID}","ym");ym(${METRIKA_ID},"init",{ssr:true,clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});</script>
+`;
+const metrikaBody = `<noscript><div><img src="https://mc.yandex.ru/watch/${METRIKA_ID}" style="position:absolute;left:-9999px" alt=""></div></noscript>
+<div class="cookie-note" data-cookie-note hidden><p>Сайт использует cookie Яндекс Метрики, чтобы считать посещения. <a href="/ru/privacy/">Подробнее</a></p><button type="button" class="btn" data-cookie-ok>Понятно</button></div>
+<script>(function(){var k="cookie-ok",n=document.querySelector("[data-cookie-note]");try{if(localStorage.getItem(k))return;}catch(e){}n.hidden=false;n.querySelector("[data-cookie-ok]").onclick=function(){n.hidden=true;try{localStorage.setItem(k,"1");}catch(e){}};})()</script>`;
+
 const page = (o) => typo(o.lang, `${head(o)}
 <body${o.bodyClass ? ` class="${o.bodyClass}"` : ""}>
+${o.lang === "ru" ? metrikaBody : ""}
 <a class="skip" href="#main">${T[o.lang].skip}</a>
 ${header(o.lang, o.alternates, o.homeHref)}
 <main id="main">

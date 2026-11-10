@@ -379,3 +379,7 @@ a.course:hover { transform: translateY(-3px); border-color: color-mix(in srgb, v
 .cta-inline { margin: 34px 0; padding: 24px 22px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }
 .cta-inline h3 { margin-top: 0; }
 .cta-inline .stores { margin-top: 14px; }
+.cookie-note { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 50; max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(0,0,0,.18); font-size: 14px; }
+.cookie-note[hidden] { display: none; }
+.cookie-note p { margin: 0; flex: 1; }
+.cookie-note .btn { flex: none; padding: 9px 16px; }
