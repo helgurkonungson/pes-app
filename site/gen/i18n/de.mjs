@@ -244,6 +244,21 @@ export default {
       ]
     }
   },
+  "coursePage": {
+    "nav": "Kurse",
+    "hubTitle": "Kostenlose Kurse",
+    "hubLead": "Fünf kurze Kurse in der App Chompbook: je acht Lektionen mit Quiz und offenen Fragen. Kostenlos, ohne KI und ohne Anmeldung.",
+    "program": "Kursinhalt",
+    "sample": "Beispiellektion",
+    "keyPoints": "Das Wichtigste",
+    "openQ": "Offene Frage am Ende der Lektion",
+    "model": "Musterantwort",
+    "perLesson": "etwa {n} Min. pro Lektion",
+    "start": "Kurs in der App starten",
+    "allCourses": "Alle Kurse",
+    "free": "Kostenlos · 8 Lektionen · funktioniert offline",
+    "goal": "Ziel"
+  },
   "notFound": {
     "h": "Diese Seite wurde aufgefuttert",
     "p": "Wir konnten sie nicht finden. Versuch's mit der Startseite.",

@@ -244,6 +244,21 @@ export default {
       ]
     }
   },
+  "coursePage": {
+    "nav": "Cursos",
+    "hubTitle": "Cursos gratis",
+    "hubLead": "Cinco cursos breves en la app Chompbook: ocho lecciones cada uno, con tests y preguntas abiertas. Gratis, sin IA ni registro.",
+    "program": "Programa del curso",
+    "sample": "Lección de ejemplo",
+    "keyPoints": "Ideas clave",
+    "openQ": "Pregunta abierta al final de la lección",
+    "model": "Respuesta modelo",
+    "perLesson": "unos {n} min por lección",
+    "start": "Haz el curso en la app",
+    "allCourses": "Todos los cursos",
+    "free": "Gratis · 8 lecciones · funciona sin conexión",
+    "goal": "Objetivo"
+  },
   "notFound": {
     "h": "Alguien se comió esta página",
     "p": "No la encontramos. Prueba con la página de inicio.",
