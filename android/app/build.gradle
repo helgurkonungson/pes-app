@@ -75,6 +75,8 @@ dependencies {
     // Samsung IAP for RevenueCat (GalaxyPurchasesPlugin, ADR-041). Must be the same version as the
     // native `purchases` SDK that @revenuecat/purchases-capacitor brings in through
     // purchases-hybrid-common (19.15.0 → 10.29.0); src/config.test.ts checks the pair.
+    // `purchases` itself is only a private dependency of the Capacitor plugin, so the app declares it to compile against it.
+    galaxyImplementation "com.revenuecat.purchases:purchases:10.29.0"
     galaxyImplementation "com.revenuecat.purchases:purchases-store-galaxy:10.29.0"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
