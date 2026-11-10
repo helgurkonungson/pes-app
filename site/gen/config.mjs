@@ -4,7 +4,7 @@
 export const SITE = "https://chompbook.online";
 
 /** Date shown as "Effective …" on the documents (ISO). Update it when a document changes. */
-export const DOCS_DATE = "2026-11-03";
+export const DOCS_DATE = "2026-11-10";
 
 /** The seller / data controller (from the Armenian state register extract, 21.01.2026). */
 export const SELLER = {
@@ -28,6 +28,9 @@ export const SELLER = {
 };
 
 export const APP_ID = "online.chompbook.app";
+
+/** Yandex Metrica tag — only on Russian-language pages (/ru/…, /cis/…); no Session Replay. Described in the privacy policies. */
+export const METRIKA_ID = 114170350;
 
 /** Store links. status: "live" shows a normal button, "soon" a dimmed "coming soon" one; for the APK, "off" hides the GitHub link (the repository is private from 1.1.0). */
 export const STORES = {
