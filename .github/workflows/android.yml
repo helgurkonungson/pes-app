@@ -77,7 +77,7 @@ jobs:
 
   # WebKit (iOS engine) and Firefox: blocking since 0.9.0 (green on every run since 0.4).
   e2e-cross:
-    name: E2E (${{ matrix.engine }})
+    name: E2E (${{ matrix.engine }} ${{ matrix.shard }})
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     # the official image ships every browser with its system libraries — `playwright install
@@ -88,10 +88,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # WebKit runs 4 profiles; in one job it outgrew the 25-minute limit (Nov 2026), so it's split in two
         include:
           - engine: webkit
+            shard: 1/2
+            projects: --project=iphone-se --project=iphone-15-pro-max --project=ipad-mini --project=desktop-safari
+          - engine: webkit
+            shard: 2/2
             projects: --project=iphone-se --project=iphone-15-pro-max --project=ipad-mini --project=desktop-safari
           - engine: firefox
+            shard: 1/1
             projects: --project=desktop-firefox
     steps:
       - uses: actions/checkout@v4
@@ -102,13 +108,13 @@ jobs:
       - run: npm ci
       - name: Playwright
         # one retry for a flaky test; --max-failures stops a broken engine early
-        run: npx playwright test ${{ matrix.projects }} --retries=1 --max-failures=15
+        run: npx playwright test ${{ matrix.projects }} --shard=${{ matrix.shard }} --retries=1 --max-failures=15
         env:
           CI: "1"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-${{ matrix.engine }}
+          name: playwright-report-${{ matrix.engine }}-${{ strategy.job-index }}
           path: |
             playwright-report
             test-results
