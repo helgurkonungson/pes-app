@@ -244,6 +244,21 @@ export default {
       ]
     }
   },
+  "coursePage": {
+    "nav": "Courses",
+    "hubTitle": "Free courses",
+    "hubLead": "Five short courses in the Chompbook app: eight lessons each, with quizzes and open questions. Free, no AI or sign-up needed.",
+    "program": "Course programme",
+    "sample": "Sample lesson",
+    "keyPoints": "Key points",
+    "openQ": "Open question at the end of the lesson",
+    "model": "Model answer",
+    "perLesson": "about {n} min per lesson",
+    "start": "Take the course in the app",
+    "allCourses": "All courses",
+    "free": "Free · 8 lessons · works offline",
+    "goal": "Goal"
+  },
   "notFound": {
     "h": "This page got chomped",
     "p": "We couldn't find it. Try the home page.",

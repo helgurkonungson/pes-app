@@ -13,6 +13,14 @@ import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
 import * as CIS from "./docs/cis.mjs";
 import SUMMARIES from "./docs/summaries.mjs";
+import GUIDES_RU from "./guides/ru.mjs";
+import GUIDES_EN from "./guides/en.mjs";
+
+/** Guides exist in these languages only (same slugs); see guides/*.mjs. */
+const GUIDES = { ru: GUIDES_RU, en: GUIDES_EN };
+/** Date of the course and guide pages (sitemap lastmod, "Updated"). */
+const CONTENT_DATE = "2026-11-10";
+const COURSE_SLUGS = ["learning", "ai", "data", "money", "thinking"];
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PUB = join(here, "..", "public");
@@ -35,7 +43,7 @@ const alt = (fn) => Object.fromEntries(LANGS.map((l) => [l.id, fn(l.id)]));
 
 // ---------------------------------------------------------------- shell
 
-function head({ lang, title, desc, path, alternates, og }) {
+function head({ lang, title, desc, path, alternates, og, ogType }) {
   const links = alternates
     ? Object.entries(alternates).filter(([, p]) => p).map(([l, p]) => `<link rel="alternate" hreflang="${l}" href="${SITE}${p}">`).join("\n") +
       (alternates.en ? `\n<link rel="alternate" hreflang="x-default" href="${SITE}${alternates.en}">` : "")
@@ -51,7 +59,7 @@ function head({ lang, title, desc, path, alternates, og }) {
 ${links}
 <meta name="theme-color" content="#141517" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#f5f4f0" media="(prefers-color-scheme: light)">
-<meta property="og:type" content="website">
+<meta property="og:type" content="${ogType || "website"}">
 <meta property="og:site_name" content="Chompbook">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
@@ -78,7 +86,7 @@ function header(lang, alternates, homeHref) {
   return `<header class="top"><div class="wrap">
 <a class="brand" href="${homeHref || p + "/"}"><img src="/img/icon-64.png" alt="" width="34" height="34">${t.brand}${lang === "ru" ? " <small>Chompbook</small>" : ""}</a>
 <nav class="nav" aria-label="Main">
-<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a><a href="${p}/docs/">${t.nav.docs}</a>
+<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${p}/courses/">${t.coursePage.nav}</a>${GUIDES[lang] ? `<a href="${p}/guides/">${GUIDES[lang].nav}</a>` : ""}<a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a>
 </nav>
 <details class="lang-pick"><summary aria-label="${esc(t.langLabel)}">${I.globe}${cur.label}</summary><ul>${items}</ul></details>
 </div></header>`;
@@ -105,7 +113,8 @@ function footer(lang) {
 </ul></div>
 <div><h4>${t.foot.app}</h4><ul>
 <li><a href="${docHref(lang, "support")}">${dn.support[0]}</a></li>
-<li><a href="${p}/#faq">${t.nav.faq}</a></li>
+<li><a href="${p}/courses/">${t.coursePage.hubTitle}</a></li>
+${GUIDES[lang] ? `<li><a href="${p}/guides/">${GUIDES[lang].nav}</a></li>\n` : ""}<li><a href="${p}/#faq">${t.nav.faq}</a></li>
 ${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
 </div>
@@ -154,13 +163,17 @@ const docHref = (lang, id) => `${pre(lang)}/${id}/`;
 
 // ---------------------------------------------------------------- landing
 
-function storeButtons(lang) {
+/** Google Play install referrer: installs from the site show up in Play Console by source and page. */
+const playUrl = (lang, campaign) =>
+  `${STORES.play.url}&referrer=${encodeURIComponent(`utm_source=chompbook.online&utm_medium=site&utm_campaign=${campaign}&utm_content=${lang}`)}`;
+
+function storeButtons(lang, campaign = "home") {
   const t = T[lang].store;
   const b = (key, name, icon) => {
-    const s = STORES[key];
+    const s = key === "play" ? { ...STORES.play, url: STORES.play.url && playUrl(lang, campaign) } : STORES[key];
     const live = s.status === "live" && s.url;
     const sub = live ? t.getOn : t.soon;
-    const tag = live ? `a href="${s.url}" rel="noopener"` : `span aria-disabled="true"`;
+    const tag = live ? `a href="${esc(s.url)}" rel="noopener"` : `span aria-disabled="true"`;
     const end = live ? "a" : "span";
     return `<${tag} class="btn store${live ? "" : " soon"}">${icon}<span class="two"><small>${esc(sub)}</small>${name}</span></${end}>`;
   };
@@ -225,11 +238,19 @@ function landing(lang) {
   const courseIcons = [[I.brain, "var(--accent-soft)", "var(--accent-ink)"], [I.chip, "var(--info-soft)", "var(--info)"], [I.table, "rgba(110,231,168,.14)", "var(--good)"], [I.coin, "rgba(255,162,92,.15)", "var(--warn)"], [I.scale, "rgba(255,143,163,.15)", "var(--worm)"]];
   const shot = (n, cls = "") => `<img${cls ? ` class="${cls}"` : ""} src="/img/shots/${lang}/${n}.webp" alt="" width="600" height="1150" decoding="async">`;
   const ld = {
-    "@context": "https://schema.org", "@type": "MobileApplication", name: "Chompbook", alternateName: "Грызи",
-    operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.map((l) => l.id),
-    description: t.desc, url: `${SITE}${p}/`, image: `${SITE}/img/icon-192.png`,
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    author: { "@type": "Person", name: SELLER.en.name },
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "MobileApplication", "@id": `${SITE}/#app`, name: "Chompbook", alternateName: "Грызи",
+        operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.map((l) => l.id),
+        description: t.desc, url: `${SITE}${p}/`, image: `${SITE}/img/icon-192.png`,
+        installUrl: STORES.play.url, sameAs: [STORES.play.url],
+        offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        author: { "@type": "Person", name: SELLER.en.name },
+      },
+      { "@type": "WebSite", "@id": `${SITE}/#site`, name: "Chompbook", alternateName: "Грызи", url: `${SITE}/`, inLanguage: lang },
+      faqLd(t.faq.items.map((f) => [f.q, f.a])),
+    ],
   };
   return `
 <section class="hero"><div class="wrap">
@@ -274,8 +295,9 @@ ${caps.map((c, i) => `<figure class="shot reveal" style="--d:${i * 0.07}s"><div 
 <section id="courses"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.courses.kicker)}</span><h2>${esc(t.courses.h2)}</h2><p>${esc(t.courses.p)}</p></div>
 <div class="courses">
-${t.courses.items.map((c, i) => `<div class="course reveal" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></div>`).join("\n")}
+${t.courses.items.map((c, i) => `<a class="course reveal" href="${p}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}
 </div>
+<p class="more-link reveal"><a href="${p}/courses/">${esc(t.coursePage.allCourses)} →</a></p>
 </div></section>
 
 <section id="pro"><div class="wrap split">
@@ -300,9 +322,152 @@ ${t.faq.items.map((f, i) => `<details class="reveal" style="--d:${i * 0.06}s"${i
 </div></section>
 
 <section><div class="wrap">
-<div class="cta reveal"><img src="/img/icon-192.png" alt="" width="84" height="84"><h2>${esc(t.cta.h2)}</h2><p class="muted">${esc(t.cta.p)}</p>${storeButtons(lang)}</div>
+<div class="cta reveal"><img src="/img/icon-192.png" alt="" width="84" height="84"><h2>${esc(t.cta.h2)}</h2><p class="muted">${esc(t.cta.p)}</p>${storeButtons(lang, "home-bottom")}</div>
 </div></section>
 <script type="application/ld+json">${JSON.stringify(ld)}</script>`;
+}
+
+// ---------------------------------------------------------------- structured data helpers
+
+const faqLd = (pairs) => ({ "@type": "FAQPage", mainEntity: pairs.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) });
+const crumbsLd = (items) => ({ "@type": "BreadcrumbList", itemListElement: items.map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: `${SITE}${path}` })) });
+const ldScript = (graph) => `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@graph": graph }).replace(/</g, "\\u003c")}</script>`;
+
+// ---------------------------------------------------------------- built-in courses (src/courses/<slug>/<lang>.md)
+
+/** Light markdown for course text: paragraphs, "1." and "-" lists, **bold**, *italic*, `code`. */
+function md(text) {
+  const inline = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\*(.+?)\*/g, "<i>$1</i>").replace(/`(.+?)`/g, "<code>$1</code>");
+  const out = [];
+  let list = null;
+  const close = () => { if (list) { out.push(`</${list}>`); list = null; } };
+  for (const raw of text.split("\n")) {
+    const line = raw.trim();
+    const ol = line.match(/^\d+\.\s+(.*)/);
+    const ul = line.match(/^[-*]\s+(.*)/);
+    if (ol || ul) {
+      const kind = ol ? "ol" : "ul";
+      if (list !== kind) { close(); out.push(`<${kind}>`); list = kind; }
+      out.push(`<li>${inline((ol || ul)[1])}</li>`);
+    } else if (!line) close();
+    else { close(); out.push(`<p>${inline(line)}</p>`); }
+  }
+  close();
+  return out.join("\n").replace(/<\/p>\n<p>/g, "</p>\n<p>");
+}
+
+function parseCourse(slug, lang) {
+  const src = readFileSync(join(REPO, "src", "courses", slug, `${lang}.md`), "utf8").replace(/\r/g, "");
+  const [, header, rest] = src.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  const meta = Object.fromEntries(header.split("\n").map((l) => { const i = l.indexOf(":"); return [l.slice(0, i).trim(), l.slice(i + 1).trim()]; }));
+  const lessons = [];
+  let lesson = null, section = null, mode = null;
+  for (const line of rest.split("\n")) {
+    if (line.startsWith("//")) continue;
+    let m;
+    if ((m = line.match(/^# ([^|]+)\|([^|]+)\|(.+)$/))) {
+      lesson = { id: m[1].trim(), module: m[2].trim(), title: m[3].trim(), sections: [], keys: [], open: null, model: null };
+      lessons.push(lesson); section = null; mode = null;
+    } else if (!lesson) continue;
+    else if ((m = line.match(/^## (.+)$/))) { section = { h: m[1].trim(), body: [] }; lesson.sections.push(section); mode = "theory"; }
+    else if (line.startsWith("!key ")) { lesson.keys.push(line.slice(5).trim()); mode = null; }
+    else if (line.startsWith("!open ")) { lesson.open = line.slice(6).trim(); mode = null; }
+    else if (line.startsWith("!model ")) { lesson.model = line.slice(7).trim(); mode = null; }
+    else if (/^(\?|!|\+ |= )/.test(line)) mode = null;
+    else if (mode === "theory") section.body.push(line);
+  }
+  return { slug, ...meta, lessons };
+}
+
+const COURSE_ICONS = { learning: I.brain, ai: I.chip, data: I.table, money: I.coin, thinking: I.scale };
+
+function coursePage(lang, slug) {
+  const t = T[lang], c = t.coursePage, p = pre(lang);
+  const k = parseCourse(slug, lang);
+  const modules = [];
+  for (const l of k.lessons) {
+    let mod = modules.find((x) => x.name === l.module);
+    if (!mod) modules.push((mod = { name: l.module, lessons: [] }));
+    mod.lessons.push(l);
+  }
+  const first = k.lessons[0];
+  const path = `${p}/courses/${slug}/`;
+  const html = `<p class="lead-p">${esc(k.description)}</p>
+<div class="note"><p><b>${esc(c.goal)}:</b> ${esc(k.goal)}</p></div>
+<h2>${esc(c.program)}</h2>
+${modules.map((m) => `<h3>${esc(m.name)}</h3>
+<ol class="lessons" start="${k.lessons.indexOf(m.lessons[0]) + 1}">${m.lessons.map((l) => `<li><b>${esc(l.title)}</b><span>${l.sections.map((s) => esc(s.h)).join(" · ")}</span></li>`).join("")}</ol>`).join("\n")}
+<h2>${esc(c.sample)}: ${esc(first.title)}</h2>
+${first.sections.map((s) => `<h3>${esc(s.h)}</h3>\n${md(s.body.join("\n"))}`).join("\n")}
+${first.keys.length ? `<div class="card"><b>${esc(c.keyPoints)}</b><ul>${first.keys.map((x) => `<li>${md(x).replace(/^<p>|<\/p>$/g, "")}</li>`).join("")}</ul></div>` : ""}
+${first.open ? `<div class="card"><b>${esc(c.openQ)}</b><p>${esc(first.open)}</p>${first.model ? `<details><summary>${esc(c.model)}</summary><p>${esc(first.model)}</p></details>` : ""}</div>` : ""}
+<div class="cta-inline"><p><b>${esc(c.start)}</b></p>${storeButtons(lang, `course-${slug}`)}</div>
+<p><a href="${p}/courses/">← ${esc(c.allCourses)}</a></p>`;
+  const body = `<div class="wrap">
+<div class="doc-hero"><div class="crumbs"><a href="${p}/">${esc(t.docs.home)}</a> / <a href="${p}/courses/">${esc(c.hubTitle)}</a></div>
+<h1>${esc(k.title)}</h1><p class="meta">${esc(c.free)} · ${esc(c.perLesson.replace("{n}", k.minutes))}</p></div>
+${withToc(html, t.docs.contents)}
+</div>
+${ldScript([
+    { "@type": "Course", name: k.title, description: k.description, inLanguage: lang, url: `${SITE}${path}`, isAccessibleForFree: true,
+      provider: { "@type": "Organization", name: "Chompbook", url: `${SITE}/` }, teaches: k.goal,
+      syllabusSections: k.lessons.map((l) => ({ "@type": "Syllabus", name: l.title })) },
+    crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`], [k.title, path]]),
+  ])}`;
+  return page({ lang, title: `${k.title} — ${c.hubTitle} | ${t.brand}`, desc: k.description, path, alternates: alt((l) => `${pre(l)}/courses/${slug}/`), body });
+}
+
+function coursesHub(lang) {
+  const t = T[lang], c = t.coursePage, p = pre(lang);
+  const ks = COURSE_SLUGS.map((s) => parseCourse(s, lang));
+  const body = `<div class="wrap">
+<div class="doc-hero"><div class="crumbs"><a href="${p}/">${esc(t.docs.home)}</a></div><h1>${esc(c.hubTitle)}</h1><p class="meta">${esc(c.hubLead)}</p></div>
+<div class="doc-grid">${ks.map((k) => `<a class="doc-tile reveal" href="${p}/courses/${k.slug}/"><span class="ic">${COURSE_ICONS[k.slug]}</span><b>${esc(k.title)}</b><span>${esc(k.goal)}</span></a>`).join("")}</div>
+<div class="cta-inline">${storeButtons(lang, "courses")}</div>
+</div>
+${ldScript([{ "@type": "ItemList", itemListElement: ks.map((k, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}${p}/courses/${k.slug}/`, name: k.title })) }, crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`]])])}`;
+  return page({ lang, title: `${c.hubTitle} — ${t.brand}`, desc: c.hubLead, path: `${p}/courses/`, alternates: alt((l) => `${pre(l)}/courses/`), body });
+}
+
+// ---------------------------------------------------------------- guides (ru, en)
+
+const guideAlt = (slug) => Object.fromEntries(Object.keys(GUIDES).map((l) => [l, `${pre(l)}/guides/${slug}/`]));
+
+function guidePage(lang, g) {
+  const t = T[lang], G = GUIDES[lang], p = pre(lang);
+  const path = `${p}/guides/${g.slug}/`;
+  const others = G.items.filter((x) => x.slug !== g.slug);
+  const html = `<p class="lead-p">${esc(g.lead)}</p>
+${g.body.trim()}
+<h2>${esc(G.faqTitle)}</h2>
+<div class="faq">${g.faq.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join("")}</div>
+<div class="cta-inline"><h3>${esc(G.ctaH)}</h3><p>${esc(G.ctaP)}</p>${storeButtons(lang, `guide-${g.slug}`)}</div>
+<h3>${esc(G.more)}</h3>
+<ul>${others.map((x) => `<li><a href="${p}/guides/${x.slug}/">${esc(x.title)}</a></li>`).join("")}</ul>`;
+  const body = `<div class="wrap">
+<div class="doc-hero"><div class="crumbs"><a href="${p}/">${esc(t.docs.home)}</a> / <a href="${p}/guides/">${esc(G.nav)}</a></div>
+<h1>${esc(g.title)}</h1><p class="meta">${esc(G.updated)} ${fmtDate(lang, CONTENT_DATE)}</p></div>
+${withToc(html, t.docs.contents)}
+</div>
+${ldScript([
+    { "@type": "Article", headline: g.title, description: g.desc, inLanguage: lang, url: `${SITE}${path}`, mainEntityOfPage: `${SITE}${path}`,
+      datePublished: CONTENT_DATE, dateModified: CONTENT_DATE, image: `${SITE}/img/og/${lang}.jpg`,
+      author: { "@type": "Person", name: lang === "ru" ? SELLER.ru.nameShort : SELLER.en.name },
+      publisher: { "@type": "Organization", name: "Chompbook", logo: { "@type": "ImageObject", url: `${SITE}/img/icon-192.png` } } },
+    faqLd(g.faq),
+    crumbsLd([[t.docs.home, `${p}/`], [G.nav, `${p}/guides/`], [g.title, path]]),
+  ])}`;
+  return page({ lang, title: g.title, desc: g.desc, path, alternates: guideAlt(g.slug), body, ogType: "article" });
+}
+
+function guidesHub(lang) {
+  const t = T[lang], G = GUIDES[lang], p = pre(lang);
+  const body = `<div class="wrap">
+<div class="doc-hero"><div class="crumbs"><a href="${p}/">${esc(t.docs.home)}</a></div><h1>${esc(G.hubTitle)}</h1><p class="meta">${esc(G.hubLead)}</p></div>
+<div class="doc-grid">${G.items.map((g) => `<a class="doc-tile reveal" href="${p}/guides/${g.slug}/"><span class="ic">${I.book}</span><b>${esc(g.title)}</b><span>${esc(g.desc)}</span></a>`).join("")}</div>
+</div>
+${ldScript([crumbsLd([[t.docs.home, `${p}/`], [G.nav, `${p}/guides/`]])])}`;
+  return page({ lang, title: `${G.hubTitle} — ${t.brand}`, desc: G.hubLead, path: `${p}/guides/`, alternates: Object.fromEntries(Object.keys(GUIDES).map((l) => [l, `${pre(l)}/guides/`])), body });
 }
 
 // ---------------------------------------------------------------- documents
@@ -406,7 +571,8 @@ ${rows}
 // ---------------------------------------------------------------- write
 
 const out = new Map();
-const put = (rel, html) => out.set(rel, html);
+const lastmod = new Map();
+const put = (rel, html, date) => { out.set(rel, html); if (date) lastmod.set(rel, date); };
 
 for (const l of LANGS) {
   const lang = l.id;
@@ -414,13 +580,20 @@ for (const l of LANGS) {
   put(`${p.slice(1)}/index.html`.replace(/^\//, ""), page({ lang, title: T[lang].title, desc: T[lang].desc, path: `${p}/`, alternates: alt((x) => `${pre(x)}/`), body: landing(lang), bodyClass: lang === "en" ? "root" : "" }));
   put(`${p ? p.slice(1) + "/" : ""}docs/index.html`, docsHub(lang));
   for (const id of DOC_IDS) put(`${p ? p.slice(1) + "/" : ""}${id}/index.html`, intlDoc(lang, id));
+  const dir = p ? p.slice(1) + "/" : "";
+  put(`${dir}courses/index.html`, coursesHub(lang), CONTENT_DATE);
+  for (const slug of COURSE_SLUGS) put(`${dir}courses/${slug}/index.html`, coursePage(lang, slug), CONTENT_DATE);
+  if (GUIDES[lang]) {
+    put(`${dir}guides/index.html`, guidesHub(lang), CONTENT_DATE);
+    for (const g of GUIDES[lang].items) put(`${dir}guides/${g.slug}/index.html`, guidePage(lang, g), CONTENT_DATE);
+  }
 }
 for (const id of ["", "terms", "offer", "privacy", "consent"]) put(`cis/${id ? id + "/" : ""}index.html`, cisPage(id));
 put("404.html", notFound());
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${[...out.keys()].filter((k) => k !== "404.html").map((k) => `<url><loc>${SITE}/${k.replace(/index\.html$/, "")}</loc><lastmod>${DOCS_DATE}</lastmod></url>`).join("\n")}
+${[...out.keys()].filter((k) => k !== "404.html").map((k) => `<url><loc>${SITE}/${k.replace(/index\.html$/, "")}</loc><lastmod>${lastmod.get(k) || DOCS_DATE}</lastmod></url>`).join("\n")}
 </urlset>
 `;
 put("sitemap.xml", sitemap);

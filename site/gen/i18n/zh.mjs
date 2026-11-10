@@ -244,6 +244,21 @@ export default {
       ]
     }
   },
+  "coursePage": {
+    "nav": "课程",
+    "hubTitle": "免费课程",
+    "hubLead": "Chompbook 应用内的五门短课程：每门 8 节课，含测验和开放式问题。免费，无需 AI，无需注册。",
+    "program": "课程大纲",
+    "sample": "示例课程",
+    "keyPoints": "要点",
+    "openQ": "课程结尾的开放式问题",
+    "model": "参考答案",
+    "perLesson": "每节课约 {n} 分钟",
+    "start": "在应用中学习本课程",
+    "allCourses": "全部课程",
+    "free": "免费 · 8 节课 · 可离线使用",
+    "goal": "目标"
+  },
   "notFound": {
     "h": "这一页被啃掉了",
     "p": "没找到这个页面。去首页看看吧。",

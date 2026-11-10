@@ -361,3 +361,21 @@ h2 { font-size: clamp(30px, 4.2vw, 44px); line-height: 1.08; letter-spacing: -.0
 body > main:only-child, body > main.plain { max-width: 640px; margin: 0 auto; padding: 56px 20px 64px; }
 body > main .muted, .muted { color: var(--muted); }
 body > main > .btn:not(.primary):not(.store) { background: var(--accent); color: var(--on-accent); }
+
+/* course and guide pages */
+a.course { display: block; color: var(--ink); text-decoration: none; transition: transform .25s, border-color .25s; }
+a.course:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.more-link { text-align: center; margin: 22px 0 0; font-weight: 600; }
+.lead-p { font-size: 18px; line-height: 1.6; margin-top: 0; }
+.doc ol.lessons { padding-left: 26px; }
+.doc ol.lessons li { margin: 10px 0; }
+.doc ol.lessons li b { display: block; }
+.doc ol.lessons li span { color: var(--muted); font-size: 14.5px; }
+.doc .card > b { display: block; margin-bottom: 6px; }
+.doc .card ul { margin: 6px 0 0; }
+.doc .card details { margin-top: 10px; }
+.doc .card summary { cursor: pointer; font-weight: 600; color: var(--accent-ink); }
+.doc .faq { max-width: none; }
+.cta-inline { margin: 34px 0; padding: 24px 22px; border-radius: 20px; background: var(--surface); border: 1px solid var(--line); }
+.cta-inline h3 { margin-top: 0; }
+.cta-inline .stores { margin-top: 14px; }
