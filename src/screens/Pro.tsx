@@ -1,6 +1,7 @@
 /**
- * Chompbook Pro (ADR-037): built-in AI with a subscription through Google Play.
- * - Google Play build: plans from the store, free trial, legal text, restore, manage.
+ * Chompbook Pro (ADR-037): built-in AI with a subscription through Google Play or, in the Galaxy
+ * Store build, Samsung IAP (ADR-041).
+ * - Store build: plans from the store, free trial, legal text, restore, manage.
  * - Active Pro: renewal date, today's allowance, switch lessons back to Chompbook AI.
  * - GitHub APK / web: Pro is sold in the Google Play version.
  */
@@ -17,7 +18,9 @@ import { useProfile } from "../data/hooks";
 import { type Key, locale, useLang, useT } from "../i18n";
 import { useNav } from "../nav/store";
 import { buy, fetchUsage, loadPlans, proPurchasable, restore, usePro } from "../pro/purchases";
-import { APP_ID, PLAY_URL, SITE_URL as SITE } from "../build";
+import { APP_ID, PLAY_URL, SITE_URL as SITE, STORE } from "../build";
+
+const galaxy = STORE === "galaxy";
 
 function legalUrl(page: "terms" | "privacy", lang: string): string {
   return `${SITE}/${page}/${lang === "ru" ? "ru/" : ""}`;
@@ -111,7 +114,7 @@ export function Pro() {
             <button
               className="btn primary block"
               onClick={async () => {
-                if (!(await getApiKey("chompbook"))) return toast(t("pro.loadFailed"));
+                if (!(await getApiKey("chompbook"))) return toast(t(galaxy ? "pro.loadFailedGalaxy" : "pro.loadFailed"));
                 await updateProfile({ provider: "chompbook", aiBlock: undefined });
                 toast(t("pro.inUse"));
               }}
@@ -120,7 +123,7 @@ export function Pro() {
             </button>
           )}
           {purchasable && (
-            <button className="btn ghost block" onClick={() => openExternal(managementUrl ?? manageSubscriptionUrl(APP_ID))}>
+            <button className="btn ghost block" onClick={() => openExternal(managementUrl ?? manageSubscriptionUrl(APP_ID, undefined, STORE))}>
               <ExternalLink size={18} /> {t("pro.manage")}
             </button>
           )}
@@ -203,7 +206,7 @@ export function Pro() {
             {loadError && (
               <div className="stack">
                 <div className="error-box" role="alert">
-                  {t("pro.loadFailed")}
+                  {t(galaxy ? "pro.loadFailedGalaxy" : "pro.loadFailed")}
                 </div>
                 <button className="btn ghost block" onClick={load}>
                   <RotateCcw size={18} /> {t("common.retry")}
@@ -233,7 +236,7 @@ export function Pro() {
             {plan && (
               <div className="stack">
                 <p className="faint small">
-                  {plan.kind === "annual" ? t("pro.legalYear", { price: plan.price }) : t("pro.legalMonth", { price: plan.price })} {t("pro.legalCancel")}
+                  {plan.kind === "annual" ? t("pro.legalYear", { price: plan.price }) : t("pro.legalMonth", { price: plan.price })} {t(galaxy ? "pro.legalCancelGalaxy" : "pro.legalCancel")}
                   {plan.trialDays ? ` ${t("pro.legalTrial")}` : ""}
                 </p>
               </div>

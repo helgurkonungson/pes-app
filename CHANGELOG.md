@@ -2,6 +2,10 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
 
+## Unreleased
+
+- **Samsung Galaxy Store build:** CI also builds `Chompbook-x.y.z-galaxy.apk` — the same app with Chompbook Pro sold through Samsung In-App Purchase, Galaxy Store links and wording, and no Google Play rating card. The Google Play build is unchanged. The privacy policy and terms now name the Galaxy Store.
+
 ## 1.1.0 — 2026-11-03
 
 A design pass over the first run, the lesson and Home.

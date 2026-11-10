@@ -22,6 +22,17 @@
 - **Data safety**: материалы пользователя передаются выбранному им AI-сервису с его собственным ключом. Возрастная группа хранится только на устройстве.
 - **Что помогает попасть в подборки**: стабильность (без падений и ANR — эмуляторные тесты в CI), поддержка планшетов и альбомной ориентации (есть), светлая и тёмная тема (есть), локализация (9 языков), доступность (axe-проверки в CI), Material-стиль, отзывы и рейтинг, регулярные обновления. Подать заявку на featuring можно через форму Google Play для разработчиков.
 
+## Samsung Galaxy Store (ADR-041)
+
+Пошаговый план с текущим статусом — в проекте Chompbook на claude.ai (`claude/galaxy-store-setup.md`). Кратко:
+1. 👤 Seller Portal: Corporate Seller + Commercial Seller (D-U-N-S, счёт ИП). Подано 10.11.2026.
+2. 👤 Apps → Add New App: тексты, графика, APK `galaxy`, страны (без России и Беларуси), анкеты по `docs/STORE_FORMS.md`.
+3. 👤 In App Purchase: подписки `pro_monthly` / `pro_annual` → Activate. Assistance → API Service → сервисный аккаунт (Publishing & ITEM + GSS) → ключ в RevenueCat.
+4. 👤 RevenueCat: приложение Galaxy Store, продукты в entitlement `pro` и в пакеты `$rc_monthly` / `$rc_annual` offering `default`; ISN URL из RevenueCat → Seller Portal → In App Purchase → Instant Server Notification Url.
+5. 👤 GitHub → Settings → Secrets and variables → Actions → Variables: `REVENUECAT_GALAXY_KEY` (публичный ключ Galaxy-приложения из RevenueCat); для тестовой сборки с тестовым режимом Samsung IAP — `GALAXY_BILLING=test` (перед отправкой в Samsung удалить переменную и пересобрать).
+6. 👤 Android developer verification: когда Google откроет регистрацию ключей, добавить в Play Console ключ подписи galaxy-APK — это ключ загрузки из секрета `PES_KEYSTORE_BASE64`, а не ключ Play App Signing.
+7. Тест: License Tester в профиле Seller Portal + Closed Beta; затем Submit.
+
 ## App Store
 
 - **Возрастной рейтинг** (анкета App Store Connect, новые категории 4+/9+/13+/16+/18+). Приложение генерирует контент с помощью AI и открывает страницы сервисов во встроенном браузере (только фиксированные адреса). Ожидаемо **13+**. Не отмечайте «Made for Kids»: это категория для детей, с запретом сторонней аналитики и внешних ссылок без родительского контроля.
