@@ -69,10 +69,12 @@ describe("built-in courses", () => {
         for (const lang of COURSE_LANGS) {
           const text = read(c.slug, lang).replace(/^---[\s\S]*?---/, "");
           const cyr = (text.match(/[А-Яа-яЁё]/g) ?? []).length;
-          if (["en", "es", "de", "fr", "zh", "hi"].includes(lang)) expect([lang, cyr]).toEqual([lang, 0]);
+          if (["en", "es", "de", "fr", "zh", "hi", "tr"].includes(lang)) expect([lang, cyr]).toEqual([lang, 0]);
           if (lang === "zh") expect((text.match(/[一-鿿]/g) ?? []).length).toBeGreaterThan(1000);
           if (lang === "hi") expect((text.match(/[ऀ-ॿ]/g) ?? []).length).toBeGreaterThan(1000);
           if (lang === "uk") expect(/[іїєґ]/i.test(text)).toBe(true);
+          if (lang === "kk") expect(/[әғқңөұүһ]/i.test(text)).toBe(true);
+          if (lang === "tr") expect(/[ğışçöü]/i.test(text)).toBe(true);
           if (lang === "be") expect(/[іў]/i.test(text)).toBe(true);
         }
       });
