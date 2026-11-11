@@ -52,6 +52,9 @@ const DOC_IDS = ["privacy", "terms", "support", "delete-data"];
 const FULL = { en: EN, ru: RU };
 const docKey = { privacy: "privacy", terms: "terms", support: "support", "delete-data": "deleteData" };
 const LOCALE = Object.fromEntries(LANGS.map((l) => [l.id, l.locale]));
+/** Course pages exist only in languages with translated courses (src/courses/<slug>/<lang>.md); others link to the English ones. */
+const HAS_COURSES = Object.fromEntries(LANGS.map((l) => [l.id, l.courses !== false]));
+const coursesPre = (lang) => (HAS_COURSES[lang] ? pre(lang) : "");
 const fmtDate = (lang, iso) => new Intl.DateTimeFormat(LOCALE[lang], { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso + "T12:00:00Z"));
 
 /** path of the same page in each language (null = page doesn't exist in that language) */
@@ -102,7 +105,7 @@ function header(lang, alternates, homeHref) {
   return `<header class="top"><div class="wrap">
 <a class="brand" href="${homeHref || p + "/"}"><img src="/img/icon-64.png" alt="" width="34" height="34">${t.brand}${lang === "ru" ? " <small>Chompbook</small>" : ""}</a>
 <nav class="nav" aria-label="Main">
-<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${p}/courses/">${t.coursePage.nav}</a>${GUIDES[lang] ? `<a href="${p}/guides/">${GUIDES[lang].nav}</a>` : ""}<a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a>
+<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${coursesPre(lang)}/courses/">${t.coursePage.nav}</a>${GUIDES[lang] ? `<a href="${p}/guides/">${GUIDES[lang].nav}</a>` : ""}<a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a>
 </nav>
 <details class="lang-pick"><summary aria-label="${esc(t.langLabel)}">${I.globe}${cur.label}</summary><ul>${items}</ul></details>
 </div></header>`;
@@ -129,7 +132,7 @@ function footer(lang) {
 </ul></div>
 <div><h4>${t.foot.app}</h4><ul>
 <li><a href="${docHref(lang, "support")}">${dn.support[0]}</a></li>
-<li><a href="${p}/courses/">${t.coursePage.hubTitle}</a></li>
+<li><a href="${coursesPre(lang)}/courses/">${t.coursePage.hubTitle}</a></li>
 ${GUIDES[lang] ? `<li><a href="${p}/guides/">${GUIDES[lang].nav}</a></li>\n` : ""}<li><a href="${p}/#faq">${t.nav.faq}</a></li>
 ${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
@@ -208,8 +211,13 @@ ${lang === "ru" || lang === "be" || lang === "uk" ? b("ruStore", "RuStore", I.ba
 </div>`;
 }
 
-/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app. */
+/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app (kk, tr: written here until the app has them). */
+const EXTRA_LABELS = {
+  kk: { kicker: "Үйренгеніңізді қолданыңыз", check: "ЖИ-мен тексеру", score: "ЖИ бағасы · 10-нан", worked: "Не жақсы болды", improve: "Нені жақсарту керек" },
+  tr: { kicker: "Öğrendiklerinizi uygulayın", check: "Yapay zekâ ile kontrol et", score: "YZ puanı · 10 üzerinden", worked: "İyi giden", improve: "Geliştirilecek" },
+};
 function appLabels(lang) {
+  if (EXTRA_LABELS[lang]) return EXTRA_LABELS[lang]; // languages the app doesn't have yet (site and store only)
   const src = readFileSync(join(REPO, "src", "i18n", `${lang}.ts`), "utf8");
   const get = (k) => {
     const m = src.match(new RegExp(`"${k.replace(".", "\\.")}":\\s*"((?:[^"\\\\]|\\\\.)*)"`));
@@ -266,7 +274,7 @@ function landing(lang) {
     "@graph": [
       {
         "@type": "MobileApplication", "@id": `${SITE}/#app`, name: "Chompbook", alternateName: "Грызи",
-        operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.map((l) => l.id),
+        operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.filter((l) => l.appUi !== false).map((l) => l.id),
         description: t.desc, url: `${SITE}${p}/`, image: `${SITE}/img/icon-192.png`,
         installUrl: STORES.play.url, sameAs: [STORES.play.url],
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
@@ -319,9 +327,9 @@ ${caps.map((c, i) => `<figure class="shot reveal" style="--d:${i * 0.07}s"><div 
 ${demoSection(lang)}<section id="courses"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.courses.kicker)}</span><h2>${esc(t.courses.h2)}</h2><p>${esc(t.courses.p)}</p></div>
 <div class="courses">
-${t.courses.items.map((c, i) => `<a class="course reveal" href="${p}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}
+${t.courses.items.map((c, i) => `<a class="course reveal" href="${coursesPre(lang)}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}
 </div>
-<p class="more-link reveal"><a href="${p}/courses/">${esc(t.coursePage.allCourses)} →</a></p>
+<p class="more-link reveal"><a href="${coursesPre(lang)}/courses/">${esc(t.coursePage.allCourses)} →</a></p>
 </div></section>
 
 <section id="pro"><div class="wrap split">
@@ -438,7 +446,7 @@ ${ldScript([
       syllabusSections: k.lessons.map((l) => ({ "@type": "Syllabus", name: l.title })) },
     crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`], [k.title, path]]),
   ])}`;
-  return page({ lang, title: `${k.title} — ${c.hubTitle} | ${t.brand}`, desc: k.description, path, alternates: alt((l) => `${pre(l)}/courses/${slug}/`), body });
+  return page({ lang, title: `${k.title} — ${c.hubTitle} | ${t.brand}`, desc: k.description, path, alternates: alt((l) => (HAS_COURSES[l] ? `${pre(l)}/courses/${slug}/` : null)), body });
 }
 
 function coursesHub(lang) {
@@ -450,7 +458,7 @@ function coursesHub(lang) {
 <div class="cta-inline">${storeButtons(lang, "courses")}</div>
 </div>
 ${ldScript([{ "@type": "ItemList", itemListElement: ks.map((k, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}${p}/courses/${k.slug}/`, name: k.title })) }, crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`]])])}`;
-  return page({ lang, title: `${c.hubTitle} — ${t.brand}`, desc: c.hubLead, path: `${p}/courses/`, alternates: alt((l) => `${pre(l)}/courses/`), body });
+  return page({ lang, title: `${c.hubTitle} — ${t.brand}`, desc: c.hubLead, path: `${p}/courses/`, alternates: alt((l) => (HAS_COURSES[l] ? `${pre(l)}/courses/` : null)), body });
 }
 
 // ---------------------------------------------------------------- guides (ru, en)
@@ -605,8 +613,10 @@ for (const l of LANGS) {
   put(`${p ? p.slice(1) + "/" : ""}docs/index.html`, docsHub(lang));
   for (const id of DOC_IDS) put(`${p ? p.slice(1) + "/" : ""}${id}/index.html`, intlDoc(lang, id));
   const dir = p ? p.slice(1) + "/" : "";
-  put(`${dir}courses/index.html`, coursesHub(lang), CONTENT_DATE);
-  for (const slug of COURSE_SLUGS) put(`${dir}courses/${slug}/index.html`, coursePage(lang, slug), CONTENT_DATE);
+  if (HAS_COURSES[lang]) {
+    put(`${dir}courses/index.html`, coursesHub(lang), CONTENT_DATE);
+    for (const slug of COURSE_SLUGS) put(`${dir}courses/${slug}/index.html`, coursePage(lang, slug), CONTENT_DATE);
+  }
   if (GUIDES[lang]) {
     put(`${dir}guides/index.html`, guidesHub(lang), CONTENT_DATE);
     for (const g of GUIDES[lang].items) put(`${dir}guides/${g.slug}/index.html`, guidePage(lang, g), CONTENT_DATE);
