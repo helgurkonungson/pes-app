@@ -1,6 +1,6 @@
 // chompbook.online — small enhancements; every page works without this file.
 (function () {
-  var LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi"];
+  var LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi", "kk", "tr"];
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 

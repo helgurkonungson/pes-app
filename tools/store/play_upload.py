@@ -10,7 +10,7 @@ Usage:
 - The service account needs Play Console access to this app with "Manage store presence".
 - Texts come from store/listing/<lang>.json (title, short, full); images from the assets folder made by
   tools/store/frames.mjs (phone/<lang>/1..6, tablet-10in/<lang>/1..6, feature-graphic/<lang>).
-- Only locales that already exist in the Play listing are touched; others are reported and skipped.
+- Only locales that already exist in the Play listing are touched; others are reported and skipped (--create adds them: --only kk,tr --create).
 - With managed publishing on, the committed changes wait in Play Console → Publishing overview.
 """
 import argparse, glob, json, os, sys
@@ -32,6 +32,8 @@ LOCALES = {
     "ru": ["ru-RU"],
     "uk": ["uk"],
     "be": ["be"],
+    "kk": ["kk"],       # site-and-store-only: screenshots reuse the Russian app screens
+    "tr": ["tr-TR"],    # site-and-store-only: screenshots reuse the English app screens
 }
 IMAGES = [("phoneScreenshots", "phone"), ("tenInchScreenshots", "tablet-10in")]
 
@@ -49,6 +51,7 @@ def main():
     ap.add_argument("--listing", default=os.path.join(os.path.dirname(__file__), "..", "..", "store", "listing"))
     ap.add_argument("--only", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--create", action="store_true", help="also create locales that are not in the Play listing yet (e.g. --only kk,tr --create)")
     ap.add_argument("--video", default="", help="YouTube promo video URL, set on every touched locale")
     ap.add_argument("--video-only", action="store_true", help="only set the promo video (no texts or images)")
     a = ap.parse_args()
@@ -66,7 +69,7 @@ def main():
     for lang in langs:
         L = json.load(open(os.path.join(a.listing, f"{lang}.json"), encoding="utf-8"))
         for loc in LOCALES[lang]:
-            if loc not in existing:
+            if loc not in existing and not a.create:
                 skipped.append(loc)
                 continue
             if a.video_only:

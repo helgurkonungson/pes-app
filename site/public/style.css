@@ -8,6 +8,9 @@
 @font-face { font-family: "Chomp"; font-style: normal; font-weight: 200 800; font-display: swap;
   src: url(/fonts/manrope-cyrillic-wght-normal.woff2) format("woff2");
   unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Chomp"; font-style: normal; font-weight: 200 800; font-display: swap;
+  src: url(/fonts/plus-jakarta-sans-cyrillic-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F; }
 
 :root {
   --bg: #141517; --bg-2: #1a1b1e; --surface: #232427; --surface-2: #2c2d31; --surface-3: #37383d;
@@ -384,10 +387,10 @@ a.course:hover { transform: translateY(-3px); border-color: color-mix(in srgb, v
 .cookie-note p { margin: 0; flex: 1; }
 .cookie-note .btn { flex: none; padding: 9px 16px; }
 
-.demo { max-width: 860px; margin: 0 auto; }
-.demo-play, .demo iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--r); overflow: hidden; background: #141517; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
-.demo-play { position: relative; }
-.demo-play img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.demo-btn { position: absolute; inset: 0; margin: auto; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #1a1405; transition: transform .2s; }
-.demo-btn svg { width: 34px; height: 34px; margin-left: 4px; }
-.demo-play:hover .demo-btn, .demo-play:focus-visible .demo-btn { transform: scale(1.08); }
+.vid { max-width: 860px; margin: 0 auto; }
+.vid-play, .vid iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: var(--r); overflow: hidden; background: #141517; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+.vid-play { position: relative; }
+.vid-play img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vid-btn { position: absolute; inset: 0; margin: auto; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: #141517; color: #ffc53a; box-shadow: 0 8px 24px rgba(0,0,0,.35); transition: transform .2s; }
+.vid-btn svg { width: 34px; height: 34px; margin-left: 4px; }
+.vid-play:hover .vid-btn, .vid-play:focus-visible .vid-btn { transform: scale(1.08); }

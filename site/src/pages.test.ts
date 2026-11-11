@@ -9,7 +9,7 @@ import { pathToFileURL } from "node:url";
 const ROOT = join(__dirname, "..");
 const PUB = join(ROOT, "public");
 const load = async (l: string): Promise<unknown> => (await import(pathToFileURL(join(ROOT, "gen", "i18n", `${l}.mjs`)).href)).default;
-const LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi"];
+const LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi", "kk", "tr"];
 
 function htmlFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((n) => {
@@ -30,7 +30,7 @@ describe("site pages", () => {
     expect(() => execFileSync("node", [join(ROOT, "gen", "build.mjs"), "--check"], { stdio: "pipe" })).not.toThrow();
   });
 
-  it("have every site text in all nine languages", async () => {
+  it("have every site text in every language", async () => {
     const en = await load("en");
     for (const l of LANGS) {
       const t = await load(l);

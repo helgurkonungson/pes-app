@@ -16,6 +16,7 @@ node site/gen/build.mjs --check  # what the test runs
 | Short versions for uk, be, es, de, fr, zh, hi | `docs/summaries.mjs` |
 | RuStore (CIS): user agreement, offer, 152-FZ policy, consent | `docs/cis.mjs` |
 | Screenshot captions | `store/listing/<lang>.json` (same as the stores) |
+| Languages | `config.mjs` → `LANGS` (`kk`, `tr`: site and store only — `appUi: false`; `courses: false` = no translated course pages, links go to the English ones; their screenshots are copies of the ru / en ones) |
 | Screenshots | `site/public/img/shots/<lang>/1…6.webp` — `python3 tools/store/site_shots.py <raw dir of tools/store/capture.mjs>` (store order, side margins so text never touches the phone frame) |
 | Styles / scripts | `site/public/style.css`, `site/public/site.js` (hand-written) |
 

@@ -26,6 +26,9 @@ const META = {
   ru: { name: "Русский", play: ["ru-RU"], apple: "Russian" },
   uk: { name: "Українська", play: ["uk"], apple: "Ukrainian" },
   be: { name: "Беларуская", play: ["be"], apple: null },
+  // site-and-store-only languages (no app interface yet): screenshots reuse another language's screens, see tools/store/frames.mjs
+  kk: { name: "Қазақша", play: ["kk"], apple: "Kazakh" },
+  tr: { name: "Türkçe", play: ["tr-TR"], apple: "Turkish" },
 };
 
 const len = (s) => [...s].length; // characters (code points), as the stores count them

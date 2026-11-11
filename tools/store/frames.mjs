@@ -6,9 +6,9 @@ import { mkdirSync, readFileSync } from "node:fs";
 
 const raw = process.argv[2];
 const out = process.argv[3] ?? "store-assets";
-const LANGS = (process.argv[4] ?? "en,es,de,fr,zh,zh-TW,hi,ru,uk,be").split(",");
-// listings without their own app language use another language's screens (zh-TW: the zh interface)
-const RAW = { "zh-TW": "zh" };
+const LANGS = (process.argv[4] ?? "en,es,de,fr,zh,zh-TW,hi,ru,uk,be,kk,tr").split(",");
+// listings without their own app language use another language's screens (zh-TW: the zh interface; kk: Russian, tr: English — until the app has them)
+const RAW = { "zh-TW": "zh", kk: "ru", tr: "en" };
 const ROOT = new URL("../../", import.meta.url);
 // store order: the AI-checked open answer (the main feature) first
 const SCREENS = ["1-ai-check", "2-sources", "3-lesson", "4-quiz", "5-courses", "6-home"];
