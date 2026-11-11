@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID } from "./config.mjs";
+import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, DEMO_VIDEO } from "./config.mjs";
 import { I } from "./icons.mjs";
 import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
@@ -31,6 +31,22 @@ const T = {};
 for (const l of LANGS) T[l.id] = (await import(`./i18n/${l.id}.mjs`)).default;
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const DEMO = {
+  en: { kicker: "Demo", h2: "See it in 45 seconds", p: "Add your material, take a lesson, and get AI feedback on your own answer.", play: "Play the demo video", alt: "Chompbook demo video" },
+  ru: { kicker: "Демо", h2: "Посмотрите за 45 секунд", p: "Добавьте материал, пройдите урок и получите оценку ИИ вашего ответа.", play: "Смотреть демо-видео", alt: "Демо-видео Chompbook" },
+};
+const demoSection = (lang) => {
+  const d = DEMO[lang];
+  if (!d || !DEMO_VIDEO.id) return "";
+  const id = DEMO_VIDEO.id;
+  return `<section id="demo"><div class="wrap">
+<div class="sec-head center reveal"><span class="kicker">${esc(d.kicker)}</span><h2>${esc(d.h2)}</h2><p>${esc(d.p)}</p></div>
+<div class="demo reveal"><a class="demo-play" href="https://youtu.be/${id}" data-yt="${id}" aria-label="${esc(d.play)}"><img src="/img/demo-thumb.webp" alt="${esc(d.alt)}" width="960" height="540" loading="lazy" decoding="async"><span class="demo-btn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></a></div>
+</div></section>
+`;
+};
+
 const pre = (lang) => (lang === "en" ? "" : `/${lang}`);
 const DOC_IDS = ["privacy", "terms", "support", "delete-data"];
 const FULL = { en: EN, ru: RU };
@@ -300,7 +316,7 @@ ${caps.map((c, i) => `<figure class="shot reveal" style="--d:${i * 0.07}s"><div 
 </div>
 </div></section>
 
-<section id="courses"><div class="wrap">
+${demoSection(lang)}<section id="courses"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.courses.kicker)}</span><h2>${esc(t.courses.h2)}</h2><p>${esc(t.courses.p)}</p></div>
 <div class="courses">
 ${t.courses.items.map((c, i) => `<a class="course reveal" href="${p}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}

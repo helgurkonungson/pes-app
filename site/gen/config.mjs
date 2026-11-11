@@ -52,3 +52,6 @@ export const LANGS = [
   { id: "zh", label: "中文（简体）", locale: "zh-CN" },
   { id: "hi", label: "हिन्दी", locale: "hi-IN" },
 ];
+
+// Demo video on the home page (en, ru). Empty id hides the block.
+export const DEMO_VIDEO = { id: "WrDTraxTYDM" };

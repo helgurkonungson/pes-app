@@ -164,4 +164,16 @@
     }, { rootMargin: "-80px 0px -70% 0px" });
     document.querySelectorAll(".doc h2[id]").forEach(function (h) { tio.observe(h); });
   }
+
+  // Demo video: load YouTube (no-cookie) only after a click; without JS the link opens YouTube.
+  var yt = document.querySelector("a[data-yt]");
+  if (yt) yt.addEventListener("click", function (e) {
+    e.preventDefault();
+    var f = document.createElement("iframe");
+    f.src = "https://www.youtube-nocookie.com/embed/" + yt.getAttribute("data-yt") + "?autoplay=1&rel=0";
+    f.title = yt.getAttribute("aria-label") || "Video";
+    f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+    f.allowFullscreen = true;
+    yt.parentNode.replaceChild(f, yt);
+  });
 })();
