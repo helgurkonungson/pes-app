@@ -4,6 +4,27 @@
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 
+  // Campaign tags: remember utm_* of the link a visitor came by (this browser tab only) and pass them on
+  // to Google Play through the install referrer, so Play Console shows installs by source (linkedin, habr …).
+  // The page and language stay in utm_content (set by the site generator as utm_campaign/utm_content).
+  var UTM = ["utm_source", "utm_medium", "utm_campaign"];
+  function sess(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } }
+  var qs = new URLSearchParams(location.search);
+  if (qs.get("utm_source")) UTM.forEach(function (k) { sess(k, qs.get(k) || ""); });
+  if (sess("utm_source")) {
+    document.querySelectorAll('a[href*="play.google.com/store/apps/details"]').forEach(function (a) {
+      try {
+        var u = new URL(a.href);
+        var ref = new URLSearchParams(u.searchParams.get("referrer") || "");
+        var page = [ref.get("utm_campaign"), ref.get("utm_content")].filter(Boolean).join("_");
+        UTM.forEach(function (k) { var v = sess(k); if (v) ref.set(k, v); else ref.delete(k); });
+        if (page) ref.set("utm_content", page);
+        u.searchParams.set("referrer", ref.toString());
+        a.href = u.toString();
+      } catch (e) {}
+    });
+  }
+
   // Language: remember an explicit choice; on the English home page, follow the saved choice or the browser language once.
   document.addEventListener("click", function (e) {
     var a = e.target.closest && e.target.closest("a[data-lang]");
@@ -19,7 +40,7 @@
         if (LANGS.indexOf(c) >= 0) want = c;
       }
     }
-    if (want && want !== "en" && LANGS.indexOf(want) >= 0) { location.replace("/" + want + "/" + location.hash); return; }
+    if (want && want !== "en" && LANGS.indexOf(want) >= 0) { location.replace("/" + want + "/" + location.search + location.hash); return; }
   }
 
   // Close the language menu on outside click / Escape.
