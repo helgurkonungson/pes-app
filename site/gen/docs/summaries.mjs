@@ -231,7 +231,7 @@ export default {
     support: [
       "support@chompbook.online мекенжайына қосымшаның кез келген тілінде жазыңыз — әдетте екі жұмыс күні ішінде жауап береміз.",
       "Сабаққа шағым — сабақ экранындағы жалаушаны басыңыз; техникалық мәліметтер — Баптаулар → Қателер журналы.",
-      "Pro-дан бас тарту: Google Play → Төлемдер мен жазылымдар, Galaxy Store → Мәзір → Жазылымдар немесе iPhone-да Баптаулар → атыңыз → Жазылымдар.",
+      "Pro-дан бас тарту: Google Play → Төлемдер мен жазылымдар немесе iPhone-да Баптаулар → атыңыз → Жазылымдар.",
       "Жаңа телефон: Сақтық көшірмені экспорттау → Сақтық көшірмеден қалпына келтіру; Pro үшін — «Сатып алуларды қалпына келтіру».",
     ],
     "delete-data": [
@@ -261,7 +261,7 @@ export default {
     support: [
       "support@chompbook.online adresine uygulamanın herhangi bir dilinde yazın — genellikle iki iş günü içinde yanıtlarız.",
       "Ders şikâyeti için ders ekranındaki bayrağı kullanın; teknik ayrıntılar için Ayarlar → Hata günlüğü.",
-      "Pro'yu iptal etmek: Google Play → Ödemeler ve abonelikler, Galaxy Store → Menü → Abonelikler veya iPhone'da Ayarlar → adınız → Abonelikler.",
+      "Pro'yu iptal etmek: Google Play → Ödemeler ve abonelikler veya iPhone'da Ayarlar → adınız → Abonelikler.",
       "Yeni telefon: Yedeği dışa aktar → Yedekten geri yükle; Pro için «Satın alımları geri yükle».",
     ],
     "delete-data": [
