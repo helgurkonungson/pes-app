@@ -66,7 +66,7 @@ test.describe("interface languages", () => {
     });
   }
 
-  test("the lesson language of a new skillset follows the interface and can be any of ten", async ({ page }) => {
+  test("the lesson language of a new skillset follows the interface and can be any of twelve", async ({ page }) => {
     await mockApis(page);
     await onboard(page, { lang: "en" });
     await page.getByRole("navigation").getByRole("button", { name: "Skillsets" }).click();
@@ -75,7 +75,7 @@ test.describe("interface languages", () => {
     await expect(field).toBeVisible();
     await field.click();
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("radio")).toHaveCount(10);
+    await expect(dialog.getByRole("radio")).toHaveCount(12);
     await dialog.getByRole("radio", { name: "Deutsch" }).click();
     await expect(page.getByRole("button", { name: /^Lesson language: Deutsch/ })).toBeVisible();
   });
