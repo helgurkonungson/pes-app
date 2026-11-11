@@ -40,9 +40,9 @@ const demoSection = (lang) => {
   const d = DEMO[lang];
   if (!d || !DEMO_VIDEO.id) return "";
   const id = DEMO_VIDEO.id;
-  return `<section id="demo"><div class="wrap">
+  return `<section id="video"><div class="wrap">
 <div class="sec-head center reveal"><span class="kicker">${esc(d.kicker)}</span><h2>${esc(d.h2)}</h2><p>${esc(d.p)}</p></div>
-<div class="demo reveal"><a class="demo-play" href="https://youtu.be/${id}" data-yt="${id}" aria-label="${esc(d.play)}"><img src="/img/demo-thumb.webp" alt="${esc(d.alt)}" width="960" height="540" loading="lazy" decoding="async"><span class="demo-btn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></a></div>
+<div class="vid reveal"><a class="vid-play" href="https://youtu.be/${id}" data-yt="${id}" aria-label="${esc(d.play)}"><img src="/img/demo-thumb.webp" alt="${esc(d.alt)}" width="960" height="540" loading="lazy" decoding="async"><span class="vid-btn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></a></div>
 </div></section>
 `;
 };
