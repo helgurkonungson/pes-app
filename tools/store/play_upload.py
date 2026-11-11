@@ -5,6 +5,7 @@ Usage:
   pip install google-api-python-client google-auth
   python3 tools/store/play_upload.py --key path/to/service-account.json \
       --assets "<Claude outputs>/store-assets/google-play" [--listing store/listing] [--only en,ru] [--dry-run]
+      [--video https://youtu.be/<id> [--video-only]]
 
 - The service account needs Play Console access to this app with "Manage store presence".
 - Texts come from store/listing/<lang>.json (title, short, full); images from the assets folder made by
@@ -48,6 +49,8 @@ def main():
     ap.add_argument("--listing", default=os.path.join(os.path.dirname(__file__), "..", "..", "store", "listing"))
     ap.add_argument("--only", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--video", default="", help="YouTube promo video URL, set on every touched locale")
+    ap.add_argument("--video-only", action="store_true", help="only set the promo video (no texts or images)")
     a = ap.parse_args()
 
     creds = service_account.Credentials.from_service_account_file(
@@ -66,7 +69,17 @@ def main():
             if loc not in existing:
                 skipped.append(loc)
                 continue
+            if a.video_only:
+                if not a.video:
+                    sys.exit("--video-only needs --video <YouTube URL>")
+                if not a.dry_run:
+                    edits.listings().patch(packageName=PACKAGE, editId=edit, language=loc, body={"language": loc, "video": a.video}).execute()
+                print(("[dry-run] " if a.dry_run else "video set: ") + loc)
+                done.append(loc)
+                continue
             body = {"language": loc, "title": L["title"], "shortDescription": L["short"], "fullDescription": L["full"]}
+            if a.video:
+                body["video"] = a.video
             plan = {kind: pick(os.path.join(a.assets, sub, lang)) for kind, sub in IMAGES}
             fg = [p for p in glob.glob(os.path.join(a.assets, "feature-graphic", f"{lang}.*"))]
             for kind, files in plan.items():
