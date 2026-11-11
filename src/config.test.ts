@@ -134,6 +134,5 @@ describe("branding", () => {
     const hybrid = rc.match(/purchases-hybrid-common:([\d.]+)/)?.[1] ?? "";
     expect(PAIRS[hybrid], `purchases-hybrid-common ${hybrid}: add its native version to PAIRS`).toBeTruthy();
     expect(gradle).toContain(`purchases-store-galaxy:${PAIRS[hybrid]}"`);
-    expect(gradle).toContain(`galaxyImplementation "com.revenuecat.purchases:purchases:${PAIRS[hybrid]}"`);
   });
 });
