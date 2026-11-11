@@ -23,7 +23,15 @@ export const BUILTIN_COURSES: BuiltinCourse[] = [
 
 export const COURSE_LANGS: Lang[] = ["ru", "en", "uk", "be", "es", "de", "fr", "zh", "hi"];
 
-const LANGUAGE: Record<Lang, LessonLanguage> = {
+/** Interface languages without their own course texts read the course of a close language (Kazakh → Russian, Turkish → English). */
+const COURSE_FALLBACK: Partial<Record<Lang, Lang>> = { kk: "ru", tr: "en" };
+
+/** The language whose course texts a learner in this interface language gets. */
+export function courseLang(lang: Lang): Lang {
+  return COURSE_FALLBACK[lang] ?? lang;
+}
+
+const LANGUAGE: Partial<Record<Lang, LessonLanguage>> = {
   ru: "Russian",
   en: "English",
   uk: "Ukrainian",
@@ -36,19 +44,19 @@ const LANGUAGE: Record<Lang, LessonLanguage> = {
 };
 
 export function courseLanguageFor(lang: Lang): LessonLanguage {
-  return LANGUAGE[lang];
+  return LANGUAGE[courseLang(lang)] ?? "English";
 }
 
 /** Course id of a built-in course in a language ("cb-learning-ru"). */
 export function builtinCourseId(slug: string, lang: Lang): string {
-  return `cb-${slug}-${lang}`;
+  return `cb-${slug}-${courseLang(lang)}`;
 }
 
 const FILES = import.meta.glob("./*/*.md", { query: "?raw", import: "default" }) as Record<string, () => Promise<string>>;
 
 /** Source text of a built-in course; falls back to English for a language without it. */
 export async function loadBuiltinCourse(slug: string, lang: Lang): Promise<string> {
-  const load = FILES[`./${slug}/${lang}.md`] ?? FILES[`./${slug}/en.md`];
+  const load = FILES[`./${slug}/${courseLang(lang)}.md`] ?? FILES[`./${slug}/en.md`];
   if (!load) throw new Error(`no built-in course ${slug}`);
   return load();
 }

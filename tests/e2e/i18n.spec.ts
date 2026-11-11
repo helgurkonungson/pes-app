@@ -10,6 +10,8 @@ const LANGS: { name: string; lang: string; start: RegExp; settings: string }[] =
   { name: "Français", lang: "fr", start: /Commencer/, settings: "Réglages" },
   { name: "中文（简体）", lang: "zh", start: /开始/, settings: "设置" },
   { name: "हिन्दी", lang: "hi", start: /शुरू/, settings: "सेटिंग्स" },
+  { name: "Қазақша", lang: "kk", start: /Бастау/, settings: "Баптаулар" },
+  { name: "Türkçe", lang: "tr", start: /Başlayın/, settings: "Ayarlar" },
 ];
 
 test.describe("interface languages", () => {

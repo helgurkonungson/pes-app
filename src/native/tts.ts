@@ -25,6 +25,7 @@ const STOPWORDS: [string, RegExp][] = [
   ["es-ES", /\b(el|la|los|las|de|que|y|en|es|por|con|una)\b/gi],
   ["de-DE", /\b(der|die|das|und|ist|nicht|mit|ein|eine|zu|den|auf)\b/gi],
   ["fr-FR", /\b(le|la|les|et|des|est|une|dans|que|pour|du|pas)\b/gi],
+  ["tr-TR", /\b(ve|bir|bu|için|ile|de|da|olarak|çok|daha|gibi|ama)\b/gi],
 ];
 
 /**
@@ -42,6 +43,7 @@ export function speechLang(text: string, hint?: string): string {
   if (han === top) return "zh-CN";
   if (dev === top) return "hi-IN";
   if (cyr === top) {
+    if (count(text, /[әғқңөұүһ]/gi) > 0) return "kk-KZ";
     if (count(text, /ў/gi) > 0) return "be-BY";
     if (count(text, /[їєґ]/gi) > 0 || (count(text, /і/gi) > 0 && count(text, /[ыэъё]/gi) === 0)) return "uk-UA";
     return "ru-RU";

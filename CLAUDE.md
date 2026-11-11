@@ -11,7 +11,7 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - AI output is untrusted: always pass it through `src/core/normalize.ts`.
 - No developer secrets in the repo or app. The user's key lives only in secure storage.
 - Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark and light themes (ADR-022: accent text via `--accent-ink`, fills via `--accent`), sun-yellow accent `#ffc53a` (brand «Солнце», same as the icon; orange `--warn`, blue `--info`); 360 px min width; safe-area variables.
-- Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **all nine** dictionaries (en, ru, uk, be, es, de, fr, zh, hi — ADR-024). Plurals need every form `Intl.PluralRules` has for the language (ru/uk/be: one/few/many/other; es/fr: one/many/other); `npm test` checks it.
+- Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **all eleven** dictionaries (en, ru, uk, be, es, de, fr, zh, hi, kk, tr — ADR-024). Plurals need every form `Intl.PluralRules` has for the language (ru/uk/be: one/few/many/other; es/fr: one/many/other); `npm test` checks it.
 - AI-generated screens keep the "Report this lesson" flag (store rules, ADR-025); a new flow after onboarding must not break the first-run tutorial (ADR-026) or the emulator smoke test (`scripts/android-smoke.sh`).
 - Android release builds are shrunk by R8: a new Capacitor plugin package needs a keep rule in `android/app/proguard-rules.pro`; Android images are WebP.
 - Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.

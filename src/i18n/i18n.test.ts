@@ -5,8 +5,10 @@ import { type Dict, en } from "./en";
 import { es } from "./es";
 import { fr } from "./fr";
 import { hi } from "./hi";
+import { kk } from "./kk";
 import { type Lang, LANG_IDS, loadLang, locale, resolveLang, systemLang, translate } from "./index";
 import { ru } from "./ru";
+import { tr } from "./tr";
 import { uk } from "./uk";
 import { zh } from "./zh";
 import type { Entry } from "./types";
@@ -16,7 +18,7 @@ const placeholders = (e: Entry): string[] => {
   return [...new Set(all.flatMap((s) => (s ?? "").match(/\{\w+\}/g) ?? []))].sort();
 };
 
-const OTHERS: Record<Exclude<Lang, "en">, Dict> = { ru, uk, be, es, de, fr, zh, hi };
+const OTHERS: Record<Exclude<Lang, "en">, Dict> = { ru, uk, be, es, de, fr, zh, hi, kk, tr };
 
 describe("dictionaries", () => {
   for (const [lang, dict] of Object.entries(OTHERS) as [Exclude<Lang, "en">, Dict][]) {
@@ -92,7 +94,9 @@ describe("translate", () => {
   it("follows the phone: first supported language in its list, CIS phones → Russian, else English", () => {
     expect(systemLang(["uk-UA", "ru-RU"])).toBe("uk");
     expect(systemLang(["be-BY"])).toBe("be");
-    expect(systemLang(["kk-KZ"])).toBe("ru");
+    expect(systemLang(["kk-KZ"])).toBe("kk");
+    expect(systemLang(["tr-TR"])).toBe("tr");
+    expect(systemLang(["ky-KG"])).toBe("ru");
     expect(systemLang(["zh-Hans-CN"])).toBe("zh");
     expect(systemLang(["zh-TW"])).toBe("zh");
     expect(systemLang(["ja-JP", "fr-CA"])).toBe("fr");

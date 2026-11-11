@@ -3,9 +3,9 @@
 export type LearnerLevel = "beginner" | "intermediate" | "advanced";
 export type Difficulty = "e" | "m" | "h";
 /** Language lessons are written in ("Source" = the language of the materials). */
-export type LessonLanguage = "English" | "Russian" | "Ukrainian" | "Belarusian" | "Spanish" | "German" | "French" | "Chinese" | "Hindi" | "Source";
+export type LessonLanguage = "English" | "Russian" | "Ukrainian" | "Belarusian" | "Spanish" | "German" | "French" | "Chinese" | "Hindi" | "Kazakh" | "Turkish" | "Source";
 /** Interface language. "system" follows the phone's language. */
-export type UiLanguage = "system" | "en" | "ru" | "uk" | "be" | "es" | "de" | "fr" | "zh" | "hi";
+export type UiLanguage = "system" | "en" | "ru" | "uk" | "be" | "es" | "de" | "fr" | "zh" | "hi" | "kk" | "tr";
 /** How lessons are made: "auto" uses AI when it works and falls back to offline lessons; "offline" never calls AI. */
 export type AiMode = "auto" | "offline";
 /** Where a lesson came from. */

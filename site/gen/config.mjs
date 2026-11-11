@@ -40,7 +40,7 @@ export const STORES = {
   apk: { status: "off", url: "https://github.com/helgurkonungson/pes-app/releases/latest" },
 };
 
-/** Site languages: the app's interface languages in the app's order (src/i18n/index.ts), then the site-and-store-only ones (appUi: false; courses: false = no translated course pages, links go to the English ones). */
+/** Site languages: the app's interface languages in the app's order (src/i18n/index.ts), then kk and tr (courses: false = no translated course pages, links go to the English ones). */
 export const LANGS = [
   { id: "en", label: "English", locale: "en-GB" },
   { id: "ru", label: "Русский", locale: "ru-RU" },
@@ -51,9 +51,9 @@ export const LANGS = [
   { id: "fr", label: "Français", locale: "fr-FR" },
   { id: "zh", label: "中文（简体）", locale: "zh-CN" },
   { id: "hi", label: "हिन्दी", locale: "hi-IN" },
-  // Site and store only for now: the app has no kk / tr interface yet (its screens and course pages come from another language).
-  { id: "kk", label: "Қазақша", locale: "kk-KZ", appUi: false, shots: "ru", courses: false },
-  { id: "tr", label: "Türkçe", locale: "tr-TR", appUi: false, shots: "en", courses: false },
+  // kk / tr: the app has the interface (1.2.0) but no translated courses (courses: false = course links go to the English pages); shots = which language's app screens the store/site images use until real ones are captured.
+  { id: "kk", label: "Қазақша", locale: "kk-KZ", shots: "ru", courses: false },
+  { id: "tr", label: "Türkçe", locale: "tr-TR", shots: "en", courses: false },
 ];
 
 // Demo video on the home page (en, ru). Empty id hides the block.

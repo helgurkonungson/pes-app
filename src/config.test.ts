@@ -100,9 +100,9 @@ describe("branding", () => {
     expect(manifest).toContain('android:localeConfig="@xml/locales_config"');
     expect(manifest).toContain('android:enableOnBackInvokedCallback="true"');
     expect(manifest).toMatch(/<receiver\s+android:name="\.StreakWidget"[\s\S]*?android\.appwidget\.provider/);
-    // the languages offered in Android Settings are exactly the app's nine
+    // the languages offered in Android Settings are exactly the app's eleven
     const locales = [...read("res/xml/locales_config.xml").matchAll(/<locale android:name="([^"]+)"/g)].map((m) => m[1].split("-")[0]);
-    expect(locales.sort()).toEqual(["be", "de", "en", "es", "fr", "hi", "ru", "uk", "zh"]);
+    expect(locales.sort()).toEqual(["be", "de", "en", "es", "fr", "hi", "kk", "ru", "tr", "uk", "zh"]);
     const activity = read("java/io/github/helgurkonungson/pes/MainActivity.java");
     const boot = activity.indexOf("super.onCreate");
     for (const plugin of ["HomeWidgetPlugin", "AppLocalePlugin", "StoreReviewPlugin"]) {

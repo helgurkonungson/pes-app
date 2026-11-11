@@ -5,7 +5,7 @@ describe("lesson languages", () => {
   it("every interface language has a lesson language and back", () => {
     for (const [ui, lesson] of Object.entries(LESSON_LANG_OF)) expect(uiLangOfLesson(lesson)).toBe(ui);
     expect(uiLangOfLesson("Source")).toBeNull();
-    expect(LESSON_LANGUAGES).toHaveLength(10);
+    expect(LESSON_LANGUAGES).toHaveLength(12);
   });
   it("validates stored values", () => {
     expect(isLessonLanguage("Spanish")).toBe(true);

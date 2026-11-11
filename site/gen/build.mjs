@@ -211,13 +211,8 @@ ${lang === "ru" || lang === "be" || lang === "uk" ? b("ruStore", "RuStore", I.ba
 </div>`;
 }
 
-/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app (kk, tr: written here until the app has them). */
-const EXTRA_LABELS = {
-  kk: { kicker: "Үйренгеніңізді қолданыңыз", check: "ЖИ-мен тексеру", score: "ЖИ бағасы · 10-нан", worked: "Не жақсы болды", improve: "Нені жақсарту керек" },
-  tr: { kicker: "Öğrendiklerinizi uygulayın", check: "Yapay zekâ ile kontrol et", score: "YZ puanı · 10 üzerinden", worked: "İyi giden", improve: "Geliştirilecek" },
-};
+/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app . */
 function appLabels(lang) {
-  if (EXTRA_LABELS[lang]) return EXTRA_LABELS[lang]; // languages the app doesn't have yet (site and store only)
   const src = readFileSync(join(REPO, "src", "i18n", `${lang}.ts`), "utf8");
   const get = (k) => {
     const m = src.match(new RegExp(`"${k.replace(".", "\\.")}":\\s*"((?:[^"\\\\]|\\\\.)*)"`));
@@ -274,7 +269,7 @@ function landing(lang) {
     "@graph": [
       {
         "@type": "MobileApplication", "@id": `${SITE}/#app`, name: "Chompbook", alternateName: "Грызи",
-        operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.filter((l) => l.appUi !== false).map((l) => l.id),
+        operatingSystem: "Android", applicationCategory: "EducationalApplication", inLanguage: LANGS.map((l) => l.id),
         description: t.desc, url: `${SITE}${p}/`, image: `${SITE}/img/icon-192.png`,
         installUrl: STORES.play.url, sameAs: [STORES.play.url],
         offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },

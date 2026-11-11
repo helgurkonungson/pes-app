@@ -38,6 +38,7 @@ export function scriptOfLanguage(lang: LessonLanguage): Script | null {
     case "Russian":
     case "Ukrainian":
     case "Belarusian":
+    case "Kazakh":
       return "Cyrillic";
     case "Chinese":
       return "Han";

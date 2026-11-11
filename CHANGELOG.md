@@ -4,6 +4,7 @@ All notable changes to Chompbook (formerly PES). Versions follow semver; every n
 
 ## Unreleased
 
+- **Kazakh and Turkish:** the app now speaks Қазақша and Türkçe — all screens, the language picker, Android's per-app language list, lessons written in these languages and speech for Kazakh text. The five free courses are not translated yet: a Kazakh interface opens them in Russian, a Turkish one in English. Phones set to Kazakh now get the Kazakh interface (they used to get Russian).
 - **Samsung Galaxy Store build:** CI also builds `Chompbook-x.y.z-galaxy.apk` — the same app with Chompbook Pro sold through Samsung In-App Purchase, Galaxy Store links and wording, and no Google Play rating card. The Google Play build is unchanged. The privacy policy and terms now name the Galaxy Store.
 
 ## 1.1.0 — 2026-11-03
