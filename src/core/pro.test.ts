@@ -52,10 +52,6 @@ describe("Pro paywall (ADR-037)", () => {
       "https://play.google.com/store/account/subscriptions?package=io.github.helgurkonungson.pes&sku=pro_monthly",
     );
   });
-
-  it("links to the app's Galaxy Store page in the Galaxy build (ADR-041)", () => {
-    expect(manageSubscriptionUrl("online.chompbook.app", "pro_monthly", "galaxy")).toBe("https://galaxystore.samsung.com/detail/online.chompbook.app");
-  });
 });
 
 describe("Pro offer after a lesson (1.1.0)", () => {

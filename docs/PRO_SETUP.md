@@ -74,16 +74,6 @@
 3. Создайте навык со своим текстом → урок пишет Chompbook AI. В RevenueCat → Customers появится анонимный покупатель.
 4. Отмените подписку в Google Play → после окончания периода урок соберётся без AI, а приложение предложит продлить Pro.
 
-## 9. Samsung Galaxy Store (ADR-041)
-
-Та же подписка в сборке для Galaxy Store, через Samsung IAP:
-1. Seller Portal → Apps → Chompbook → **In App Purchase → Add New Product → Subscription**: `pro_monthly` (1 month, $4.99) и `pro_annual` (1 year, $39.99), free trial 7 days, цены СНГ как в Play → отметить → **Activate**.
-2. Seller Portal → **Assistance → API Service → Create Service Account**: Publishing & ITEM + GSS → Download Key, скопировать Service Account ID.
-3. RevenueCat → проект Chompbook → **Apps & providers → Add app → Galaxy Store**: package `online.chompbook.app`, Service Account ID, ключ. Public SDK key → GitHub Variables `REVENUECAT_GALAXY_KEY`.
-4. **Product catalog → Products → New product** (Galaxy app): `pro_monthly`, `pro_annual` (Subscription) → entitlement `pro`; в offering `default` добавить их в пакеты `$rc_monthly` и `$rc_annual`.
-5. В Galaxy-приложении RevenueCat скопировать «Samsung IAP Instant Server Notification Service URL» → Seller Portal → In App Purchase → ⋮ → **Instant Server Notification Url (ISN)** → Test → Save.
-6. Проверка: свой Samsung-аккаунт в **Profile → License Test**, Closed Beta со сборкой `galaxy`. Сервер `api/` менять не нужно: он проверяет entitlement `pro`, общий для обоих магазинов.
-
 ## Если что-то не так
 
 | Симптом | Причина |

@@ -20,7 +20,7 @@ import { SessionScreen } from "../screens/Session";
 import { SkillsetDetail } from "../screens/SkillsetDetail";
 import { Skillsets } from "../screens/Skillsets";
 import { autoUpdateCheckEnabled, dailyUpdateCheck, type UpdateInfo } from "../update/updater";
-import { initPro, refreshPro } from "../pro/purchases";
+import { initPro } from "../pro/purchases";
 import { TabBar } from "./TabBar";
 import { SITE_URL } from "../build";
 import { useTutorial } from "./tutorialStore";
@@ -173,7 +173,6 @@ export function App() {
       } else {
         void settleStreakNow().then(scheduleReminders); // a new day may have started; "studied today?" and due cards may have changed
         void syncLanguageWithAndroid(); // the language may have been changed in Android Settings
-        void refreshPro(); // Galaxy Store build: renewals and cancellations are read on return (ADR-041)
       }
     });
     return () => {
@@ -185,7 +184,7 @@ export function App() {
   useEffect(() => {
     // after boot: the check writes to the profile, and an empty database must be restored first
     if (ready) void settleStreakNow().then(scheduleReminders).then(refreshHomeWidget); // missed days: freezes, rest days, repair (ADR-029)
-    if (ready) void initPro(); // store builds: subscription state from the store (ADR-037, ADR-041)
+    if (ready) void initPro(); // Google Play build: subscription state from the store (ADR-037)
     if (!ready || !autoUpdateCheckEnabled()) return;
     runDailyUpdateCheck();
     if (!Capacitor.isNativePlatform()) return;

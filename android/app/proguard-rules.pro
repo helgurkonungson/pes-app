@@ -39,8 +39,3 @@
 # Play Billing ship their own consumer rules.
 -keep class com.revenuecat.purchases.capacitor.** { *; }
 -keep class com.revenuecat.purchases.hybridcommon.** { *; }
-# Galaxy Store build (ADR-041): RevenueCat's Galaxy module and Samsung IAP ship consumer rules;
-# keep them whole as a safety margin, like the plugins above.
--keep class com.revenuecat.purchases.galaxy.** { *; }
--keep class com.samsung.android.sdk.iap.** { *; }
--dontwarn com.samsung.android.sdk.iap.**

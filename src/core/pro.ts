@@ -120,13 +120,8 @@ export function usageView(u: ProUsage | null | undefined): { ratio: number; less
   return { ratio: Math.min(1, Math.max(0, u.used / u.limit)), lessonsLeft: Math.max(0, Math.floor(u.left / TOKENS_PER_LESSON)) };
 }
 
-/**
- * Where to manage the subscription (cancel, change plan, payment method) when the store gives no
- * link of its own: Google Play's subscription page for this app; for the Galaxy Store (ADR-041) the
- * app's page there — subscriptions live in Galaxy Store → Menu → Subscriptions.
- */
-export function manageSubscriptionUrl(appId: string, productId?: string, store: "play" | "galaxy" = "play"): string {
-  if (store === "galaxy") return `https://galaxystore.samsung.com/detail/${encodeURIComponent(appId)}`;
+/** Google Play's subscription page for this app (cancel, change plan, payment method). */
+export function manageSubscriptionUrl(appId: string, productId?: string): string {
   const base = `https://play.google.com/store/account/subscriptions?package=${encodeURIComponent(appId)}`;
   return productId ? `${base}&sku=${encodeURIComponent(productId)}` : base;
 }

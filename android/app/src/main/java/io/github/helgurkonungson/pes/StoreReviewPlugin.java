@@ -10,7 +10,7 @@ import com.google.android.play.core.review.ReviewManager;
 import com.google.android.play.core.review.ReviewManagerFactory;
 
 /**
- * Google Play In-App Review (0.19.2), Play flavor only (ADR-040). The app asks at a good moment (src/core/reviewAsk.ts);
+ * Google Play In-App Review (0.19.2). The app asks at a good moment (src/core/reviewAsk.ts);
  * Google decides whether the card is actually shown and never tells the result.
  */
 @CapacitorPlugin(name = "StoreReview")

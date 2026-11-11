@@ -14,16 +14,6 @@ export const APP_REPO: string = __APP_REPO__;
 export const APP_ID = "online.chompbook.app";
 /** The app's Google Play page. */
 export const PLAY_URL = `https://play.google.com/store/apps/details?id=${APP_ID}`;
-
-/**
- * The store this build is for (ADR-041): "play" — Google Play (default); "galaxy" — Samsung Galaxy
- * Store (VITE_STORE=galaxy, the Android `galaxy` flavor). Decides the purchases backend, store links,
- * the rating card and store wording.
- */
-export type StoreId = "play" | "galaxy";
-export const STORE: StoreId = import.meta.env.VITE_STORE === "galaxy" ? "galaxy" : "play";
-/** The app's page in the store this build came from. */
-export const STORE_URL: string = STORE === "galaxy" ? `https://galaxystore.samsung.com/detail/${APP_ID}` : PLAY_URL;
 /** Our site: privacy policy, OAuth callback pages, report endpoint. */
 export const SITE_URL = "https://chompbook.online";
 
@@ -40,12 +30,6 @@ export const REPORT_EMAIL_OVERRIDE: string = import.meta.env.VITE_REPORT_EMAIL ?
 
 /** RevenueCat public SDK key for Android (Chompbook Pro purchases, ADR-037); public by design. Empty = Pro can't be bought in this build. */
 export const REVENUECAT_ANDROID_KEY: string = import.meta.env.VITE_REVENUECAT_ANDROID_KEY ?? "";
-/** RevenueCat public SDK key of the Galaxy Store app (ADR-041); public by design. */
-export const REVENUECAT_GALAXY_KEY: string = import.meta.env.VITE_REVENUECAT_GALAXY_KEY ?? "";
-/** The key for this build's store; empty = Pro can't be bought in this build. */
-export const REVENUECAT_KEY: string = STORE === "galaxy" ? REVENUECAT_GALAXY_KEY : REVENUECAT_ANDROID_KEY;
-/** Samsung IAP test mode (VITE_GALAXY_BILLING=test): no real charges. Release builds stay in production mode. */
-export const GALAXY_BILLING_TEST: boolean = import.meta.env.VITE_GALAXY_BILLING === "test";
 /** Chompbook AI server (Pro, ADR-037), OpenAI-compatible. */
 export const PRO_API: string = (import.meta.env.VITE_PRO_API || "https://api.chompbook.online/v1").replace(/\/+$/, "");
 

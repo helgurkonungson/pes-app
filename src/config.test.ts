@@ -110,29 +110,11 @@ describe("branding", () => {
       expect(at, plugin).toBeGreaterThan(0);
       expect(at, plugin).toBeLessThan(boot);
     }
-    expect(readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8")).toContain('playImplementation "com.google.android.play:review:');
+    expect(readFileSync(new URL("../android/app/build.gradle", import.meta.url), "utf8")).toContain("com.google.android.play:review:");
     // every widget string exists in every language folder
     for (const dir of ["values", "values-ru", "values-uk", "values-be", "values-es", "values-de", "values-fr", "values-zh", "values-hi"]) {
       const xml = read(`res/${dir}/strings.xml`);
       for (const name of ["widget_name", "widget_description", "widget_streak_label", "widget_cta", "widget_empty"]) expect(xml, `${dir}/${name}`).toContain(`name="${name}"`);
     }
-  });
-  it("ADR-041 store flavors: play and galaxy with their own StoreReview / GalaxyPurchases, Samsung IAP matching RevenueCat", () => {
-    const app = new URL("../android/app/", import.meta.url);
-    const gradle = readFileSync(new URL("build.gradle", app), "utf8");
-    expect(gradle).toMatch(/productFlavors\s*\{[\s\S]*play\s*\{[\s\S]*galaxy\s*\{/);
-    for (const flavor of ["play", "galaxy"])
-      for (const cls of ["StoreReviewPlugin", "GalaxyPurchasesPlugin"])
-        expect(readFileSync(new URL(`src/${flavor}/java/io/github/helgurkonungson/pes/${cls}.java`, app), "utf8"), `${flavor}/${cls}`).toContain(`class ${cls}`);
-    const activity = readFileSync(new URL("src/main/java/io/github/helgurkonungson/pes/MainActivity.java", app), "utf8");
-    expect(activity.indexOf("registerPlugin(GalaxyPurchasesPlugin.class)")).toBeGreaterThan(0);
-    expect(activity.indexOf("registerPlugin(GalaxyPurchasesPlugin.class)")).toBeLessThan(activity.indexOf("super.onCreate"));
-    // purchases-store-galaxy must equal the native SDK of purchases-hybrid-common: update both together
-    // (the hybrid-common POM on Maven Central names its `purchases` version)
-    const PAIRS: Record<string, string> = { "19.15.0": "10.29.0" };
-    const rc = readFileSync(new URL("../node_modules/@revenuecat/purchases-capacitor/android/build.gradle", import.meta.url), "utf8");
-    const hybrid = rc.match(/purchases-hybrid-common:([\d.]+)/)?.[1] ?? "";
-    expect(PAIRS[hybrid], `purchases-hybrid-common ${hybrid}: add its native version to PAIRS`).toBeTruthy();
-    expect(gradle).toContain(`purchases-store-galaxy:${PAIRS[hybrid]}"`);
   });
 });

@@ -11,12 +11,6 @@ interface ImportMetaEnv {
   readonly VITE_REPORT_EMAIL?: string;
   /** RevenueCat public SDK key for Android (Pro purchases, ADR-037); public by design. Empty = Pro can't be bought in this build. */
   readonly VITE_REVENUECAT_ANDROID_KEY?: string;
-  /** Store of this build (ADR-041): "galaxy" = Samsung Galaxy Store; anything else = Google Play. */
-  readonly VITE_STORE?: string;
-  /** RevenueCat public SDK key of the Galaxy Store app; public by design. */
-  readonly VITE_REVENUECAT_GALAXY_KEY?: string;
-  /** "test" = Samsung IAP test mode (no real charges); otherwise production. */
-  readonly VITE_GALAXY_BILLING?: string;
   /** Chompbook AI server (Pro). Default https://api.chompbook.online/v1. */
   readonly VITE_PRO_API?: string;
 }

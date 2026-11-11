@@ -21,7 +21,7 @@ export default {
     support: [
       "Пишіть на support@chompbook.online будь-якою мовою застосунку — відповідаємо зазвичай за два робочі дні.",
       "Скарга на урок — прапорець на екрані уроку; технічні подробиці — Налаштування → Журнал помилок.",
-      "Скасування Pro: Google Play → Платежі й передплати, Galaxy Store → Меню → Передплати, або на iPhone — Налаштування → ваше ім'я → Передплати.",
+      "Скасування Pro: Google Play → Платежі й передплати, або на iPhone — Налаштування → ваше ім'я → Передплати.",
       "Новий телефон: Експорт резервної копії → Відновлення з резервної копії; Pro — «Відновити покупки».",
     ],
     "delete-data": [
@@ -51,7 +51,7 @@ export default {
     support: [
       "Пішыце на support@chompbook.online на любой мове праграмы — адказваем звычайна за два працоўныя дні.",
       "Скарга на ўрок — сцяжок на экране ўрока; тэхнічныя падрабязнасці — Налады → Журнал памылак.",
-      "Адмена Pro: Google Play → Плацяжы і падпіскі, Galaxy Store → Меню → Падпіскі, або на iPhone — Налады → ваша імя → Падпіскі.",
+      "Адмена Pro: Google Play → Плацяжы і падпіскі, або на iPhone — Налады → ваша імя → Падпіскі.",
       "Новы тэлефон: Экспарт рэзервовай копіі → Аднаўленне з рэзервовай копіі; Pro — «Аднавіць пакупкі».",
     ],
     "delete-data": [
@@ -81,7 +81,7 @@ export default {
     support: [
       "Escribe a support@chompbook.online en cualquier idioma de la app; solemos responder en dos días laborables.",
       "Reporta una lección con la bandera de la pantalla; envía detalles técnicos desde Ajustes → Registro de errores.",
-      "Cancelar Pro: Google Play → Pagos y suscripciones, Galaxy Store → Menú → Suscripciones, o en iPhone Ajustes → tu nombre → Suscripciones.",
+      "Cancelar Pro: Google Play → Pagos y suscripciones, o en iPhone Ajustes → tu nombre → Suscripciones.",
       "Teléfono nuevo: Exportar copia → Restaurar desde copia; para Pro, «Restaurar compras».",
     ],
     "delete-data": [
@@ -111,7 +111,7 @@ export default {
     support: [
       "Schreib an support@chompbook.online in einer der App-Sprachen – meist antworten wir innerhalb von zwei Werktagen.",
       "Lektion melden: Flagge auf dem Lektionsbildschirm; technische Details: Einstellungen → Fehlerprotokoll.",
-      "Pro kündigen: Google Play → Zahlungen und Abos, Galaxy Store → Menü → Abonnements, oder am iPhone Einstellungen → dein Name → Abonnements.",
+      "Pro kündigen: Google Play → Zahlungen und Abos, oder am iPhone Einstellungen → dein Name → Abonnements.",
       "Neues Handy: Backup exportieren → Aus Backup wiederherstellen; Pro: „Käufe wiederherstellen“.",
     ],
     "delete-data": [
@@ -141,7 +141,7 @@ export default {
     support: [
       "Écris à support@chompbook.online dans une des langues de l'appli ; nous répondons en général sous deux jours ouvrés.",
       "Signaler une leçon : drapeau sur l'écran de leçon ; détails techniques : Réglages → Journal d'erreurs.",
-      "Résilier Pro : Google Play → Paiements et abonnements, Galaxy Store → Menu → Abonnements, ou sur iPhone Réglages → ton nom → Abonnements.",
+      "Résilier Pro : Google Play → Paiements et abonnements, ou sur iPhone Réglages → ton nom → Abonnements.",
       "Nouveau téléphone : Exporter une sauvegarde → Restaurer depuis une sauvegarde ; pour Pro, « Restaurer les achats ».",
     ],
     "delete-data": [
@@ -171,7 +171,7 @@ export default {
     support: [
       "请用应用支持的任一语言写信至 support@chompbook.online，我们通常在两个工作日内回复。",
       "举报课程：点击课程页面上的旗帜；技术细节：设置 → 错误日志。",
-      "取消 Pro：Google Play → 付款和订阅；Galaxy Store → 菜单 → 订阅；iPhone：设置 → 你的名字 → 订阅。",
+      "取消 Pro：Google Play → 付款和订阅；iPhone：设置 → 你的名字 → 订阅。",
       "换新手机：导出备份 → 从备份恢复；Pro 请点“恢复购买”。",
     ],
     "delete-data": [
@@ -201,7 +201,7 @@ export default {
     support: [
       "ऐप की किसी भी भाषा में support@chompbook.online पर लिखें — आम तौर पर दो कार्यदिवसों में जवाब देते हैं।",
       "पाठ की शिकायत: पाठ स्क्रीन पर झंडा; तकनीकी विवरण: सेटिंग्स → एरर लॉग।",
-      "Pro रद्द करें: Google Play → भुगतान और सदस्यताएँ, Galaxy Store → मेनू → सदस्यताएँ, या iPhone पर सेटिंग्स → आपका नाम → सदस्यताएँ।",
+      "Pro रद्द करें: Google Play → भुगतान और सदस्यताएँ, या iPhone पर सेटिंग्स → आपका नाम → सदस्यताएँ।",
       "नया फ़ोन: बैकअप एक्सपोर्ट करें → बैकअप से रीस्टोर करें; Pro के लिए “ख़रीदारी बहाल करें”।",
     ],
     "delete-data": [

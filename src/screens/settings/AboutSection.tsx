@@ -3,7 +3,7 @@ import { Bug, Download, Flag, GraduationCap, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useUpdate } from "../../app/App";
 import { useTutorial } from "../../app/tutorialStore";
-import { APP_VERSION, STORE, STORE_URL } from "../../build";
+import { APP_VERSION, PLAY_URL } from "../../build";
 import { Group, MenuRow, openExternal, SectionLabel, toast } from "../../components/ui";
 import { locale, useT } from "../../i18n";
 import { useNav } from "../../nav/store";
@@ -43,7 +43,7 @@ export function AboutSection() {
           {selfUpdate ? (
             <MenuRow icon={<RefreshCw size={20} className={checking ? "spin" : undefined} />} label={t("settings.checkUpdates")} hint={checking ? t("settings.checkingUpdates") : (checkNote ?? undefined)} value={`v${APP_VERSION}`} onClick={checking ? undefined : doCheck} />
           ) : (
-            <MenuRow icon={<RefreshCw size={20} />} label={t("settings.version")} hint={t(STORE === "galaxy" ? "settings.updatesGalaxy" : "settings.updatesPlay")} value={`v${APP_VERSION}`} onClick={() => openExternal(STORE_URL)} />
+            <MenuRow icon={<RefreshCw size={20} />} label={t("settings.version")} hint={t("settings.updatesPlay")} value={`v${APP_VERSION}`} onClick={() => openExternal(PLAY_URL)} />
           )}
           {selfUpdate && update.info && <MenuRow icon={<Download size={20} />} label={t("settings.install", { v: update.info.version })} hint={t("settings.installHint")} onClick={() => installUpdateSafely(update.info!)} />}
           <MenuRow icon={<GraduationCap size={20} />} label={t("settings.tutorial")} onClick={() => useTutorial.getState().show()} />
