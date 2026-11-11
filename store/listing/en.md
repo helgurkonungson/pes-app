@@ -11,14 +11,14 @@ Chompbook: AI Study Tutor
 ```
 Answer in your own words — AI checks if you got it. Study books, PDFs and notes
 ```
-**Полное описание (≤4000, 3549):**
+**Полное описание (≤4000, 3631):**
 ```
 Answer in your own words — and AI checks whether you really understood. Chompbook is a study tutor that turns your books, PDFs and notes into short daily lessons.
 Every lesson ends with an open question. You get a score out of 10, what worked, what to improve and how, plus a model answer.
 
 WHY YOUR OWN WORDS
 Flashcards and multiple choice test recognition: you can spot or guess the right option without really knowing the topic. Explaining an idea in your own words proves that you understand it. That is active recall and the Feynman technique — and it is how every Chompbook lesson ends.
-• You write freely, so there is nothing to guess from.
+• Type or dictate your answer, so there is nothing to guess from.
 • AI gives a score out of 10, says what worked, what is missing and how to fix it.
 • A model answer shows what a complete explanation looks like.
 • AI remembers what you missed and brings it back in the next lessons until you get it right.
@@ -51,6 +51,7 @@ STUDY SMARTER
 AI YOUR WAY
 • Connect a free AI in a couple of taps: sign in with Google to create a free Gemini key, or sign in to OpenRouter for free.
 • Or use your own key: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA — or your own server such as Ollama or LM Studio.
+• Or try Chompbook Pro: AI lessons with no key to set up, 7 days free.
 • It writes lessons from your materials and checks your open answers the way a personal tutor would.
 
 FIVE FREE COURSES

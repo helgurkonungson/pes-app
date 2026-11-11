@@ -11,14 +11,14 @@ Chompbook : réviser avec l'IA
 ```
 Réponds avec tes mots, l'IA vérifie si tu as compris. Cours, PDF, examens, quiz
 ```
-**Полное описание (≤4000, 3907):**
+**Полное описание (≤4000, 3991):**
 ```
 Réponds avec tes propres mots, et l'IA vérifie si tu as vraiment compris, comme un tuteur. Chompbook transforme tes livres, PDF et notes de cours en courtes leçons quotidiennes pour réviser efficacement.
 Chaque leçon se termine par une question ouverte. Tu reçois une note sur 10, ce qui est réussi, ce qu'il faut améliorer et comment, ainsi qu'une réponse modèle.
 
 POURQUOI AVEC TES MOTS
 Les fiches et les QCM testent la reconnaissance : on peut repérer ou deviner la bonne réponse sans vraiment maîtriser le sujet. Expliquer une idée avec ses propres mots prouve qu'on l'a comprise. C'est le rappel actif et la technique Feynman — et c'est ainsi que se termine chaque leçon Chompbook.
-• Tu écris librement : rien à deviner.
+• Tu écris ou dictes librement : rien à deviner.
 • L'IA donne une note sur 10 et dit ce qui va, ce qui manque et comment l'améliorer.
 • Une réponse modèle montre à quoi ressemble une explication complète.
 • L'IA retient ce qui t'a échappé et le ramène dans les leçons suivantes jusqu'à ce que ce soit acquis.
@@ -51,6 +51,7 @@ RÉVISER PLUS MALIN
 L'IA À TA FAÇON
 • Connecte une IA gratuite en quelques touches : identifie-toi avec Google pour créer une clé Gemini gratuite, ou inscris-toi gratuitement sur OpenRouter.
 • Ou utilise ta propre clé : Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA — ou ton propre serveur comme Ollama ou LM Studio.
+• Ou essaie Chompbook Pro : l'IA sans clé à configurer, 7 jours gratuits.
 • Elle rédige des leçons à partir de tes supports et corrige tes réponses ouvertes comme un tuteur particulier.
 
 CINQ COURS GRATUITS

@@ -11,14 +11,14 @@ Chompbook: estudia con IA
 ```
 Responde con tus palabras y la IA revisa si lo entiendes. Libros, PDF y apuntes
 ```
-**Полное описание (≤4000, 3869):**
+**Полное описание (≤4000, 3961):**
 ```
 Responde con tus propias palabras y la IA revisa si de verdad lo entiendes, como un tutor. Chompbook convierte tus libros, PDF y apuntes en lecciones cortas para estudiar cada día.
 Cada lección termina con una pregunta abierta. Recibes una nota sobre 10, qué hiciste bien, qué mejorar y cómo, y una respuesta modelo.
 
 POR QUÉ CON TUS PALABRAS
 Las tarjetas de memoria y los tests de opción múltiple miden el reconocimiento: puedes reconocer o adivinar la opción correcta sin dominar el tema. Explicar una idea con tus propias palabras demuestra que la entiendes. Es el recuerdo activo y la técnica Feynman, y así termina cada lección de Chompbook.
-• Escribes libremente, así que no hay nada que adivinar.
+• Escribes o dictas tu respuesta, así que no hay nada que adivinar.
 • La IA pone una nota sobre 10 y te dice qué salió bien, qué falta y cómo mejorarlo.
 • Una respuesta modelo muestra cómo es una explicación completa.
 • La IA recuerda lo que se te escapó y lo trae de vuelta en las siguientes lecciones hasta que lo domines.
@@ -51,6 +51,7 @@ ESTUDIA MEJOR
 LA IA A TU MANERA
 • Conecta una IA gratis en un par de toques: inicia sesión con Google para crear una clave gratuita de Gemini o regístrate gratis en OpenRouter.
 • O usa tu propia clave: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA, o tu propio servidor como Ollama o LM Studio.
+• O prueba Chompbook Pro: lecciones con IA sin configurar claves, 7 días gratis.
 • Con ella, Chompbook escribe lecciones a partir de tus materiales y corrige tus respuestas abiertas como un tutor personal.
 
 CINCO CURSOS GRATIS

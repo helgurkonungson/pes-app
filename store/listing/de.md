@@ -11,14 +11,14 @@ Chompbook: KI-Lernhilfe & Quiz
 ```
 Antworte in eigenen Worten – KI prüft dein Verständnis. Lerne aus Büchern & PDFs
 ```
-**Полное описание (≤4000, 3888):**
+**Полное описание (≤4000, 3983):**
 ```
 Antworte in eigenen Worten – und die KI prüft, ob du es wirklich verstanden hast. Chompbook ist deine Lernhilfe für Bücher, PDFs und Notizen: kurze Lektionen, die in deinen Tag passen.
 Jede Lektion endet mit einer offenen Frage. Du bekommst eine Bewertung von 0 bis 10, Feedback, was gut war und was du wie verbessern kannst, und eine Musterantwort.
 
 WARUM IN EIGENEN WORTEN
 Karteikarten und Multiple Choice prüfen nur das Wiedererkennen: Die richtige Option kann man erkennen oder raten, ohne das Thema zu verstehen. Wer etwas in eigenen Worten erklären kann, hat es wirklich verstanden. Das ist aktives Abrufen (Active Recall) und die Feynman-Methode – und genau so endet jede Lektion in Chompbook.
-• Du schreibst frei, es gibt also nichts zu raten.
+• Du schreibst oder diktierst frei, es gibt also nichts zu raten.
 • Die KI vergibt bis zu 10 Punkte und sagt, was gut war, was fehlt und wie du es besser machst.
 • Eine Musterantwort zeigt, wie eine vollständige Erklärung aussieht.
 • Die KI merkt sich, was du übersehen hast, und bringt es in den nächsten Lektionen wieder, bis es sitzt.
@@ -51,6 +51,7 @@ CLEVERER LERNEN
 KI, WIE DU SIE WILLST
 • Verbinde mit wenigen Tipps eine kostenlose KI: Mit Google anmelden und einen kostenlosen Gemini-Schlüssel erstellen – oder kostenlos bei OpenRouter anmelden.
 • Oder nutze deinen eigenen Schlüssel: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA – oder deinen eigenen Server wie Ollama oder LM Studio.
+• Oder teste Chompbook Pro: KI-Lektionen ohne eigenen Schlüssel, 7 Tage gratis.
 • Sie schreibt Lektionen aus deinen Materialien und prüft deine offenen Antworten wie eine gute Nachhilfe.
 
 FÜNF KOSTENLOSE KURSE
