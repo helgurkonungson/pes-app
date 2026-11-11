@@ -5,7 +5,7 @@
 // skillset's sources screen. Demo progress (a 7-day streak) is written into the local database only for
 // the screenshots. Store order (tools/store/frames.mjs): 1-ai-check, 2-sources, 3-lesson, 4-quiz, 5-courses, 6-home.
 import { chromium } from "playwright";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 
 const BASE = process.env.STORE_BASE_URL ?? "http://localhost:4175/";
 const out = process.argv[2] ?? "store-shots";
@@ -141,6 +141,30 @@ const GRADE = {
   }
 };
 
+// demo sources for screenshot 2 (titles only are visible; the content is generic English text)
+const SRC = {
+  en: { book: "Marketing textbook", notes: "Lecture notes, week 2", article: "How a sales funnel works" },
+  es: { book: "Manual de marketing", notes: "Apuntes de clase, semana 2", article: "Cómo funciona un embudo de ventas" },
+  de: { book: "Marketing-Lehrbuch", notes: "Vorlesungsnotizen, Woche 2", article: "So funktioniert ein Sales-Funnel" },
+  fr: { book: "Manuel de marketing", notes: "Notes de cours, semaine 2", article: "Comment fonctionne un tunnel de vente" },
+  zh: { book: "市场营销教材", notes: "课堂笔记 第2周", article: "销售漏斗是如何运作的" },
+  hi: { book: "मार्केटिंग पाठ्यपुस्तक", notes: "लेक्चर नोट्स, सप्ताह 2", article: "सेल्स फ़नल कैसे काम करता है" },
+  ru: { book: "Учебник маркетинга", notes: "Конспект лекций, неделя 2", article: "Как устроена воронка продаж" },
+  uk: { book: "Підручник маркетингу", notes: "Конспект лекцій, тиждень 2", article: "Як працює воронка продажів" },
+  be: { book: "Падручнік маркетынгу", notes: "Канспект лекцый, тыдзень 2", article: "Як уладкаваная варонка продажаў" },
+};
+const DEMO_URL = "https://blog.example.com/sales-funnel";
+const LOREM = [
+  "A funnel describes how people move from first contact to purchase: awareness, interest, consideration, purchase and loyalty.",
+  "Each step loses people. The job of marketing is to find where they leave and why, and to fix the biggest leak first.",
+  "Positioning is the place a product takes in the customer's mind. It is built by contrast: what we are, for whom, and instead of what.",
+  "Research beats opinion. Short interviews with five to ten customers often reveal more than a large survey with leading questions.",
+];
+const body = (n) => Array.from({ length: n }, (_, i) => LOREM[i % LOREM.length]).join(" ");
+const notesMd = (title) => `# ${title}\n\n` + [1, 2, 3, 4].map((i) => `## ${i}\n\n${body(14)}\n`).join("\n");
+const articleHtml = (title) =>
+  `<!doctype html><html><head><title>${title}</title></head><body><article><h1>${title}</h1>${[1, 2, 3, 4, 5, 6].map((i) => `<h2>${i}</h2><p>${body(10)}</p>`).join("")}</article></body></html>`;
+
 const pause = (p, ms = 600) => p.waitForTimeout(ms);
 
 async function correctIndex(page) {
@@ -271,6 +295,20 @@ async function run(browser, lang, device) {
   await page.locator("#sk-name").fill(SKILL[lang]);
   await page.locator(".btn.primary").last().click();
   await page.locator(".action-tile").first().waitFor();
+  // a textbook PDF, lecture notes and a web article, so the sources screen shows a filled skillset
+  await page.route(DEMO_URL, (r) =>
+    r.fulfill({ status: 200, contentType: "text/html", headers: { "access-control-allow-origin": "*" }, body: articleHtml(SRC[lang].article) }),
+  );
+  await page.locator('[data-testid="source-file"]').setInputFiles([
+    { name: `${SRC[lang].book}.pdf`, mimeType: "application/pdf", buffer: readFileSync(new URL("assets/demo-book.pdf", import.meta.url)) },
+    { name: `${SRC[lang].notes}.md`, mimeType: "text/markdown", buffer: Buffer.from(notesMd(SRC[lang].notes)) },
+  ]);
+  await page.locator(".list-card").nth(1).waitFor({ timeout: 30000 });
+  await page.locator(".action-tile").nth(3).click();
+  await page.locator('input[inputmode="url"]').fill(DEMO_URL);
+  await page.locator('input[inputmode="url"] ~ .btn.primary').click();
+  await page.locator(".list-card").nth(2).waitFor({ timeout: 30000 });
+  await page.evaluate(() => document.querySelectorAll("*").forEach((el) => el.scrollTop && (el.scrollTop = 0)));
   await shot("2-sources");
   await ctx.close();
 }
