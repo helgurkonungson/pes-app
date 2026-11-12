@@ -1,9 +1,10 @@
 # Branches and where each one goes
 
-`main` is where all work lands. The other branches are release lines: each one is a copy of `main` at the moment it was released to its target, plus (for a store) the code that only that store needs. Releasing = bringing `main` into the branch and pushing it.
+`main` is where all work lands, directly or through a working branch such as `pro` (Oleg's branch for new versions; it is merged into `main` when the version is ready, and nothing is released from it). The other branches are release lines: each one is a copy of `main` at the moment it was released to its target, plus (for a store) the code that only that store needs. Releasing = bringing `main` into the branch and pushing it.
 
 | Branch | Target | What a push does |
 |---|---|---|
+| `pro` and other working branches | work in progress | gates only, like `main`. |
 | `main` | development | CI gates only (type-check, unit, e2e on Chromium/WebKit/Firefox). No build, no release. The Pro server (`api/`, Cloudflare Worker `chompbook-api`) still deploys from `main`. |
 | `site` | chompbook.online | Cloudflare Workers Builds (`chompbook-site`) deploys `site/` once its production branch is `site`; `site.yml` checks the pages. |
 | `google-play` | Google Play | gates → build → emulator smoke tests → Release `vX.Y.Z` with `PES-x.y.z.apk` and `Chompbook-x.y.z-play.aab` (upload the AAB in Play Console). |
