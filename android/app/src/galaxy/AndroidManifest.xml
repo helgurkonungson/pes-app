@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Galaxy Store build (ADR-041): GalaxyPurchasesPlugin checks that the Galaxy Store app is installed
+     (package visibility, Android 11+). Merged into src/main/AndroidManifest.xml. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.sec.android.app.samsungapps" />
+    </queries>
+</manifest>

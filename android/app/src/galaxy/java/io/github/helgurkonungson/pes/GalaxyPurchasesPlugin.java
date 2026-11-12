@@ -1,5 +1,6 @@
 package io.github.helgurkonungson.pes;
 
+import android.content.pm.PackageManager;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -16,11 +17,29 @@ import com.revenuecat.purchases.galaxy.GalaxyConfiguration;
 @CapacitorPlugin(name = "GalaxyPurchases")
 public class GalaxyPurchasesPlugin extends Plugin {
 
+    /** The Galaxy Store app; Samsung IAP needs it and otherwise opens its own "install Galaxy Store" screen. */
+    private static final String GALAXY_STORE = "com.sec.android.app.samsungapps";
+
+    private boolean galaxyStoreInstalled() {
+        try {
+            getContext().getPackageManager().getPackageInfo(GALAXY_STORE, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
     @PluginMethod
     public void configure(PluginCall call) {
         String apiKey = call.getString("apiKey");
         if (apiKey == null || apiKey.isEmpty()) {
             call.reject("apiKey is required");
+            return;
+        }
+        // A phone without the Galaxy Store (an emulator, a sideloaded APK): Pro just isn't offered,
+        // instead of Samsung IAP taking the learner out of the app on every start.
+        if (!galaxyStoreInstalled()) {
+            call.reject("Galaxy Store is not installed");
             return;
         }
         boolean test = Boolean.TRUE.equals(call.getBoolean("test", false));
