@@ -39,7 +39,7 @@ flowchart LR
   subgraph Phone["Phone (Android / iOS)"]
     UI["React UI<br/>screens + design system"] --> Core["Core (pure TS)<br/>session planner · scoring · XP · streaks"]
     UI --> Data["Local DB (IndexedDB / Dexie)<br/>skillsets · sources · chunks · lessons · answers · stats"]
-    UI --> Import["Importers<br/>PDF · EPUB · TXT/MD · web page"]
+    UI --> Import["Importers<br/>PDF · EPUB · FB2 · MOBI · Word/ODT · TXT/MD · web page"]
     UI --> AI["AI client<br/>prompts + JSON schemas"]
     Key["Secure storage<br/>user's API key"] --> AI
   end
@@ -56,7 +56,7 @@ flowchart LR
 | Native shell | Capacitor 8 | Same web code → Android/iOS; plugins for files, notifications, secure storage |
 | Styling | CSS variables (design tokens) + component CSS | Readable for you; light theme later = one token set |
 | Local data | IndexedDB via Dexie; versioned schema; JSON export | Works offline and in the browser |
-| Sources | Phone file picker; pdf.js for PDF; EPUB via JSZip; web pages via native HTTP | Covers local files and cloud drives without OAuth setup |
+| Sources | Phone file picker; pdf.js for PDF; EPUB, Word, ODT and FB2 via JSZip; DRM-free MOBI/AZW3 via foliate-js (MIT; DjVu skipped, its decoder is GPL); web pages via native HTTP | Covers local files and cloud drives without OAuth setup |
 | Lesson engine | Sources → chunks (≈ pages/sections) → curriculum; each session takes the next chunk(s) sized to the minutes chosen | Large books never sent whole; lessons follow the source order |
 | AI | Claude Messages API from the device with the user's key; JSON-only responses checked against schemas; web search tool when "use internet" is on; provider interface for others later | No server needed, cost on the user's key |
 | Updates (dev) | Push → GitHub Actions builds signed APK → GitHub Release; app checks the latest release and offers install | "Updates directly from my GitHub" |

@@ -11,7 +11,7 @@ import { logEvent } from "../data/logs";
 import { useNav } from "../nav/store";
 import { ACCEPT, ACCEPT_IMAGES, importFile, importPhotos, importText, importUrl, type Imported } from "../sources/importers";
 
-const KIND_LABEL: Record<Source["kind"], Key> = { pdf: "sources.kind.pdf", epub: "sources.kind.epub", docx: "sources.kind.docx", text: "sources.kind.text", url: "sources.kind.url" };
+const KIND_LABEL: Record<Source["kind"], Key> = { pdf: "sources.kind.pdf", epub: "sources.kind.epub", docx: "sources.kind.docx", fb2: "sources.kind.fb2", odt: "sources.kind.odt", mobi: "sources.kind.mobi", text: "sources.kind.text", url: "sources.kind.url" };
 
 export function Sources({ id }: { id: string }) {
   const t = useT();

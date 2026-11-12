@@ -35,7 +35,7 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 | `src/core/` | Pure logic with tests: session planner, chunker, scoring/XP/levels, streaks, badges, session flow, AI-output normalisation |
 | `src/ai/` | Claude client (BYOK), prompts and tool schemas, key storage |
 | `src/data/` | Dexie database, repository functions, session preparation |
-| `src/sources/` | Importers: PDF (pdf.js), EPUB/Word (JSZip), HTML, text, web pages |
+| `src/sources/` | Importers: PDF (pdf.js), EPUB/Word/ODT/FB2 (JSZip), MOBI/AZW3 (foliate-js), HTML, text, web pages |
 | `src/screens/`, `src/components/` | UI (React) and design system (`src/styles/app.css`); big screens keep their parts in `screens/session/` and `screens/settings/` |
 | `src/build.ts` | Build-time values in one place: version, app id, Play URL, endpoints, store (ADR-036) |
 | `src/native/` | Thin wrappers over Capacitor plugins: share, haptics, reminders, speech, keep-awake, Google sign-in |

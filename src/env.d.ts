@@ -14,3 +14,15 @@ interface ImportMetaEnv {
   /** Chompbook AI server (Pro). Default https://api.chompbook.online/v1. */
   readonly VITE_PRO_API?: string;
 }
+
+/** foliate-js ships plain JS; only the part of its MOBI reader that importers use (formats.ts). */
+declare module "foliate-js/mobi.js" {
+  export class MOBI {
+    constructor(options: { unzlib: (data: Uint8Array) => Promise<Uint8Array> });
+    headers?: { palmdoc?: { encryption?: number } };
+    open(file: Blob): Promise<{
+      sections: { createDocument(): Promise<Document> }[];
+      metadata?: { title?: unknown };
+    }>;
+  }
+}
