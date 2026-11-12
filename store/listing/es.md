@@ -11,9 +11,9 @@ Chompbook: estudia con IA
 ```
 Responde con tus palabras y la IA revisa si lo entiendes. Libros, PDF y apuntes
 ```
-**Полное описание (≤4000, 3961):**
+**Полное описание (≤4000, 3994):**
 ```
-Responde con tus propias palabras y la IA revisa si de verdad lo entiendes, como un tutor. Chompbook convierte tus libros, PDF y apuntes en lecciones cortas para estudiar cada día.
+Responde con tus propias palabras y la IA revisa si de verdad lo entiendes. Chompbook convierte tus libros, PDF y apuntes en lecciones cortas para estudiar cada día.
 Cada lección termina con una pregunta abierta. Recibes una nota sobre 10, qué hiciste bien, qué mejorar y cómo, y una respuesta modelo.
 
 POR QUÉ CON TUS PALABRAS
@@ -29,7 +29,7 @@ CÓMO FUNCIONA
 3. Un poco de teoría, un test rápido y, al final, explicas la idea clave con tus palabras y recibes comentarios.
 
 APRENDE DE CUALQUIER COSA
-• Archivos PDF, EPUB, Word, de texto y Markdown
+• Archivos PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, de texto y Markdown
 • Páginas web por enlace o notas que escribes tú
 • Fotos y escaneos de páginas: el texto se reconoce en el propio teléfono
 • Archivos de Google Drive desde el selector de archivos de siempre
@@ -73,7 +73,7 @@ Sin cuentas, sin anuncios, sin rastreo. Tus materiales y tu progreso se quedan e
 TAMBIÉN FUNCIONA SIN IA
 Las lecciones de tus propios materiales y los cinco cursos funcionan por completo sin ella, incluso sin conexión. En ese caso, comparas tú mismo lo que escribiste con la respuesta modelo y los puntos clave.
 
-Español, English, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Tema claro y oscuro, teléfonos y tablets.
+Español, English, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Tema claro y oscuro, teléfonos y tablets.
 ```
 
 ## App Store
