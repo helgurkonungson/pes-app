@@ -2,6 +2,11 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on a store branch becomes a GitHub Release (docs/BRANCHES.md).
 
+## 1.3.0 — 2026-11-12
+
+- **More book formats:** Sources now take FB2 books (also zipped, `.fb2.zip`, in any encoding such as windows-1251), DRM-free Kindle books (MOBI, AZW, AZW3) and OpenDocument text (ODT, LibreOffice). Chapters become headings and footnotes stay out of the lessons; the book's own title is used. FB2 and Kindle files show up in the phone's file chooser even when Android doesn't know their type.
+- **Clear answers instead of junk:** a copy-protected Kindle book, a DjVu scan (with a tip to convert it to PDF) or any other unreadable file now gets a plain explanation instead of being imported as garbage.
+
 ## 1.2.0 — 2026-11-11
 
 - **Kazakh and Turkish:** the app now speaks Қазақша and Türkçe — all screens, the language picker, Android's per-app language list, lessons written in these languages and speech for Kazakh text. All five free courses (How to learn effectively, AI literacy, Data and spreadsheets, Financial literacy, Critical thinking) are translated into both languages, so a learner in each language takes a course in their own. Phones set to Kazakh now get the Kazakh interface (they used to get Russian).

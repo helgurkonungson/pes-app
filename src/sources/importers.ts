@@ -1,11 +1,12 @@
 /**
  * Turns files, pasted text and web pages into text sections for the chunker.
- * Heavy parsers (pdf.js, JSZip) are loaded only when needed.
+ * Heavy parsers (pdf.js, JSZip, foliate-js) are loaded only when needed.
  */
 import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { buildChunks, type ChunkDraft, sectionsFromPlainText, type TextSection } from "../core/chunker";
 import type { SourceKind } from "../core/types";
-import { t } from "../i18n";
+import { t, type Key } from "../i18n";
+import type { FormatErrorCode } from "./formats";
 
 export interface Imported {
   kind: SourceKind;
@@ -18,14 +19,27 @@ export interface Imported {
 
 export type ImportProgress = (message: string, ratio?: number) => void;
 
-export const ACCEPT = ".pdf,.epub,.docx,.txt,.md,.markdown,.html,.htm,.csv,application/pdf,application/epub+zip,text/plain,text/markdown,text/html,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+/**
+ * Android's file chooser filters by MIME type, and FB2 or Kindle files often have none it knows,
+ * so application/octet-stream is accepted too; importFile then refuses what it can't read (1.3.0).
+ */
+export const ACCEPT = [
+  ".pdf,.epub,.docx,.odt,.fb2,.zip,.mobi,.azw,.azw3,.txt,.md,.markdown,.html,.htm,.csv,.djvu",
+  "application/pdf,application/epub+zip,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.oasis.opendocument.text",
+  "application/x-fictionbook+xml,application/x-fictionbook,application/xml,text/xml,application/zip,application/x-zip-compressed",
+  "application/x-mobipocket-ebook,application/vnd.amazon.ebook,application/vnd.amazon.mobi8-ebook",
+  "text/plain,text/markdown,text/html,text/csv,image/vnd.djvu,image/x-djvu,application/octet-stream",
+].join(",");
+
+const TEXT_EXT = new Set(["txt", "md", "markdown", "csv", "text", "log"]);
+const MOBI_EXT = new Set(["mobi", "azw", "azw3", "prc"]);
 
 const stripExt = (name: string) => name.replace(/\.[^.]+$/, "").replace(/[_]+/g, " ").trim();
 
 export async function importFile(file: File, onProgress?: ImportProgress): Promise<Imported> {
   const name = file.name || "file";
   const ext = name.toLowerCase().split(".").pop() ?? "";
-  const title = stripExt(name);
+  let title = stripExt(name.replace(/\.fb2\.zip$/i, ""));
   let sections: TextSection[];
   let kind: SourceKind = "text";
   let ocrPages = 0;
@@ -43,13 +57,63 @@ export async function importFile(file: File, onProgress?: ImportProgress): Promi
     sections = await docxSections(file);
   } else if (ext === "html" || ext === "htm" || file.type === "text/html") {
     sections = htmlSections(await file.text());
+  } else if (ext === "djvu" || ext === "djv") {
+    throw new Error(t("import.err.djvu"));
   } else {
-    sections = sectionsFromPlainText(await file.text());
+    // the rest is recognised by content: the name of a downloaded book can't always be trusted
+    const head = new Uint8Array(await file.slice(0, 4096).arrayBuffer());
+    const book = await sniffedBook(file, ext, head, onProgress);
+    if (book) {
+      kind = book.kind;
+      sections = book.sections;
+      if (book.title) title = book.title;
+    } else if (TEXT_EXT.has(ext) || !head.includes(0)) {
+      sections = sectionsFromPlainText(await file.text());
+    } else throw new Error(t("import.err.unsupported"));
   }
   onProgress?.(t("import.splitting"), 1);
   const drafts = buildChunks(sections, title);
   if (!drafts.length) throw new Error(kind === "pdf" ? t("import.err.pdfEmpty") : t("import.err.empty"));
   return { kind, title, origin: name, drafts, ...(ocrPages ? { ocrPages } : {}) };
+}
+
+const FORMAT_ERROR: Record<FormatErrorCode, Key> = { fb2: "import.err.fb2", odt: "import.err.odt", mobi: "import.err.mobi", drm: "import.err.drm" };
+
+/** FB2 (also .fb2.zip), ODT and Kindle books (1.3.0); null when the file is none of them. */
+async function sniffedBook(file: File, ext: string, head: Uint8Array, onProgress?: ImportProgress): Promise<{ kind: SourceKind; title?: string; sections: TextSection[] } | null> {
+  const formats = await import("./formats");
+  try {
+    if (MOBI_EXT.has(ext) || formats.isMobi(head)) {
+      if (!formats.isMobi(head)) throw new formats.FormatError("mobi", "no Kindle header");
+      const book = await formats.mobiBook(file, htmlSections, (i, n) => onProgress?.(t("import.chapter", { i, n }), i / n));
+      return { kind: "mobi", ...book };
+    }
+    const isZip = head[0] === 0x50 && head[1] === 0x4b;
+    if (isZip && (ext === "zip" || ext === "fb2" || ext === "odt")) {
+      const { default: JSZip } = await import("jszip");
+      const zip = await JSZip.loadAsync(await file.arrayBuffer());
+      const content = zip.file("content.xml");
+      if (ext === "odt" || (content && zip.file("mimetype"))) {
+        const xml = await content?.async("string");
+        if (!xml) throw new formats.FormatError("odt", "no content.xml");
+        return { kind: "odt", sections: formats.odtSections(xml) };
+      }
+      const fb2 = zip.file(/\.fb2$/i)[0];
+      if (!fb2) return null;
+      return { kind: "fb2", ...formats.fb2Sections(await fb2.async("uint8array")) };
+    }
+    const start = new TextDecoder("latin1").decode(head.subarray(0, 1024));
+    if (ext === "fb2" || /<FictionBook[\s>]/.test(start)) return { kind: "fb2", ...formats.fb2Sections(new Uint8Array(await file.arrayBuffer())) };
+    if (ext === "odt") throw new formats.FormatError("odt", "not a zip");
+    return null;
+  } catch (e) {
+    if (e instanceof formats.FormatError) {
+      const { logEvent } = await import("../data/logs");
+      void logEvent("error", `Import ${file.name}: ${e.message}`);
+      throw new Error(t(FORMAT_ERROR[e.code]));
+    }
+    throw e;
+  }
 }
 
 /** Accepted photo types for "Photo of pages" (1.1.0). */
