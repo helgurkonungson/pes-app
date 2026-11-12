@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, DEMO_VIDEO } from "./config.mjs";
+import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, CF_BEACON_TOKEN, DEMO_VIDEO } from "./config.mjs";
 import { I } from "./icons.mjs";
 import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
@@ -91,7 +91,7 @@ ${links}
 <link rel="preload" href="/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script>document.documentElement.classList.remove("no-js")</script>
-${lang === "ru" ? metrikaHead : ""}</head>`;
+${lang === "ru" ? metrikaHead : ""}${cfBeacon}</head>`;
 }
 
 function header(lang, alternates, homeHref) {
@@ -166,6 +166,7 @@ function typo(lang, html) {
 }
 
 // Yandex Metrica: Russian-language pages only (lang "ru": /ru/… and /cis/…); no Session Replay, plus a cookie notice.
+const cfBeacon = CF_BEACON_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_BEACON_TOKEN })}'></script>\n` : "";
 const metrikaHead = `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=${METRIKA_ID}","ym");ym(${METRIKA_ID},"init",{ssr:true,clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});</script>
 `;
 const metrikaBody = `<noscript><div><img src="https://mc.yandex.ru/watch/${METRIKA_ID}" style="position:absolute;left:-9999px" alt=""></div></noscript>
