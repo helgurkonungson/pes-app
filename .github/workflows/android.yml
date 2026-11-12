@@ -2,15 +2,21 @@
 #   checks       — type-check, unit tests (Vitest), web build
 #   e2e          — Playwright on Chromium (Android WebView engine) device profiles, 3 shards
 #   e2e-cross    — Playwright on WebKit (iOS engine) and Firefox
-#   build        — signed APK + Play AAB (play flavor) and the Galaxy Store APK (galaxy flavor, ADR-041)
+#   build        — signed build for the store of this branch (store branches and manual runs only)
 #   device-tests — smoke tests of that APK on Android emulators (API 33/34/36, small phone, tablet)
-#   release      — when package.json has a new version and every gate passed: Release "vX.Y.Z"
+#   release      — when package.json has a new version and every gate passed: a GitHub Release
 #                  with Russian + English notes (tools/release-notes.mjs)
+#
+# Branches (docs/BRANCHES.md):
+#   main         — development; gates only (no build, saves Actions minutes in the private repo)
+#   google-play  — Release "vX.Y.Z": PES-x.y.z.apk + Chompbook-x.y.z-play.aab (the Play upload)
+#   galaxy-store — Release "galaxy-vX.Y.Z": Chompbook-x.y.z-galaxy.apk (Seller Portal → Binary)
+#   rustore      — not built yet: RuStore Pay must replace RevenueCat first
 name: Android
 
 on:
   push:
-    branches: [main]
+    branches: [main, google-play, galaxy-store]
     # a push that only changes the website doesn't rebuild the app (site.yml checks it instead)
     paths-ignore: ["site/**"]
   pull_request:
@@ -23,6 +29,10 @@ permissions:
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  # the store this branch builds for (ADR-041); main and PRs only run the gates
+  STORE: ${{ github.ref_name == 'galaxy-store' && 'galaxy' || 'play' }}
 
 jobs:
   checks:
@@ -46,8 +56,13 @@ jobs:
   # Split into 3 parallel shards (0.17.0: one job no longer fit in 30 minutes).
   e2e:
     name: E2E (chromium · Android profiles ${{ matrix.shard }}/3)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
+    # the official image ships Chromium with its system libraries: `playwright install --with-deps`
+    # needs apt mirrors, and their DNS failure on 11.11.2026 failed the whole run
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
     strategy:
       fail-fast: false
       matrix:
@@ -59,8 +74,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Install browser
-        run: npx playwright install --with-deps chromium
       - name: Playwright
         run: npx playwright test --project=android-pixel-7 --project=android-galaxy-s9 --project=android-small-360 --project=android-tablet --project=android-landscape --project=desktop-chrome --shard=${{ matrix.shard }}/3
         env:
@@ -123,6 +136,8 @@ jobs:
 
   build:
     needs: [checks, e2e]
+    # store branches and manual runs; main and pull requests stop after the gates
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref_name != 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -139,6 +154,8 @@ jobs:
       - name: Build web app
         run: npm run build
         env:
+          # play | galaxy (src/build.ts, ADR-041)
+          VITE_STORE: ${{ env.STORE }}
           # Google OAuth client ids for the one-tap free Gemini key (docs/GEMINI_SETUP.md); not secrets.
           # Empty = the app falls back to the in-app Google AI Studio page.
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
@@ -150,6 +167,10 @@ jobs:
           # Chompbook Pro (ADR-037): RevenueCat public SDK key (public by design; empty = Pro can't be
           # bought in this build) and, optionally, another Chompbook AI server URL.
           VITE_REVENUECAT_ANDROID_KEY: ${{ vars.REVENUECAT_ANDROID_KEY }}
+          # Galaxy Store build: its RevenueCat key; GALAXY_BILLING=test = Samsung IAP test mode
+          # (leave empty for builds sent to Samsung)
+          VITE_REVENUECAT_GALAXY_KEY: ${{ vars.REVENUECAT_GALAXY_KEY }}
+          VITE_GALAXY_BILLING: ${{ vars.GALAXY_BILLING }}
           VITE_PRO_API: ${{ vars.PRO_API }}
 
       - name: Sync Capacitor
@@ -188,60 +209,42 @@ jobs:
           PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
         run: |
           chmod +x gradlew
-          # Play flavor: APK for direct install and the emulator smoke tests; AAB for Google Play (ADR-034)
-          ./gradlew assemblePlayRelease bundlePlayRelease --no-daemon --stacktrace
+          if [ "$STORE" = galaxy ]; then
+            # the `galaxy` flavor (ADR-041): an APK signed with the same key
+            ./gradlew assembleGalaxyRelease --no-daemon --stacktrace
+          else
+            # APK for direct install and the emulator smoke tests; AAB for Google Play (ADR-034)
+            ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+          fi
 
-      # ADR-041: the Samsung Galaxy Store build — the same app with VITE_STORE=galaxy (Samsung IAP
-      # through RevenueCat, Galaxy Store links), the `galaxy` flavor, an APK signed with the same key.
-      - name: Build web app (Galaxy Store)
-        run: npm run build && npx cap copy android
+      # dist/ = the release assets of this store; smoke/ = the APK the emulators install
+      - name: Collect the build
         env:
-          VITE_STORE: galaxy
-          VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
-          VITE_GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
-          VITE_REPORT_URL: ${{ vars.REPORT_URL }}
-          VITE_REPORT_EMAIL: ${{ vars.REPORT_EMAIL }}
-          # RevenueCat public SDK key of the Galaxy Store app (empty = Pro isn't sold in this build) and
-          # GALAXY_BILLING=test for Samsung IAP test mode (leave empty for builds sent to Samsung)
-          VITE_REVENUECAT_GALAXY_KEY: ${{ vars.REVENUECAT_GALAXY_KEY }}
-          VITE_GALAXY_BILLING: ${{ vars.GALAXY_BILLING }}
-          VITE_PRO_API: ${{ vars.PRO_API }}
-
-      - name: Build APK (Galaxy Store)
-        working-directory: android
-        env:
-          PES_VERSION_NAME: ${{ steps.v.outputs.name }}
-          PES_VERSION_CODE: ${{ steps.v.outputs.code }}
-          PES_KEYSTORE_PASSWORD: ${{ secrets.PES_KEYSTORE_PASSWORD }}
-          PES_KEY_ALIAS: ${{ secrets.PES_KEY_ALIAS }}
-          PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
-        run: ./gradlew assembleGalaxyRelease --no-daemon --stacktrace
-
-      - name: Collect APK and AAB
+          V: ${{ steps.v.outputs.name }}
         run: |
-          cp android/app/build/outputs/apk/play/release/app-play-release.apk "PES-${{ steps.v.outputs.name }}.apk"
-          cp android/app/build/outputs/bundle/playRelease/app-play-release.aab "Chompbook-${{ steps.v.outputs.name }}-play.aab"
-          cp android/app/build/outputs/apk/galaxy/release/app-galaxy-release.apk "Chompbook-${{ steps.v.outputs.name }}-galaxy.apk"
+          mkdir -p dist smoke
+          out=android/app/build/outputs
+          if [ "$STORE" = galaxy ]; then
+            cp $out/apk/galaxy/release/app-galaxy-release.apk "dist/Chompbook-$V-galaxy.apk"
+          else
+            cp $out/apk/release/app-release.apk "dist/PES-$V.apk"
+            # the Google Play upload: signed with the upload key (Play App Signing re-signs it)
+            cp $out/bundle/release/app-release.aab "dist/Chompbook-$V-play.aab"
+          fi
+          cp "$(ls dist/*.apk | head -1)" smoke/
+          ls -l dist
 
       - uses: actions/upload-artifact@v4
         with:
-          name: PES-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}
-          path: PES-*.apk
-          retention-days: 14
-
-      # the Google Play upload: signed with the upload key (Play App Signing re-signs it)
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Chompbook-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}-play-aab
-          path: Chompbook-*-play.aab
+          name: Chompbook-${{ env.STORE }}-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}
+          path: dist/*
           retention-days: 30
 
-      # the Samsung Galaxy Store upload (Seller Portal → Binary), ADR-041
       - uses: actions/upload-artifact@v4
         with:
-          name: Chompbook-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}-galaxy-apk
-          path: Chompbook-*-galaxy.apk
-          retention-days: 30
+          name: smoke-apk
+          path: smoke/*.apk
+          retention-days: 3
 
       - name: Signed?
         id: signed
@@ -280,15 +283,13 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      # The build job names its artifact PES-<version>-build<code>, so match it by pattern.
       - name: Download APK from the build job
         uses: actions/download-artifact@v4
         with:
-          pattern: PES-*
-          merge-multiple: true
+          name: smoke-apk
 
       - name: Check APK
-        run: ls -l PES-*.apk
+        run: ls -l *.apk
 
       # AVD cache as in the android-emulator-runner README, split into restore/save so the
       # snapshot is saved right after it is created (also when the smoke test later fails).
@@ -336,7 +337,7 @@ jobs:
           disable-animations: true
           # The runner executes `script` line by line with sh, so it must stay one line.
           # One retry on a fresh app install: emulators occasionally hang in system UI, not in the app.
-          script: bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results || bash scripts/android-smoke.sh "$(ls PES-*.apk | head -1)" device-results/retry
+          script: bash scripts/android-smoke.sh "$(ls *.apk | head -1)" device-results || bash scripts/android-smoke.sh "$(ls *.apk | head -1)" device-results/retry
 
       - name: Upload device results
         if: always()
@@ -350,7 +351,8 @@ jobs:
   # Publishes only release-key builds, and only after every gate passed, so installed apps can always update.
   release:
     needs: [build, e2e-cross, device-tests]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    # store branches only: a manual run on main builds, but never publishes
+    if: github.event_name != 'pull_request' && (github.ref_name == 'google-play' || github.ref_name == 'galaxy-store')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -363,7 +365,8 @@ jobs:
       - uses: actions/download-artifact@v4
         if: needs.build.outputs.signed == 'true'
         with:
-          pattern: "*-build*"
+          pattern: Chompbook-${{ env.STORE }}-*
+          path: dist
           merge-multiple: true
 
       - name: Publish release (new versions only)
@@ -372,10 +375,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          TAG="v$VERSION"
+          if [ "$STORE" = galaxy ]; then TAG="galaxy-v$VERSION"; TITLE="Chompbook $VERSION (Galaxy Store)"
+          else TAG="v$VERSION"; TITLE="Chompbook v$VERSION"; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — only the build artifact was updated."
           else
             node tools/release-notes.mjs "$VERSION" > notes.md
-            gh release create "$TAG" "PES-$VERSION.apk" "Chompbook-$VERSION-play.aab" "Chompbook-$VERSION-galaxy.apk" --title "Chompbook $TAG" --notes-file notes.md
+            # --target: the tag points at this store branch, not at main
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md
           fi
