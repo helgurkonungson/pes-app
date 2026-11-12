@@ -17,7 +17,8 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.
 - Never break update safety (ADR-009, ADR-034): don't change the app id (`online.chompbook.app`, Google Play), the upload/signing key, the WebView origin or existing Dexie versions. Store builds never update themselves (`VITE_SELF_UPDATE` stays off).
 - Tests: `npm run typecheck && npm test && npm run e2e` before every release (see `docs/TESTING.md`). New logic → unit test; new screen or flow → Playwright test.
-- Before a release: bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK after the CI gates pass.
+- Branches (`docs/BRANCHES.md`): work goes to `main` (CI gates only). Releases: merge `main` into `google-play` / `galaxy-store` (CI builds and publishes the Release) and into `site` (Cloudflare deploys the site). `rustore` isn't built until RuStore Pay replaces RevenueCat there. Never fix things directly in a release branch.
+- Before a release: bump `package.json` version, add a `CHANGELOG.md` section.
 - Oleg's private course files (e.g. the CDO test course) never go into this public repo.
 - My workspace can't reach Google's Android build servers: APKs come from GitHub Actions.
 - Commit messages end with the attribution lines the session asks for.

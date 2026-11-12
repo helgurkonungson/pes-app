@@ -1,6 +1,6 @@
 # PES — Testing & compatibility
 
-Every push to `main` runs the whole pyramid in GitHub Actions (`.github/workflows/android.yml`). The APK is released only after **every** gate passes (ADR-020).
+Every push runs the test gates in GitHub Actions (`.github/workflows/android.yml`); the store branches (`google-play`, `galaxy-store`, `docs/BRANCHES.md`) also build the app and run the emulator smoke tests. A Release is published only after **every** gate passes (ADR-020).
 
 | Layer | Tool | Where | What it covers | Gate |
 |---|---|---|---|---|

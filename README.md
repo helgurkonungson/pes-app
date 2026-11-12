@@ -43,14 +43,14 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 | `src/pro/` | Chompbook Pro purchases (RevenueCat over Google Play Billing, ADR-037) |
 | `api/` | Chompbook AI server: Cloudflare Worker + D1 (Pro entitlement, daily allowance, OpenRouter); setup in `docs/PRO_SETUP.md` |
 | `android/` | Capacitor Android project |
-| `.github/workflows/android.yml` | CI: tests → build → APK → Release on new version |
+| `.github/workflows/android.yml` | CI: tests on every branch; build → Release on the store branches (`docs/BRANCHES.md`) |
 | `docs/` | Brief, architecture and ADRs |
 | `tools/` | Icon generator, release-notes helper, one-time GitHub setup script |
 
 ### Releasing
 
 1. Bump `version` in `package.json` and add a section to `CHANGELOG.md`.
-2. Push to `main`. CI builds the APK and publishes Release `vX.Y.Z`; installed apps offer the update.
+2. Push to `main`, then bring it into the store branch (`google-play`, `galaxy-store`). The store branch's CI builds and publishes the Release (`vX.Y.Z` / `galaxy-vX.Y.Z`). Branches: `docs/BRANCHES.md`.
 
 Release signing uses four repository secrets: `PES_KEYSTORE_BASE64`, `PES_KEYSTORE_PASSWORD`, `PES_KEY_ALIAS`, `PES_KEY_PASSWORD`. Without them CI still builds a test APK (signed with a throwaway debug key, downloadable from the run's artifacts) but publishes no release.
 

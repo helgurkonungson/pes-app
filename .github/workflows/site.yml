@@ -1,10 +1,11 @@
 # chompbook.online: quick checks for website changes (about a minute).
-# Cloudflare Workers Builds deploys the site from main by itself; this only reports problems.
+# Cloudflare Workers Builds deploys the site from the `site` branch by itself (docs/BRANCHES.md);
+# this only reports problems.
 name: Site
 
 on:
   push:
-    branches: [main]
+    branches: [main, site]
     paths: ["site/**", "store/listing/**", "src/i18n/**"]
   pull_request:
     branches: [main]
