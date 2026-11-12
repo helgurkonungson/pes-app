@@ -42,6 +42,4 @@ bash scripts/android-smoke.sh PES-x.y.z.apk out/   # with an emulator or phone a
 4. Files: pick a PDF from Google Drive / Telegram downloads; import the course file from the Files app.
 5. Real Claude key: AI lesson and grading; with an empty balance → “credits ran out” banner and lessons continue without AI.
 6. Airplane mode → lessons from sources and courses still work.
-7. Settings → Install update → a backup appears in Documents/PES.
-8. Daily update pop-up: with an older APK installed, the first launch of the day shows “A new version is available”; “Later” → no pop-up on the next launch that day; the next morning it appears again (also when the app was only in the background overnight).
-9. First run: the tutorial's last step → a free course opens lesson 1 in the phone's language; "Create my own skill" → Free AI → OpenRouter sign-in comes back and "New skillset" opens.
+7. First run: the tutorial's last step → a free course opens lesson 1 in the phone's language; "Create my own skill" → Free AI → OpenRouter sign-in comes back and "New skillset" opens.

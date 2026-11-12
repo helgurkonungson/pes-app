@@ -131,16 +131,6 @@ export const es: Dict = {
   "progress.read": "{p}% de las fuentes",
 
   // update
-  "update.ready": "La actualización {v} está lista",
-  "update.tap": "Primero se guarda una copia de tu progreso y luego empieza la descarga",
-  "update.backupSaved": "Copia guardada: {path}",
-  "update.popupTitle": "Hay una versión nueva",
-  "update.popupText": "La versión {v} está lista para instalar. Tienes la {current}.",
-  "update.whatsNew": "Novedades",
-  "update.later": "Más tarde",
-  "update.install": "Actualizar",
-  "update.failed": "No se pudo iniciar la descarga. Inténtalo de nuevo en Ajustes → Buscar actualizaciones.",
-
   // skillsets
   "skillsets.new": "Nueva habilidad",
   "skillsets.newHint": "Con tus libros, archivos y enlaces",
@@ -650,16 +640,9 @@ export const es: Dict = {
   "settings.wipeText": "Se eliminarán de este teléfono las habilidades, fuentes, lecciones, XP e insignias. Tu clave de API se conserva.",
   "settings.wipeOk": "Borrar todo",
   "settings.about": "Acerca de",
-  "settings.checkUpdates": "Buscar actualizaciones",
   "settings.version": "Versión",
   "settings.updatesPlay": "Las actualizaciones llegan por Google Play",
-  "settings.install": "Instalar {v}",
-  "settings.installHint": "Antes se guarda una copia en Documents/PES",
-  "settings.updateAvailable": "Está disponible la versión {v}",
-  "settings.latestAt": "Tienes la última versión · comprobado a las {time}",
-  "settings.checkingUpdates": "Comprobando GitHub…",
   "settings.latest": "Tienes la última versión",
-  "settings.githubFailed": "No se pudo conectar con GitHub",
   "settings.footer": "Chompbook v{v} · tus datos se quedan en este teléfono",
 
   // backup

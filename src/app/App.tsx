@@ -9,7 +9,6 @@ import { App as CapApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { useLiveQuery } from "dexie-react-hooks";
 import { type ComponentType, lazy, Suspense, useEffect, useState } from "react";
-import { create } from "zustand";
 import { ConfirmHost, toast, Toaster } from "../components/ui";
 import { db, getProfile } from "../data/db";
 import { requestPersistentStorage, restoreIfEmpty, writeSnapshot } from "../data/safety";
@@ -19,7 +18,6 @@ import { Home } from "../screens/Home";
 import { SessionScreen } from "../screens/Session";
 import { SkillsetDetail } from "../screens/SkillsetDetail";
 import { Skillsets } from "../screens/Skillsets";
-import { autoUpdateCheckEnabled, dailyUpdateCheck, type UpdateInfo } from "../update/updater";
 import { initPro } from "../pro/purchases";
 import { TabBar } from "./TabBar";
 import { SITE_URL } from "../build";
@@ -47,22 +45,6 @@ const Logs = named(() => import("../screens/Logs"), "Logs");
 const Reports = named(() => import("../screens/Reports"), "Reports");
 const Pro = named(() => import("../screens/Pro"), "Pro");
 const Tutorial = named(() => import("../components/Tutorial"), "Tutorial");
-import { UpdatePrompt } from "./UpdatePrompt";
-
-/** The newer release (Home banner, Settings row) and whether the "new version" pop-up is open. */
-export const useUpdate = create<{ info: UpdateInfo | null; prompt: boolean; set: (i: UpdateInfo | null) => void; closePrompt: () => void }>((set) => ({
-  info: null,
-  prompt: false,
-  set: (info) => set({ info }),
-  closePrompt: () => set({ prompt: false }),
-}));
-
-/** Daily update check: on start and whenever the app comes back to the foreground on a new day. */
-function runDailyUpdateCheck(): void {
-  dailyUpdateCheck()
-    .then(({ info, fresh }) => useUpdate.setState((s) => ({ info, prompt: s.prompt || (fresh && !!info) })))
-    .catch(() => undefined); // offline or GitHub down — retried on the next launch
-}
 
 function RouteView({ route }: { route: Route }) {
   switch (route.name) {
@@ -185,15 +167,6 @@ export function App() {
     // after boot: the check writes to the profile, and an empty database must be restored first
     if (ready) void settleStreakNow().then(scheduleReminders).then(refreshHomeWidget); // missed days: freezes, rest days, repair (ADR-029)
     if (ready) void initPro(); // Google Play build: subscription state from the store (ADR-037)
-    if (!ready || !autoUpdateCheckEnabled()) return;
-    runDailyUpdateCheck();
-    if (!Capacitor.isNativePlatform()) return;
-    const sub = CapApp.addListener("appStateChange", ({ isActive }) => {
-      if (isActive) runDailyUpdateCheck();
-    });
-    return () => {
-      sub.then((s) => s.remove());
-    };
   }, [ready]);
 
   // deep links: the OpenRouter sign-in comes back as online.chompbook.app://oauth/openrouter?code=…
@@ -258,12 +231,10 @@ export function App() {
         )}
       </Suspense>
       {!top && <TabBar />}
-      {tutorial ? (
+      {tutorial && (
         <Suspense fallback={<div className="tutorial" />}>
           <Tutorial />
         </Suspense>
-      ) : (
-        <UpdatePrompt />
       )}
       <ConfirmHost />
       <Toaster />

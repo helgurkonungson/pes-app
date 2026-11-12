@@ -131,16 +131,6 @@ export const hi: Dict = {
   "progress.read": "स्रोतों का {p}%",
 
   // update
-  "update.ready": "अपडेट {v} तैयार है",
-  "update.tap": "पहले आपकी प्रगति का बैकअप बनता है, फिर डाउनलोड शुरू होता है",
-  "update.backupSaved": "बैकअप सहेजा गया: {path}",
-  "update.popupTitle": "नया संस्करण उपलब्ध है",
-  "update.popupText": "संस्करण {v} इंस्टॉल के लिए तैयार है। आपके पास {current} है।",
-  "update.whatsNew": "नया क्या है",
-  "update.later": "बाद में",
-  "update.install": "अपडेट करें",
-  "update.failed": "डाउनलोड शुरू नहीं हो सका। सेटिंग्स → अपडेट जाँचें से फिर से कोशिश करें।",
-
   // skillsets
   "skillsets.new": "नया कौशल",
   "skillsets.newHint": "आपकी किताबों, फ़ाइलों और लिंक से",
@@ -650,16 +640,9 @@ export const hi: Dict = {
   "settings.wipeText": "कौशल, स्रोत, पाठ, XP और बैज इस फ़ोन से हट जाएँगे। आपकी API कुंजी बनी रहेगी।",
   "settings.wipeOk": "सब कुछ हटाएँ",
   "settings.about": "ऐप के बारे में",
-  "settings.checkUpdates": "अपडेट जाँचें",
   "settings.version": "वर्शन",
   "settings.updatesPlay": "अपडेट Google Play से आते हैं",
-  "settings.install": "{v} इंस्टॉल करें",
-  "settings.installHint": "पहले Documents/PES में बैकअप सहेजा जाता है",
-  "settings.updateAvailable": "संस्करण {v} उपलब्ध है",
-  "settings.latestAt": "आपके पास नवीनतम संस्करण है · {time} पर जाँचा गया",
-  "settings.checkingUpdates": "GitHub जाँचा जा रहा है…",
   "settings.latest": "आपके पास नवीनतम संस्करण है",
-  "settings.githubFailed": "GitHub तक नहीं पहुँच सके",
   "settings.footer": "Chompbook v{v} · आपका डेटा इसी फ़ोन पर रहता है",
 
   // backup

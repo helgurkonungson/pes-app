@@ -131,16 +131,6 @@ export const be: Dict = {
   "progress.read": "{p}% крыніц",
 
   // update
-  "update.ready": "Абнаўленне {v} гатовае",
-  "update.tap": "Спачатку захоўваем рэзервовую копію прагрэсу, потым пачынаецца спампоўванне",
-  "update.backupSaved": "Рэзервовая копія захавана: {path}",
-  "update.popupTitle": "Даступная новая версія",
-  "update.popupText": "Версія {v} гатовая да ўсталявання. У вас {current}.",
-  "update.whatsNew": "Што новага",
-  "update.later": "Пазней",
-  "update.install": "Абнавіць",
-  "update.failed": "Не ўдалося пачаць спампоўванне. Паспрабуйце зноў: Налады → Праверыць абнаўленні.",
-
   // skillsets
   "skillsets.new": "Новы навык",
   "skillsets.newHint": "З вашых кніг, файлаў і спасылак",
@@ -650,16 +640,9 @@ export const be: Dict = {
   "settings.wipeText": "Навыкі, крыніцы, урокі, XP і ўзнагароды будуць выдаленыя з гэтага тэлефона. API-ключ застанецца.",
   "settings.wipeOk": "Выдаліць усё",
   "settings.about": "Пра праграму",
-  "settings.checkUpdates": "Праверыць абнаўленні",
   "settings.version": "Версія",
   "settings.updatesPlay": "Абнаўленні прыходзяць праз Google Play",
-  "settings.install": "Усталяваць {v}",
-  "settings.installHint": "Спачатку рэзервовая копія захоўваецца ў Documents/PES",
-  "settings.updateAvailable": "Даступная версія {v}",
-  "settings.latestAt": "У вас апошняя версія · праверана ў {time}",
-  "settings.checkingUpdates": "Правяраем GitHub…",
   "settings.latest": "У вас апошняя версія",
-  "settings.githubFailed": "Не ўдалося звязацца з GitHub",
   "settings.footer": "Chompbook v{v} · вашы даныя захоўваюцца толькі на гэтым тэлефоне",
 
   // backup

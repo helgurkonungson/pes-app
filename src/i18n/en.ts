@@ -131,16 +131,6 @@ export const en = {
   "progress.read": "{p}% of sources",
 
   // update
-  "update.ready": "Update {v} is ready",
-  "update.tap": "Your progress is backed up first, then the download starts",
-  "update.backupSaved": "Backup saved: {path}",
-  "update.popupTitle": "A new version is available",
-  "update.popupText": "Version {v} is ready to install. You have {current}.",
-  "update.whatsNew": "What's new",
-  "update.later": "Later",
-  "update.install": "Update",
-  "update.failed": "Couldn't start the download. Try again from Settings → Check for updates.",
-
   // skillsets
   "skillsets.new": "New skillset",
   "skillsets.newHint": "From your books, files and links",
@@ -650,16 +640,9 @@ export const en = {
   "settings.wipeText": "Skillsets, sources, lessons, XP and badges will be removed from this phone. Your API key stays.",
   "settings.wipeOk": "Delete everything",
   "settings.about": "About",
-  "settings.checkUpdates": "Check for updates",
   "settings.version": "Version",
   "settings.updatesPlay": "Updates come from Google Play",
-  "settings.install": "Install {v}",
-  "settings.installHint": "A backup is saved to Documents/PES first",
-  "settings.updateAvailable": "Version {v} is available",
-  "settings.latestAt": "You have the latest version · checked at {time}",
-  "settings.checkingUpdates": "Checking GitHub…",
   "settings.latest": "You have the latest version",
-  "settings.githubFailed": "Couldn't reach GitHub",
   "settings.footer": "Chompbook v{v} · your data stays on this phone",
 
   // backup

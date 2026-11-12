@@ -42,14 +42,12 @@ flowchart LR
     UI --> Import["Importers<br/>PDF · EPUB · TXT/MD · web page"]
     UI --> AI["AI client<br/>prompts + JSON schemas"]
     Key["Secure storage<br/>user's API key"] --> AI
-    Upd["Updater"]
   end
   Files["Phone file picker<br/>(local, Google Drive, Dropbox, OneDrive)"] --> Import
   Web["Web pages"] --> Import
   AI -->|"user's key"| Claude["Claude API<br/>+ web search tool"]
   GH["GitHub repo"] -->|"push"| CI["GitHub Actions<br/>test · build APK"]
   CI --> Rel["GitHub Releases<br/>APK + version.json"]
-  Rel --> Upd
 ```
 
 | Layer | Choice | Why |
@@ -87,7 +85,6 @@ pes-app/
     native/       thin wrappers over Capacitor plugins (share, haptics, reminders, TTS, awake, Google sign-in)
     sources/      importers and chunking
     courses/      built-in courses (9 languages)
-    update/       GitHub release checker (self-update builds only)
   site/           chompbook.online (static pages + report Worker)
   android/        Capacitor Android project
   .github/workflows/android.yml
@@ -252,6 +249,8 @@ pes-app/
 ### ADR-034 — Google Play: app id online.chompbook.app, no self-update, AAB
 - **Context:** the app goes to Google Play under the organisation account with the package `online.chompbook.app`; GitHub builds used `io.github.helgurkonungson.pes`. An installed app's id can't change. Oleg chose a single id (no parallel GitHub app).
 - **Decision:** `applicationId` and the Capacitor `appId` are `online.chompbook.app` (the Java package / namespace stay `io.github.helgurkonungson.pes` — code only). The OpenRouter deep-link scheme follows the id; the sign-in URL carries `app=online.chompbook.app`, and the callback page opens that app, or the old id for builds before 0.19. The GitHub self-updater is compiled out of the default build (`__SELF_UPDATE__` = `VITE_SELF_UPDATE=1`), because Play forbids updating outside Play; Settings shows the version and links to the Play listing. CI builds the APK (direct install, emulator smoke) and a signed **AAB** (`Chompbook-x.y.z-play.aab`), attached to each GitHub Release. Upload key = the existing release key (Play App Signing re-signs). Users of the old GitHub app move their data with Settings → Export backup → restore in the new app (the old app's updater offers v0.19 once; it installs as a separate app). ADR-009 is amended: from now on `online.chompbook.app` must never change.
+
+- **Amended 12.11.2026:** the GitHub self-updater (`src/update/`, `VITE_SELF_UPDATE`, the update pop-up and banner) is removed: every build goes through a store, and the repository is private, so GitHub Releases can't be read without a token anyway. `Profile.updateCheck` stays in the type for old profiles.
 
 ### ADR-036 — Module boundaries for the next features (0.19.1)
 - **Context:** the next steps are Chompbook Pro (a hosted AI with a subscription: a new provider, a paywall, store purchases, new error states), a RuStore build and iOS. Several Claude sessions work on the code in parallel. `Session.tsx` (1000 lines) and `Settings.tsx` (630 lines) were single components that every feature touched; build-time switches (`__APP_VERSION__`, `__SELF_UPDATE__`, `VITE_*`) were read in seven files; screens imported each other (Settings and Onboarding took AI error texts from the Session screen); Capacitor plugins (Share, Filesystem, Haptics) were called from screens.
