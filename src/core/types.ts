@@ -58,7 +58,7 @@ export interface PlacementResult {
   skipped?: boolean;
 }
 
-export type SourceKind = "pdf" | "epub" | "docx" | "text" | "url";
+export type SourceKind = "pdf" | "epub" | "docx" | "fb2" | "odt" | "mobi" | "text" | "url";
 
 export interface Source {
   id: string;
