@@ -217,27 +217,27 @@ jobs:
             ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
           fi
 
-      # dist/ = the release assets of this store; smoke/ = the APK the emulators install
+      # out/ = the release assets of this store (dist/ is the web build); smoke/ = the APK the emulators install
       - name: Collect the build
         env:
           V: ${{ steps.v.outputs.name }}
         run: |
-          mkdir -p dist smoke
+          mkdir -p out smoke
           out=android/app/build/outputs
           if [ "$STORE" = galaxy ]; then
-            cp $out/apk/galaxy/release/app-galaxy-release.apk "dist/Chompbook-$V-galaxy.apk"
+            cp $out/apk/galaxy/release/app-galaxy-release.apk "out/Chompbook-$V-galaxy.apk"
           else
-            cp $out/apk/release/app-release.apk "dist/PES-$V.apk"
+            cp $out/apk/release/app-release.apk "out/PES-$V.apk"
             # the Google Play upload: signed with the upload key (Play App Signing re-signs it)
-            cp $out/bundle/release/app-release.aab "dist/Chompbook-$V-play.aab"
+            cp $out/bundle/release/app-release.aab "out/Chompbook-$V-play.aab"
           fi
-          cp "$(ls dist/*.apk | head -1)" smoke/
-          ls -l dist
+          cp "$(ls out/*.apk | head -1)" smoke/
+          ls -l out
 
       - uses: actions/upload-artifact@v4
         with:
           name: Chompbook-${{ env.STORE }}-${{ steps.v.outputs.name }}-build${{ steps.v.outputs.code }}
-          path: dist/*
+          path: out/*
           retention-days: 30
 
       - uses: actions/upload-artifact@v4
@@ -366,7 +366,7 @@ jobs:
         if: needs.build.outputs.signed == 'true'
         with:
           pattern: Chompbook-${{ env.STORE }}-*
-          path: dist
+          path: out
           merge-multiple: true
 
       - name: Publish release (new versions only)
@@ -382,5 +382,5 @@ jobs:
           else
             node tools/release-notes.mjs "$VERSION" > notes.md
             # --target: the tag points at this store branch, not at main
-            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md
+            gh release create "$TAG" out/* --target "$GITHUB_SHA" --title "$TITLE" --notes-file notes.md
           fi
