@@ -251,7 +251,7 @@ export interface Profile {
   qwenRegion?: "intl" | "cn";
   /** Base URL of a custom OpenAI-compatible server (Ollama, LM Studio, vLLM, a proxy…), e.g. http://192.168.1.10:11434/v1 */
   customBaseUrl?: string;
-  /** Last automatic update check (the first launch of each day). */
+  /** Written by the GitHub self-updater (removed 12.11.2026); kept so old profiles still type-check. */
   updateCheck?: UpdateCheck;
   /** Daily reminder (local notification). Unset = on at 19:00 once the learner allows notifications. */
   reminder?: { on: boolean; time: string };

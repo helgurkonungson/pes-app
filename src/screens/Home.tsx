@@ -1,9 +1,8 @@
 import { needsPlacement } from "../core/scoring";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BuildProgress } from "../components/BuildProgress";
-import { BookOpen, Check, CloudOff, Download, FileUp, Flame, GraduationCap, KeyRound, Moon, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
+import { BookOpen, Check, CloudOff, FileUp, Flame, GraduationCap, KeyRound, Moon, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
 import { useState } from "react";
-import { useUpdate } from "../app/App";
 import { useAiState } from "../ai/status";
 import { useCourseImport } from "../components/FilePickers";
 import { Bar, Chevron, SectionLabel, Sheet } from "../components/ui";
@@ -19,7 +18,6 @@ import { db, updateProfile } from "../data/db";
 import { pickCurrent, type SkillsetSummary, useProfile, useSkillsetSummaries, useToday } from "../data/hooks";
 import { type Key, locale, type T, useT } from "../i18n";
 import { useNav } from "../nav/store";
-import { installUpdateSafely } from "../update/updater";
 
 export function modeOf(x: SkillsetSummary, ai: AiState | undefined): "course" | "ai" | "offline" {
   if (x.s.courseId) return "course";
@@ -235,7 +233,6 @@ export function Home() {
   const ai = useAiState();
   const { push } = useNav();
   const setTab = useNav((s) => s.setTab);
-  const update = useUpdate((s) => s.info);
   const course = useCourseImport();
   const [energyOpen, setEnergyOpen] = useState(false);
   if (!profile || !list) return <div className="screen with-tabbar" />;
@@ -273,18 +270,6 @@ export function Home() {
             </button>
           </div>
         </header>
-
-        {update && (
-          <button className="banner" onClick={() => installUpdateSafely(update)}>
-            <span className="icon-dot accent">
-              <Download size={20} />
-            </span>
-            <span className="grow">
-              <b>{t("update.ready", { v: update.version })}</b>
-              <span className="muted small block">{t("update.tap")}</span>
-            </span>
-          </button>
-        )}
 
         <StreakNews profile={profile} due={list.reduce((a, x) => a + x.due, 0)} />
 

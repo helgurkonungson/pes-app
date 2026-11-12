@@ -131,16 +131,6 @@ export const tr: Dict = {
   "progress.read": "Kaynakların %{p}'i",
 
   // update
-  "update.ready": "{v} güncellemesi hazır",
-  "update.tap": "Önce ilerlemeniz yedeğe kaydedilir, sonra indirme başlar",
-  "update.backupSaved": "Yedek kaydedildi: {path}",
-  "update.popupTitle": "Yeni sürüm mevcut",
-  "update.popupText": "{v} sürümü kuruluma hazır. Sizde {current} var.",
-  "update.whatsNew": "Yenilikler",
-  "update.later": "Daha sonra",
-  "update.install": "Güncelle",
-  "update.failed": "İndirme başlatılamadı. Ayarlar → Güncellemeleri denetle ile tekrar deneyin.",
-
   // skillsets
   "skillsets.new": "Yeni beceri",
   "skillsets.newHint": "Kitaplarınız, dosyalarınız ve bağlantılarınızdan",
@@ -650,17 +640,10 @@ export const tr: Dict = {
   "settings.wipeText": "Beceriler, kaynaklar, dersler, XP ve rozetler bu telefondan silinecek. API anahtarınız kalır.",
   "settings.wipeOk": "Her şeyi sil",
   "settings.about": "Hakkında",
-  "settings.checkUpdates": "Güncellemeleri denetle",
   "settings.version": "Sürüm",
   "settings.updatesPlay": "Güncellemeler Google Play'den gelir",
   "settings.updatesGalaxy": "Güncellemeler Galaxy Store'dan gelir",
-  "settings.install": "{v} sürümünü yükle",
-  "settings.installHint": "Önce yedek Documents/PES klasörüne kaydedilir",
-  "settings.updateAvailable": "{v} sürümü mevcut",
-  "settings.latestAt": "En son sürüme sahipsiniz · kontrol zamanı: {time}",
-  "settings.checkingUpdates": "GitHub kontrol ediliyor…",
   "settings.latest": "En son sürüme sahipsiniz",
-  "settings.githubFailed": "GitHub'a ulaşılamadı",
   "settings.footer": "Chompbook v{v} · verileriniz bu telefonda kalır",
 
   // backup

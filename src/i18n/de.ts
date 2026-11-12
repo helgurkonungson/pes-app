@@ -131,16 +131,6 @@ export const de: Dict = {
   "progress.read": "{p} % der Quellen",
 
   // update
-  "update.ready": "Update {v} ist bereit",
-  "update.tap": "Zuerst wird dein Fortschritt gesichert, dann startet der Download",
-  "update.backupSaved": "Sicherung gespeichert: {path}",
-  "update.popupTitle": "Eine neue Version ist verfügbar",
-  "update.popupText": "Version {v} kann installiert werden. Du hast {current}.",
-  "update.whatsNew": "Neuigkeiten",
-  "update.later": "Später",
-  "update.install": "Aktualisieren",
-  "update.failed": "Der Download konnte nicht gestartet werden. Versuche es erneut unter Einstellungen → Nach Updates suchen.",
-
   // skillsets
   "skillsets.new": "Neues Fach",
   "skillsets.newHint": "Aus deinen Büchern, Dateien und Links",
@@ -650,17 +640,10 @@ export const de: Dict = {
   "settings.wipeText": "Fächer, Quellen, Lektionen, XP und Abzeichen werden von diesem Telefon entfernt. Dein API-Schlüssel bleibt.",
   "settings.wipeOk": "Alles löschen",
   "settings.about": "Über",
-  "settings.checkUpdates": "Nach Updates suchen",
   "settings.version": "Version",
   "settings.updatesPlay": "Updates kommen über Google Play",
   "settings.updatesGalaxy": "Updates kommen über den Galaxy Store",
-  "settings.install": "{v} installieren",
-  "settings.installHint": "Vorher wird eine Sicherung in Documents/PES gespeichert",
-  "settings.updateAvailable": "Version {v} ist verfügbar",
-  "settings.latestAt": "Du hast die neueste Version · geprüft um {time}",
-  "settings.checkingUpdates": "GitHub wird geprüft…",
   "settings.latest": "Du hast die neueste Version",
-  "settings.githubFailed": "GitHub nicht erreichbar",
   "settings.footer": "Chompbook v{v} · deine Daten bleiben auf diesem Telefon",
 
   // backup

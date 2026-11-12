@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on `main` becomes a GitHub Release with an APK.
+All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on a store branch becomes a GitHub Release (docs/BRANCHES.md).
 
 ## 1.2.0 — 2026-11-11
 

@@ -131,16 +131,6 @@ export const ru: Dict = {
   "progress.read": "{p}% источников",
 
   // update
-  "update.ready": "Готово обновление {v}",
-  "update.tap": "Сначала сохраню резервную копию, потом начнется загрузка",
-  "update.backupSaved": "Резервная копия: {path}",
-  "update.popupTitle": "Доступна новая версия",
-  "update.popupText": "Версия {v} готова к установке. У вас {current}.",
-  "update.whatsNew": "Что нового",
-  "update.later": "Позже",
-  "update.install": "Обновить",
-  "update.failed": "Не удалось начать загрузку. Попробуйте еще раз: Настройки → Проверить обновления.",
-
   // skillsets
   "skillsets.new": "Новый навык",
   "skillsets.newHint": "Из ваших книг, файлов и ссылок",
@@ -660,17 +650,10 @@ export const ru: Dict = {
   "settings.wipeText": "С телефона будут удалены навыки, источники, уроки, XP и награды. Ключ API останется.",
   "settings.wipeOk": "Удалить все",
   "settings.about": "О приложении",
-  "settings.checkUpdates": "Проверить обновления",
   "settings.version": "Версия",
   "settings.updatesPlay": "Обновления приходят через Google Play",
   "settings.updatesGalaxy": "Обновления приходят через Galaxy Store",
-  "settings.install": "Установить {v}",
-  "settings.installHint": "Сначала копия сохранится в Documents/PES",
-  "settings.updateAvailable": "Доступна версия {v}",
-  "settings.latestAt": "У вас последняя версия · проверено в {time}",
-  "settings.checkingUpdates": "Проверяю GitHub…",
   "settings.latest": "У вас последняя версия",
-  "settings.githubFailed": "Не удалось связаться с GitHub",
   "settings.footer": "«Грызи» v{v} · данные хранятся только на этом телефоне",
 
   // backup

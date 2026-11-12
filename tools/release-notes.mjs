@@ -1,7 +1,6 @@
 // Prints the release notes for a version: node tools/release-notes.mjs 0.9.0
 // Russian section from CHANGELOG.ru.md, English from CHANGELOG.md, each behind a
-// <!--lang:xx--> marker, so the app's update pop-up shows the notes in the UI language
-// (src/core/updateCheck.ts → notesForLang). GitHub hides the markers.
+// <!--lang:xx--> marker (the old in-app update pop-up read them). GitHub hides the markers.
 import { existsSync, readFileSync } from "node:fs";
 
 const version = process.argv[2];

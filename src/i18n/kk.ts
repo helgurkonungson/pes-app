@@ -131,16 +131,6 @@ export const kk: Dict = {
   "progress.read": "Дереккөздердің {p}%-ы",
 
   // update
-  "update.ready": "{v} жаңартуы дайын",
-  "update.tap": "Алдымен прогресс сақтық көшірмеге сақталады, содан кейін жүктеу басталады",
-  "update.backupSaved": "Сақтық көшірме сақталды: {path}",
-  "update.popupTitle": "Жаңа нұсқа қолжетімді",
-  "update.popupText": "{v} нұсқасы орнатуға дайын. Сізде {current}.",
-  "update.whatsNew": "Не жаңалық",
-  "update.later": "Кейінірек",
-  "update.install": "Жаңарту",
-  "update.failed": "Жүктеуді бастау мүмкін болмады. Баптаулар → Жаңартуларды тексеру арқылы қайталап көріңіз.",
-
   // skillsets
   "skillsets.new": "Жаңа дағды",
   "skillsets.newHint": "Кітаптарыңыз, файлдарыңыз және сілтемелеріңізден",
@@ -650,17 +640,10 @@ export const kk: Dict = {
   "settings.wipeText": "Дағдылар, дереккөздер, сабақтар, XP және белгілер осы телефоннан жойылады. API кілтіңіз қалады.",
   "settings.wipeOk": "Барлығын жою",
   "settings.about": "Қолданба туралы",
-  "settings.checkUpdates": "Жаңартуларды тексеру",
   "settings.version": "Нұсқа",
   "settings.updatesPlay": "Жаңартулар Google Play арқылы келеді",
   "settings.updatesGalaxy": "Жаңартулар Galaxy Store арқылы келеді",
-  "settings.install": "{v} орнату",
-  "settings.installHint": "Алдымен сақтық көшірме Documents/PES қалтасына сақталады",
-  "settings.updateAvailable": "{v} нұсқасы қолжетімді",
-  "settings.latestAt": "Сізде соңғы нұсқа орнатылған · тексерілген уақыт: {time}",
-  "settings.checkingUpdates": "GitHub тексерілуде…",
   "settings.latest": "Сізде соңғы нұсқа орнатылған",
-  "settings.githubFailed": "GitHub-қа қосылу мүмкін болмады",
   "settings.footer": "Chompbook v{v} · деректеріңіз осы телефонда қалады",
 
   // backup

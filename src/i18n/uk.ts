@@ -131,16 +131,6 @@ export const uk: Dict = {
   "progress.read": "{p}% джерел",
 
   // update
-  "update.ready": "Оновлення {v} готове",
-  "update.tap": "Спочатку зберігаємо резервну копію прогресу, потім починається завантаження",
-  "update.backupSaved": "Резервну копію збережено: {path}",
-  "update.popupTitle": "Доступна нова версія",
-  "update.popupText": "Версія {v} готова до встановлення. У вас {current}.",
-  "update.whatsNew": "Що нового",
-  "update.later": "Пізніше",
-  "update.install": "Оновити",
-  "update.failed": "Не вдалося почати завантаження. Спробуйте ще раз: Налаштування → Перевірити оновлення.",
-
   // skillsets
   "skillsets.new": "Нова навичка",
   "skillsets.newHint": "З ваших книжок, файлів і посилань",
@@ -650,17 +640,10 @@ export const uk: Dict = {
   "settings.wipeText": "Навички, джерела, уроки, XP і нагороди буде видалено з цього телефона. API-ключ залишиться.",
   "settings.wipeOk": "Видалити все",
   "settings.about": "Про застосунок",
-  "settings.checkUpdates": "Перевірити оновлення",
   "settings.version": "Версія",
   "settings.updatesPlay": "Оновлення надходять через Google Play",
   "settings.updatesGalaxy": "Оновлення надходять через Galaxy Store",
-  "settings.install": "Встановити {v}",
-  "settings.installHint": "Спочатку резервна копія зберігається в Documents/PES",
-  "settings.updateAvailable": "Доступна версія {v}",
-  "settings.latestAt": "У вас остання версія · перевірено о {time}",
-  "settings.checkingUpdates": "Перевіряємо GitHub…",
   "settings.latest": "У вас остання версія",
-  "settings.githubFailed": "Не вдалося зв'язатися з GitHub",
   "settings.footer": "Chompbook v{v} · ваші дані зберігаються лише на цьому телефоні",
 
   // backup

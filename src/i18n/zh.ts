@@ -131,16 +131,6 @@ export const zh: Dict = {
   "progress.read": "资料已学 {p}%",
 
   // update
-  "update.ready": "更新 {v} 已就绪",
-  "update.tap": "会先备份你的进度，然后开始下载",
-  "update.backupSaved": "备份已保存：{path}",
-  "update.popupTitle": "有新版本可用",
-  "update.popupText": "版本 {v} 可以安装了。你当前的版本是 {current}。",
-  "update.whatsNew": "新功能",
-  "update.later": "稍后",
-  "update.install": "更新",
-  "update.failed": "无法开始下载。请在“设置 → 检查更新”中重试。",
-
   // skillsets
   "skillsets.new": "新建技能",
   "skillsets.newHint": "基于你的书籍、文件和链接",
@@ -650,17 +640,10 @@ export const zh: Dict = {
   "settings.wipeText": "技能、资料、课程、XP 和徽章都将从这部手机上删除。你的 API 密钥会保留。",
   "settings.wipeOk": "全部删除",
   "settings.about": "关于",
-  "settings.checkUpdates": "检查更新",
   "settings.version": "版本",
   "settings.updatesPlay": "通过 Google Play 获取更新",
   "settings.updatesGalaxy": "通过 Galaxy Store 获取更新",
-  "settings.install": "安装 {v}",
-  "settings.installHint": "会先将备份保存到 Documents/PES",
-  "settings.updateAvailable": "有新版本 {v}",
-  "settings.latestAt": "已是最新版本 · 检查于 {time}",
-  "settings.checkingUpdates": "正在检查 GitHub…",
   "settings.latest": "已是最新版本",
-  "settings.githubFailed": "无法连接 GitHub",
   "settings.footer": "Chompbook v{v} · 你的数据只保存在这部手机上",
 
   // backup
