@@ -33,7 +33,7 @@ export const APP_ID = "online.chompbook.app";
 export const METRIKA_ID = 114170350;
 
 /** Cloudflare Web Analytics (no cookies, no storage, all languages) — site token from Cloudflare → Analytics & Logs → Web Analytics. Empty = off. Described in the privacy policies. */
-export const CF_BEACON_TOKEN = "";
+export const CF_BEACON_TOKEN = "10e40fe76c88497dae4b478cd20bf33d";
 
 /** Store links. status: "live" shows a normal button, "soon" a dimmed "coming soon" one; for the APK, "off" hides the GitHub link (the repository is private from 1.1.0). */
 export const STORES = {
