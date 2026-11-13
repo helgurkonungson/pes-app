@@ -11,9 +11,9 @@ Chompbook : réviser avec l'IA
 ```
 Réponds avec tes mots, l'IA vérifie si tu as compris. Cours, PDF, examens, quiz
 ```
-**Полное описание (≤4000, 3991):**
+**Полное описание (≤4000, 3996):**
 ```
-Réponds avec tes propres mots, et l'IA vérifie si tu as vraiment compris, comme un tuteur. Chompbook transforme tes livres, PDF et notes de cours en courtes leçons quotidiennes pour réviser efficacement.
+Réponds avec tes propres mots, et l'IA vérifie si tu as vraiment compris. Chompbook transforme tes livres, PDF et notes de cours en courtes leçons quotidiennes.
 Chaque leçon se termine par une question ouverte. Tu reçois une note sur 10, ce qui est réussi, ce qu'il faut améliorer et comment, ainsi qu'une réponse modèle.
 
 POURQUOI AVEC TES MOTS
@@ -29,7 +29,7 @@ COMMENT ÇA MARCHE
 3. Un peu de théorie, un quiz rapide, puis tu expliques l'idée clé avec tes mots et tu reçois un retour.
 
 APPRENDS À PARTIR DE TOUT
-• Fichiers PDF, EPUB, Word, texte et Markdown
+• Fichiers PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, texte et Markdown
 • Pages web par lien ou notes saisies à la main
 • Photos et scans de pages — le texte est reconnu directement sur le téléphone
 • Fichiers Google Drive via le sélecteur de fichiers habituel
@@ -73,7 +73,7 @@ Sans compte, sans pub, sans pistage. Tes supports et ta progression restent sur 
 FONCTIONNE AUSSI SANS IA
 Les leçons tirées de tes propres supports et les cinq cours fonctionnent entièrement sans elle, même hors ligne. Tu compares alors toi-même ce que tu as écrit à la réponse modèle et aux points clés.
 
-Français, English, Español, Deutsch, 中文, हिन्दी, Русский, Українська, Беларуская. Thème clair et sombre, téléphones et tablettes.
+Français, English, Español, Deutsch, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Thème clair et sombre, téléphones et tablettes.
 ```
 
 ## App Store

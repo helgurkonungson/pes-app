@@ -11,13 +11,13 @@ Chompbook: Yapay Zekâ Eğitmeni
 ```
 Kendi cümlelerinizle yanıtlayın, YZ kontrol etsin. Kitap ve PDF'ten dersler
 ```
-**Полное описание (≤4000, 3977):**
+**Полное описание (≤4000, 3993):**
 ```
 Kendi cümlelerinizle yanıtlayın — yapay zekâ gerçekten anlayıp anlamadığınızı kontrol etsin. Chompbook, kitaplarınızı, PDF'lerinizi ve notlarınızı kısa günlük derslere dönüştüren bir çalışma eğitmenidir.
 Her ders açık uçlu bir soruyla biter. 10 üzerinden puan, neyin iyi gittiği, neyi nasıl geliştireceğiniz ve örnek bir yanıt alırsınız.
 
 NEDEN KENDİ CÜMLELERİNİZLE
-Bilgi kartları ve çoktan seçmeli testler tanımayı ölçer: konuyu bilmeden de doğru seçeneği fark edebilir ya da tahmin edebilirsiniz. Bir fikri kendi cümlelerinizle anlatmak, onu anladığınızı kanıtlar. Bu, aktif hatırlama ve Feynman tekniğidir — her Chompbook dersi de böyle biter.
+Bilgi kartları ve çoktan seçmeli testler tanımayı ölçer: konuyu bilmeden de doğru seçeneği fark edebilir ya da tahmin edebilirsiniz. Bir fikri kendi cümlelerinizle anlatmak anladığınızı kanıtlar. Bu, aktif hatırlama ve Feynman tekniğidir — her Chompbook dersi de böyle biter.
 • Yanıtınızı yazın ya da dikte edin; tahmin edecek bir şey yok.
 • Yapay zekâ 10 üzerinden puan verir, neyin iyi gittiğini, neyin eksik olduğunu ve nasıl düzeltileceğini söyler.
 • Örnek yanıt, eksiksiz bir açıklamanın nasıl göründüğünü gösterir.
@@ -29,7 +29,7 @@ NASIL ÇALIŞIR
 3. Kısa bir konu anlatımını çalışın, hızlı bir test çözün, ardından ana fikri kendi cümlelerinizle anlatıp geri bildirim alın.
 
 HER ŞEYDEN ÖĞRENİN
-• PDF, EPUB, Word, metin ve Markdown dosyaları
+• PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, metin ve Markdown dosyaları
 • Bağlantıyla web sayfaları veya kendi yazdığınız notlar
 • Sayfa fotoğrafları ve taramaları — metin doğrudan telefonunuzda tanınır
 • Google Drive dosyaları, alışıldık dosya seçici üzerinden
@@ -46,7 +46,7 @@ DAHA AKILLI ÇALIŞIN
 • Seviye belirleme testi, zaten bildiklerinizi atlar.
 • Aralıklı tekrar, test yanlışlarını doğru zamanda geri getirir.
 • Her 5. ders kısa bir kontrolle başlar, her konuyu bir final testi kapatır.
-• Dersleri telefonunuzun sesiyle dinleyin — yürürken ya da yoldayken.
+• Dersleri telefonunuzun sesiyle dinleyin.
 
 YAPAY ZEKÂ SİZE GÖRE
 • Birkaç dokunuşla ücretsiz bir yapay zekâ bağlayın: Google ile giriş yapıp ücretsiz bir Gemini anahtarı oluşturun veya OpenRouter'a ücretsiz giriş yapın.
@@ -73,7 +73,7 @@ Hesap yok, reklam yok, izleme yok. Materyalleriniz ve ilerlemeniz telefonunuzda 
 YAPAY ZEKÂ OLMADAN DA ÇALIŞIR
 Kendi materyallerinizden oluşturulan dersler ve beş kurs, çevrimdışı bile olsa yapay zekâ olmadan tamamen çalışır. O zaman yazdıklarınızı örnek yanıt ve ana noktalarla kendiniz karşılaştırırsınız.
 
-English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Açık ve koyu tema, telefonlar ve tabletler.
+English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Açık ve koyu tema, telefonlar ve tabletler.
 ```
 
 ## App Store

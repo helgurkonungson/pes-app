@@ -11,13 +11,13 @@ Chompbook: KI-Lernhilfe & Quiz
 ```
 Antworte in eigenen Worten – KI prüft dein Verständnis. Lerne aus Büchern & PDFs
 ```
-**Полное описание (≤4000, 3983):**
+**Полное описание (≤4000, 3996):**
 ```
 Antworte in eigenen Worten – und die KI prüft, ob du es wirklich verstanden hast. Chompbook ist deine Lernhilfe für Bücher, PDFs und Notizen: kurze Lektionen, die in deinen Tag passen.
 Jede Lektion endet mit einer offenen Frage. Du bekommst eine Bewertung von 0 bis 10, Feedback, was gut war und was du wie verbessern kannst, und eine Musterantwort.
 
 WARUM IN EIGENEN WORTEN
-Karteikarten und Multiple Choice prüfen nur das Wiedererkennen: Die richtige Option kann man erkennen oder raten, ohne das Thema zu verstehen. Wer etwas in eigenen Worten erklären kann, hat es wirklich verstanden. Das ist aktives Abrufen (Active Recall) und die Feynman-Methode – und genau so endet jede Lektion in Chompbook.
+Karteikarten und Multiple Choice prüfen nur das Wiedererkennen: Die richtige Option kann man erkennen oder raten, ohne das Thema zu verstehen. Wer etwas in eigenen Worten erklären kann, hat es wirklich verstanden. Das ist aktives Abrufen und die Feynman-Methode – und genau so endet jede Lektion in Chompbook.
 • Du schreibst oder diktierst frei, es gibt also nichts zu raten.
 • Die KI vergibt bis zu 10 Punkte und sagt, was gut war, was fehlt und wie du es besser machst.
 • Eine Musterantwort zeigt, wie eine vollständige Erklärung aussieht.
@@ -29,7 +29,7 @@ SO FUNKTIONIERT'S
 3. Kurze Theorie, ein schnelles Quiz, dann erklärst du den Kerngedanken in eigenen Worten und bekommst Feedback.
 
 LERNE AUS ALLEM
-• PDF-, EPUB-, Word-, Text- und Markdown-Dateien
+• PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, Text- und Markdown-Dateien
 • Webseiten per Link oder eigene Notizen
 • Fotos und Scans von Buchseiten – der Text wird direkt auf dem Handy erkannt
 • Dateien aus Google Drive über die normale Dateiauswahl
@@ -38,7 +38,7 @@ Die Lektionen folgen deinem Material Teil für Teil – bis das Buch geschafft i
 FÜR WEN
 • Prüfungsvorbereitung mit deinen eigenen Lehrbüchern und Notizen
 • Studierende in der Klausurenphase
-• Weiterbildungen und Zertifizierungen im Job
+• Weiterbildungen und Zertifizierungen
 • Sachbuch-Leser, die behalten wollen, was sie lesen
 • Autodidakten, die jeden Tag ein Stück weiterkommen wollen
 
@@ -52,7 +52,7 @@ KI, WIE DU SIE WILLST
 • Verbinde mit wenigen Tipps eine kostenlose KI: Mit Google anmelden und einen kostenlosen Gemini-Schlüssel erstellen – oder kostenlos bei OpenRouter anmelden.
 • Oder nutze deinen eigenen Schlüssel: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA – oder deinen eigenen Server wie Ollama oder LM Studio.
 • Oder teste Chompbook Pro: KI-Lektionen ohne eigenen Schlüssel, 7 Tage gratis.
-• Sie schreibt Lektionen aus deinen Materialien und prüft deine offenen Antworten wie eine gute Nachhilfe.
+• Sie schreibt Lektionen aus deinen Materialien und prüft deine offenen Antworten wie eine Nachhilfe.
 
 FÜNF KOSTENLOSE KURSE
 Je 8 Lektionen, sofort startklar:
@@ -73,7 +73,7 @@ Keine Konten, keine Werbung, kein Tracking. Materialien und Fortschritt bleiben 
 FUNKTIONIERT AUCH OHNE KI
 Lektionen aus deinen eigenen Materialien und die fünf Kurse laufen komplett ohne sie, sogar offline. Deine Antwort vergleichst du dann selbst mit der Musterantwort und den Kernpunkten.
 
-Deutsch, English, Español, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Helles und dunkles Design, für Smartphones und Tablets.
+Deutsch, English, Español, Français, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Helles und dunkles Design, Smartphones und Tablets.
 ```
 
 ## App Store
