@@ -383,3 +383,6 @@ a.course:hover { transform: translateY(-3px); border-color: color-mix(in srgb, v
 .cookie-note[hidden] { display: none; }
 .cookie-note p { margin: 0; flex: 1; }
 .cookie-note .btn { flex: none; padding: 9px 16px; }
+.ph-badge { display: inline-block; margin-top: 22px; line-height: 0; }
+.ph-badge img { width: 250px; height: 54px; }
+.ph-badge.foot-badge { margin: 10px 0 0; }

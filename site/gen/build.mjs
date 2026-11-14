@@ -118,6 +118,7 @@ ${GUIDES[lang] ? `<li><a href="${p}/guides/">${GUIDES[lang].nav}</a></li>\n` : "
 ${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
 </div>
+${phBadge(lang, "foot-badge")}
 <p class="seller">© 2026 ${esc(s.nameShort || s.name)}</p>
 </div></footer>`;
 }
@@ -168,6 +169,14 @@ ${footer(o.lang)}
 `);
 
 const docHref = (lang, id) => `${pre(lang)}/${id}/`;
+
+// ---------------------------------------------------------------- Product Hunt badge
+// Not on Russian-language and CIS pages (ru, be, /cis/). Dark by default, light in the light theme — like the site.
+const PH_LANGS = LANGS.map((l) => l.id).filter((l) => l !== "ru" && l !== "be");
+const PH_IMG = (theme) => `https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1312855&amp;theme=${theme}&amp;t=1794669492538`;
+const phBadge = (lang, cls = "") => PH_LANGS.includes(lang)
+  ? `<a class="ph-badge${cls ? " " + cls : ""}" href="https://www.producthunt.com/products/chompbook-ai-study-tutor?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-chompbook" target="_blank" rel="noopener noreferrer"><picture><source media="(prefers-color-scheme: light)" srcset="${PH_IMG("light")}"><img alt="Chompbook - AI tutor that checks your answers, not your guesses | Product Hunt" width="250" height="54" src="${PH_IMG("dark")}" loading="lazy"></picture></a>`
+  : "";
 
 // ---------------------------------------------------------------- landing
 
@@ -268,6 +277,7 @@ function landing(lang) {
 <p class="lead">${esc(t.hero.lead)}</p>
 ${storeButtons(lang)}
 ${STORES.apk.status === "live" ? `<p class="apk">${esc(t.hero.apk)} <a href="${STORES.apk.url}" rel="noopener">${esc(t.hero.apkLink)}</a></p>\n` : ""}<ul class="ticks">${t.hero.ticks.map((x) => `<li>${I.check}${esc(x)}</li>`).join("")}</ul>
+${phBadge(lang)}
 </div>
 <div class="stage" aria-hidden="true">
 <div class="phone back"><div class="screen">${shot(5, "on")}</div></div>
