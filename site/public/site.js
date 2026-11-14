@@ -1,13 +1,13 @@
 // chompbook.online — small enhancements; every page works without this file.
 (function () {
-  var LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi"];
+  var LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi", "kk", "tr"];
   var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
 
   // Campaign tags: remember utm_* of the link a visitor came by (this browser tab only) and pass them on
   // to Google Play through the install referrer, so Play Console shows installs by source (linkedin, habr …).
-  // The page and language stay in utm_content (set by the site generator as utm_campaign/utm_content).
-  var UTM = ["utm_source", "utm_medium", "utm_campaign"];
+  // utm_content = the incoming one (if any) + the button's page and language, e.g. "first-comment_home_en".
+  var UTM = ["utm_source", "utm_medium", "utm_campaign", "utm_content"];
   function sess(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, v); } catch (e) { return null; } }
   var qs = new URLSearchParams(location.search);
   if (qs.get("utm_source")) UTM.forEach(function (k) { sess(k, qs.get(k) || ""); });
@@ -18,7 +18,8 @@
         var ref = new URLSearchParams(u.searchParams.get("referrer") || "");
         var page = [ref.get("utm_campaign"), ref.get("utm_content")].filter(Boolean).join("_");
         UTM.forEach(function (k) { var v = sess(k); if (v) ref.set(k, v); else ref.delete(k); });
-        if (page) ref.set("utm_content", page);
+        var content = [sess("utm_content"), page].filter(Boolean).join("_");
+        if (content) ref.set("utm_content", content);
         u.searchParams.set("referrer", ref.toString());
         a.href = u.toString();
       } catch (e) {}
@@ -185,4 +186,16 @@
     }, { rootMargin: "-80px 0px -70% 0px" });
     document.querySelectorAll(".doc h2[id]").forEach(function (h) { tio.observe(h); });
   }
+
+  // Demo video: load YouTube (no-cookie) only after a click; without JS the link opens YouTube.
+  var yt = document.querySelector("a[data-yt]");
+  if (yt) yt.addEventListener("click", function (e) {
+    e.preventDefault();
+    var f = document.createElement("iframe");
+    f.src = "https://www.youtube-nocookie.com/embed/" + yt.getAttribute("data-yt") + "?autoplay=1&rel=0";
+    f.title = yt.getAttribute("aria-label") || "Video";
+    f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen";
+    f.allowFullscreen = true;
+    yt.parentNode.replaceChild(f, yt);
+  });
 })();

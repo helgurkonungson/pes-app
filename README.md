@@ -35,22 +35,21 @@ cd android && ./gradlew assembleDebug   # local APK (needs Android SDK)
 | `src/core/` | Pure logic with tests: session planner, chunker, scoring/XP/levels, streaks, badges, session flow, AI-output normalisation |
 | `src/ai/` | Claude client (BYOK), prompts and tool schemas, key storage |
 | `src/data/` | Dexie database, repository functions, session preparation |
-| `src/sources/` | Importers: PDF (pdf.js), EPUB/Word (JSZip), HTML, text, web pages |
+| `src/sources/` | Importers: PDF (pdf.js), EPUB/Word/ODT/FB2 (JSZip), MOBI/AZW3 (foliate-js), HTML, text, web pages |
 | `src/screens/`, `src/components/` | UI (React) and design system (`src/styles/app.css`); big screens keep their parts in `screens/session/` and `screens/settings/` |
-| `src/build.ts` | Build-time values in one place: version, app id, Play URL, endpoints, self-update flag (ADR-036) |
+| `src/build.ts` | Build-time values in one place: version, app id, Play URL, endpoints, store (ADR-036) |
 | `src/native/` | Thin wrappers over Capacitor plugins: share, haptics, reminders, speech, keep-awake, Google sign-in |
-| `src/update/` | Self-update from GitHub Releases (only builds with `VITE_SELF_UPDATE=1`) |
 | `src/pro/` | Chompbook Pro purchases (RevenueCat over Google Play Billing, ADR-037) |
 | `api/` | Chompbook AI server: Cloudflare Worker + D1 (Pro entitlement, daily allowance, OpenRouter); setup in `docs/PRO_SETUP.md` |
 | `android/` | Capacitor Android project |
-| `.github/workflows/android.yml` | CI: tests → build → APK → Release on new version |
+| `.github/workflows/android.yml` | CI: tests on every branch; build → Release on the store branches (`docs/BRANCHES.md`) |
 | `docs/` | Brief, architecture and ADRs |
 | `tools/` | Icon generator, release-notes helper, one-time GitHub setup script |
 
 ### Releasing
 
 1. Bump `version` in `package.json` and add a section to `CHANGELOG.md`.
-2. Push to `main`. CI builds the APK and publishes Release `vX.Y.Z`; installed apps offer the update.
+2. Push to `main`, then bring it into the store branch (`google-play`, `galaxy-store`). The store branch's CI builds and publishes the Release (`vX.Y.Z` / `galaxy-vX.Y.Z`). Branches: `docs/BRANCHES.md`.
 
 Release signing uses four repository secrets: `PES_KEYSTORE_BASE64`, `PES_KEYSTORE_PASSWORD`, `PES_KEY_ALIAS`, `PES_KEY_PASSWORD`. Without them CI still builds a test APK (signed with a throwaway debug key, downloadable from the run's artifacts) but publishes no release.
 

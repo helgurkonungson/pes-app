@@ -1,4 +1,4 @@
-// Full documents in English — the binding versions for Google Play, the Samsung Galaxy Store, the App Store and the GitHub build.
+// Full documents in English — the binding versions for Google Play, the App Store and the GitHub build.
 import { SELLER as S } from "../config.mjs";
 
 const who = `${S.en.name}, an ${S.en.kind} (state registration no. ${S.regNo}, taxpayer no. ${S.tin}, address: ${S.en.address})`;
@@ -9,7 +9,7 @@ export const privacy = {
   body: `
 <p>Chompbook (in Russian: «Грызи») is a learning app made by ${who} ("we", "us"). We are the controller of the personal data described below.</p>
 <div class="note"><p><strong>In short:</strong> your learning data stays on your phone. We run no accounts, no analytics and no ads. Text leaves the phone only to go to the AI service <em>you</em> choose (including Chompbook AI if you subscribe to Chompbook Pro), to us when <em>you</em> report a lesson or send an error report, or to a web page <em>you</em> ask the app to read.</p>
-<p>This policy covers the app installed from Google Play, the Samsung Galaxy Store, the Apple App Store or GitHub, and this website. If you installed the app from RuStore, the <a href="/cis/privacy/">RuStore documents</a> apply instead.</p></div>
+<p>This policy covers the app installed from Google Play, the Apple App Store or GitHub, and this website. If you installed the app from RuStore, the <a href="/cis/privacy/">RuStore documents</a> apply instead.</p></div>
 
 <h2>Data kept only on your device</h2>
 <ul>
@@ -30,11 +30,11 @@ export const privacy = {
 <p><strong>OpenRouter sign-in</strong> (only to get a free OpenRouter key for you): you sign in on openrouter.ai; OpenRouter then sends a one-time code to <code>chompbook.online/oauth/openrouter/</code>, a page that only passes it on to the app on your phone and keeps nothing. The app exchanges the code for your key directly with OpenRouter. We never see your OpenRouter account or key.</p>
 
 <h2>Chompbook Pro and Chompbook AI</h2>
-<p>Chompbook Pro is an optional subscription sold inside the app from Google Play, the Samsung Galaxy Store and, once released, the App Store. It adds Chompbook AI, an AI service run by us, so you don't need your own key.</p>
+<p>Chompbook Pro is an optional subscription sold inside the app from Google Play and, once released, the App Store. It adds Chompbook AI, an AI service run by us, so you don't need your own key.</p>
 <ul>
-<li><strong>Payment.</strong> You pay through Google Play, Samsung (Galaxy Store) or Apple under their terms and privacy policies. We never see your card details, name, e-mail address, Google account, Samsung account or Apple ID. The store gives us the order or transaction number, the plan, the country and currency, the price and the subscription status.</li>
+<li><strong>Payment.</strong> You pay through Google Play or Apple under their terms and privacy policies. We never see your card details, name, e-mail address, Google account or Apple ID. The store gives us the order or transaction number, the plan, the country and currency, the price and the subscription status.</li>
 <li><strong>Anonymous ID.</strong> The app creates a random ID (such as <code>$RCAnonymousID:…</code>) that is not linked to your name, e-mail or store account. It identifies your subscription and your daily allowance.</li>
-<li><strong>RevenueCat.</strong> We use RevenueCat, Inc. (USA) to confirm purchases with Google Play, the Galaxy Store and the App Store. The app sends RevenueCat the anonymous ID, your purchase records for this app, the app and operating-system version, your locale and currency, and, like any internet request, your IP address. RevenueCat processes this on our behalf (<a href="https://www.revenuecat.com/privacy">its privacy policy</a>). The app does not send it your advertising ID and does not track you across other companies' apps or websites.</li>
+<li><strong>RevenueCat.</strong> We use RevenueCat, Inc. (USA) to confirm purchases with Google Play and the App Store. The app sends RevenueCat the anonymous ID, your purchase records for this app, the app and operating-system version, your locale and currency, and, like any internet request, your IP address. RevenueCat processes this on our behalf (<a href="https://www.revenuecat.com/privacy">its privacy policy</a>). The app does not send it your advertising ID and does not track you across other companies' apps or websites.</li>
 <li><strong>Lessons by Chompbook AI.</strong> When Chompbook AI writes a lesson or checks an answer, the app sends our server <code>api.chompbook.online</code> the same lesson content as for any other AI service (see the previous section) with your anonymous ID and whether you said you are 18 or older. The server adds privacy rules to every request (the AI must not request or process personal data) and, for younger learners, safety rules. The server checks the subscription with RevenueCat and passes the request to OpenRouter, Inc. (USA), which sends it to the company that runs the AI model (currently Anthropic; if it is unavailable, another model host). The answer comes back the same way. Our server does not store or read the content of your lessons, and we don't use it to train AI. OpenRouter is set to use only model providers that do not train on requests.</li>
 <li><strong>What our server keeps:</strong> the anonymous ID, whether the subscription is active and until when (a cached answer from RevenueCat), and how many AI tokens you used each day, so the daily fair-use limit can work. We keep no request logs. The server runs on Cloudflare, which processes IP addresses to deliver and protect the service.</li>
 </ul>
@@ -49,7 +49,7 @@ export const privacy = {
 <li><strong>Web pages you add as sources</strong> are downloaded from their sites.</li>
 <li><strong>Dictation</strong> (optional): when you tap the microphone under an open question, your phone's own speech recognition service (on most Android phones, Google's) turns what you say into text under its own terms and may send the audio to its provider for that. Chompbook asks for microphone permission the first time, receives only the text and records or keeps no audio.</li>
 <li><strong>Update check</strong> (only in the version installed from GitHub): once a day the app asks GitHub for the latest release. Versions from the stores are updated by the store.</li>
-<li><strong>This website</strong> remembers your language choice only in your browser. Cloudflare serves it and processes IP addresses to deliver and protect it; Cloudflare Web Analytics counts page views without cookies and without identifying visitors. The Russian-language pages (<code>/ru/</code> and the RuStore documents) also use <strong>Yandex Metrica</strong> (YANDEX LLC, Russia): it sets cookies and receives your IP address, browser and device details, the pages you view and the page you came from, so we can see which pages and searches bring visitors. We don't use its session recording and don't link this data to the app. You can block or delete cookies in your browser; the site works without them.</li>
+<li><strong>This website</strong> remembers your language choice only in your browser. Cloudflare serves it and processes IP addresses to deliver and protect it; Cloudflare Web Analytics counts page views without cookies and without identifying visitors. The Russian-language pages (<code>/ru/</code> and the RuStore documents) also use <strong>Yandex Metrica</strong> (YANDEX LLC, Russia): it sets cookies and receives your IP address, browser and device details, the pages you view and the page you came from, so we can see which pages and searches bring visitors. We don't use its session recording and don't link this data to the app. The demo video on the home page loads from YouTube (Google) only after you click play, using the privacy-enhanced youtube-nocookie.com address; until then nothing is sent to YouTube. You can block or delete cookies in your browser; the site works without them.</li>
 <li>Like any internet request, these reveal your IP address to the server you contact.</li>
 </ul>
 
@@ -77,11 +77,11 @@ export const privacy = {
 <ul>
 <li>Use the app without AI (Settings → Lesson mode → "Always without AI").</li>
 <li>Remove an AI key at any time in Settings.</li>
-<li>Cancel Chompbook Pro at any time in the store: Google Play → Payments &amp; subscriptions → Subscriptions, Galaxy Store → Menu → Subscriptions, or on iPhone Settings → your name → Subscriptions. Deleting the app does not cancel a subscription.</li>
+<li>Cancel Chompbook Pro at any time in the store: Google Play → Payments &amp; subscriptions → Subscriptions, or on iPhone Settings → your name → Subscriptions. Deleting the app does not cancel a subscription.</li>
 <li>Delete everything on the phone: Settings → Delete all data, or uninstall the app. See <a href="/delete-data/">Delete your data</a>.</li>
 <li>Export your data: Settings → Export backup.</li>
 <li>Turn automatic error reports on or off at any time: Settings → Error log.</li>
-<li>You may ask us for access to, correction or deletion of the data we hold (a lesson or error report you sent, or Pro data on our server), object to processing, or ask for a copy. For Pro data, include your order number (Google Play: starts with <code>GPA.</code>; Galaxy Store: from your Samsung receipt e-mail; Apple: from your receipt) so we can find the anonymous ID. We answer within one month. You may also complain to your data-protection authority.</li>
+<li>You may ask us for access to, correction or deletion of the data we hold (a lesson or error report you sent, or Pro data on our server), object to processing, or ask for a copy. For Pro data, include your order number (Google Play: starts with <code>GPA.</code>; Apple: from your receipt) so we can find the anonymous ID. We answer within one month. You may also complain to your data-protection authority.</li>
 </ul>
 
 <h2>Children</h2>
@@ -102,7 +102,7 @@ export const privacy = {
 export const terms = {
   title: "Terms of use",
   body: `
-<p>These terms apply to the Chompbook app (in Russian: «Грызи») and the Chompbook Pro subscription, provided by ${who} ("we", "us"). By installing or using the app you accept them. The terms of the store you got the app from also apply to the download and to payments (Google Play Terms of Service; Samsung Galaxy Store Terms and Conditions; for the App Store see the "Apple App Store" section below). How we handle data is described in the <a href="/privacy/">privacy policy</a>. If you installed the app from RuStore, the <a href="/cis/terms/">RuStore documents</a> apply instead.</p>
+<p>These terms apply to the Chompbook app (in Russian: «Грызи») and the Chompbook Pro subscription, provided by ${who} ("we", "us"). By installing or using the app you accept them. The terms of the store you got the app from also apply to the download and to payments (Google Play Terms of Service; for the App Store see the "Apple App Store" section below). How we handle data is described in the <a href="/privacy/">privacy policy</a>. If you installed the app from RuStore, the <a href="/cis/terms/">RuStore documents</a> apply instead.</p>
 
 <h2>The app and your licence</h2>
 <p>Chompbook turns your own materials and the built-in courses into daily lessons. The app is free. Lessons from your materials work without AI and without the internet; AI features are optional. We grant you a personal, non-exclusive, non-transferable, revocable licence to use the app on devices you own or control, for your own learning. The app's source code is publicly viewable on GitHub; seeing it does not grant any rights beyond this licence unless a separate licence file says so. Open-source components keep their own licences.</p>
@@ -119,12 +119,12 @@ export const terms = {
 <h2>Chompbook Pro</h2>
 <ul>
 <li><strong>What you get.</strong> Chompbook AI writes lessons and checks your written answers without a key of your own. Fair use: a daily allowance of AI tokens that covers about 10 fifteen-minute AI lessons a day; it resets every day at 00:00 UTC. Longer or larger lessons use more of it. When the allowance is used up, lessons continue without AI until the reset. We choose the AI model and may change it, keeping comparable quality.</li>
-<li><strong>Where it is sold.</strong> Inside the app from Google Play, the Samsung Galaxy Store and, once released, the App Store, in countries where these stores sell subscriptions.</li>
+<li><strong>Where it is sold.</strong> Inside the app from Google Play and, once released, the App Store, in countries where these stores sell subscriptions.</li>
 <li><strong>Plans and prices.</strong> Monthly and annual plans. The store shows the price in your currency, including the taxes it applies, before you pay; prices can differ by country.</li>
 <li><strong>Free trial.</strong> New subscribers may get a free trial of the length shown before purchase (7 days at launch). Eligibility is decided by the store (usually one trial per account). Nothing is charged during the trial; if you don't cancel at least 24 hours before it ends, the subscription starts and the first payment is charged.</li>
 <li><strong>Automatic renewal.</strong> The subscription renews automatically at the end of each period, and the store charges the payment method on your account, unless you cancel at least 24 hours before the end of the current period.</li>
-<li><strong>Cancelling.</strong> Cancel at any time: Google Play → Payments &amp; subscriptions → Subscriptions; Galaxy Store → Menu → Subscriptions; on iPhone, Settings → your name → Subscriptions; or in the app: Settings → Chompbook Pro → Manage subscription. Pro stays active until the end of the period you have paid for. Deleting the app does not cancel the subscription.</li>
-<li><strong>Refunds.</strong> Payments are processed by the store, so refunds follow its policy: request one in Google Play or from Samsung (Galaxy Store), or for Apple at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>. You can also write to us and we will help.</li>
+<li><strong>Cancelling.</strong> Cancel at any time: Google Play → Payments &amp; subscriptions → Subscriptions; on iPhone, Settings → your name → Subscriptions; or in the app: Settings → Chompbook Pro → Manage subscription. Pro stays active until the end of the period you have paid for. Deleting the app does not cancel the subscription.</li>
+<li><strong>Refunds.</strong> Payments are processed by the store, so refunds follow its policy: request one in Google Play, or for Apple at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>. You can also write to us and we will help.</li>
 <li><strong>Price changes.</strong> If the price changes, the store notifies you in advance as its rules require, and you can cancel before the new price applies.</li>
 <li><strong>Restoring.</strong> On a new phone, sign in to the same store account and tap Settings → Chompbook Pro → "Restore purchases".</li>
 </ul>
@@ -172,9 +172,9 @@ export const support = {
 
 <h2>Subscriptions</h2>
 <h3>How do I cancel Chompbook Pro?</h3>
-<p>Google Play: open Play Store → profile → Payments &amp; subscriptions → Subscriptions → Chompbook → Cancel. Galaxy Store: Menu → Subscriptions → Chompbook → Cancel subscription. iPhone: Settings → your name → Subscriptions → Chompbook. Or in the app: Settings → Chompbook Pro → Manage subscription. Pro stays active until the end of the paid period. Deleting the app does not cancel the subscription.</p>
+<p>Google Play: open Play Store → profile → Payments &amp; subscriptions → Subscriptions → Chompbook → Cancel. iPhone: Settings → your name → Subscriptions → Chompbook. Or in the app: Settings → Chompbook Pro → Manage subscription. Pro stays active until the end of the paid period. Deleting the app does not cancel the subscription.</p>
 <h3>How do I get a refund?</h3>
-<p>The store processes payments, so request a refund there: in Google Play (Order history → Request a refund), through Samsung support for Galaxy Store purchases, or at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>. If that doesn't work, write to us with your order number and we will help.</p>
+<p>The store processes payments, so request a refund there: in Google Play (Order history → Request a refund) or at <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>. If that doesn't work, write to us with your order number and we will help.</p>
 <h3>I changed phones. How do I get Pro back?</h3>
 <p>Sign in with the same Google account or Apple ID, open Settings → Chompbook Pro → "Restore purchases".</p>
 <h3>Chompbook AI says the daily limit is reached.</h3>
@@ -216,12 +216,12 @@ export const deleteData = {
 <li><strong>Lesson reports and error reports</strong> you chose to send — deleted automatically after 12 months.</li>
 <li><strong>Chompbook Pro data</strong>: an anonymous ID, the cached subscription status (deleted 30 days after your last use of Chompbook AI) and daily usage counts (deleted after 90 days).</li>
 </ul>
-<p>To have them deleted earlier, write to ${mail(S.privacy)} with the subject "Delete my data". For Pro data, include your order number (Google Play: starts with <code>GPA.</code>; Galaxy Store: from your Samsung receipt e-mail; Apple: from your receipt) — without an account it is the only way to find your anonymous ID. For reports, tell us roughly when you sent them and from which app version. We confirm deletion within 30 days. Purchase records that the store and RevenueCat must keep for tax and accounting are deleted under their own policies.</p>
+<p>To have them deleted earlier, write to ${mail(S.privacy)} with the subject "Delete my data". For Pro data, include your order number (Google Play: starts with <code>GPA.</code>; Apple: from your receipt) — without an account it is the only way to find your anonymous ID. For reports, tell us roughly when you sent them and from which app version. We confirm deletion within 30 days. Purchase records that the store and RevenueCat must keep for tax and accounting are deleted under their own policies.</p>
 
 <h2>AI services you connected</h2>
 <p>Data you sent to an AI service with your own key is held by that service. Delete it in your account there (for example in Google AI Studio, OpenRouter or the provider's console), and revoke the key.</p>
 
 <h2>Cancelling a subscription</h2>
-<p>Deleting data or the app does not cancel Chompbook Pro. Cancel it in Google Play, in Galaxy Store or in your Apple ID settings — see <a href="/support/">Support</a>.</p>
+<p>Deleting data or the app does not cancel Chompbook Pro. Cancel it in Google Play or in your Apple ID settings — see <a href="/support/">Support</a>.</p>
 `,
 };

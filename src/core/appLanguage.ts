@@ -8,7 +8,7 @@
  */
 import type { UiLanguage } from "./types";
 
-const LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi"] as const;
+const LANGS = ["en", "ru", "uk", "be", "es", "de", "fr", "zh", "hi", "kk", "tr"] as const;
 type Lang = (typeof LANGS)[number];
 
 /** Android language tag for an app language ("" = follow the system). */

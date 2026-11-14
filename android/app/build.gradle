@@ -36,17 +36,6 @@ android {
             }
         }
     }
-    // ADR-041: one app, a build per store. Same application id, version and signing key; the web
-    // layer is built with VITE_STORE=<flavor> before `cap copy` (see .github/workflows/android.yml).
-    flavorDimensions = ["store"]
-    productFlavors {
-        play {
-            dimension "store"
-        }
-        galaxy {
-            dimension "store"
-        }
-    }
     buildTypes {
         release {
             signingConfig = System.getenv("PES_KEYSTORE_PATH") ? signingConfigs.release : signingConfigs.debug
@@ -70,14 +59,8 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
-    // Google Play In-App Review (StoreReviewPlugin, 0.19.2) — Play build only (ADR-041)
-    playImplementation "com.google.android.play:review:2.0.2"
-    // Samsung IAP for RevenueCat (GalaxyPurchasesPlugin, ADR-041). Must be the same version as the
-    // native `purchases` SDK that @revenuecat/purchases-capacitor brings in through
-    // purchases-hybrid-common (19.15.0 → 10.29.0); src/config.test.ts checks the pair.
-    // `purchases` itself is only a private dependency of the Capacitor plugin, so the app declares it to compile against it.
-    galaxyImplementation "com.revenuecat.purchases:purchases:10.29.0"
-    galaxyImplementation "com.revenuecat.purchases:purchases-store-galaxy:10.29.0"
+    // Google Play In-App Review (StoreReviewPlugin, 0.19.2)
+    implementation "com.google.android.play:review:2.0.2"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

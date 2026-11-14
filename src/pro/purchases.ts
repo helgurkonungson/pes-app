@@ -1,6 +1,6 @@
 /**
- * Chompbook Pro purchases through RevenueCat on top of Google Play Billing (ADR-037) or, in the
- * Galaxy Store build, Samsung IAP (ADR-041). Only the Android app sells Pro (the web version shows where to get it).
+ * Chompbook Pro purchases through RevenueCat on top of Google Play Billing (ADR-037).
+ * Only the Android app sells Pro (the web version shows where to get it).
  * When the "pro" entitlement is active the learner's RevenueCat app user id becomes the "key"
  * of the Chompbook AI provider; the server checks it with RevenueCat on every request.
  */
@@ -8,14 +8,13 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases, type PurchasesPackage } from "@revenuecat/purchases-capacitor";
 import { create } from "zustand";
 import { getApiKey, setApiKey } from "../ai/key";
-import { GALAXY_BILLING_TEST, PRO_API, REVENUECAT_KEY as RC_KEY, STORE } from "../build";
+import { PRO_API, REVENUECAT_ANDROID_KEY as RC_KEY } from "../build";
 import { nowIso } from "../core/ids";
 import { type CustomerInfoLike, type PlanView, type ProStatus, type ProUsage, proStatus, type StorePackage, toPlans } from "../core/pro";
 import { getProfile, updateProfile } from "../data/db";
 import { logEvent } from "../data/logs";
-import { configureGalaxyPurchases } from "../native/galaxyPurchases";
 
-/** Pro can be bought here: the Android app with the store configured (the build has the store's RevenueCat key). */
+/** Pro can be bought here: the Android app with the store configured (the build has the RevenueCat key). */
 export function proPurchasable(): boolean {
   return Capacitor.getPlatform() === "android" && !!RC_KEY;
 }
@@ -39,14 +38,8 @@ let packages: PurchasesPackage[] = [];
 export function initPro(): Promise<void> {
   if (!proPurchasable()) return Promise.resolve();
   configured ??= (async () => {
-    if (STORE === "galaxy") {
-      // Samsung IAP: configured natively; the plugin's update listener isn't attached there, so the
-      // state is read at start, after a purchase or restore, and when the app comes back (refreshPro).
-      await configureGalaxyPurchases(RC_KEY, GALAXY_BILLING_TEST);
-    } else {
-      await Purchases.configure({ apiKey: RC_KEY });
-      await Purchases.addCustomerInfoUpdateListener((info) => void applyCustomerInfo(info as unknown as CustomerInfoLike));
-    }
+    await Purchases.configure({ apiKey: RC_KEY });
+    await Purchases.addCustomerInfoUpdateListener((info) => void applyCustomerInfo(info as unknown as CustomerInfoLike));
     const { customerInfo } = await Purchases.getCustomerInfo();
     await applyCustomerInfo(customerInfo as unknown as CustomerInfoLike);
   })().catch((e) => {
@@ -78,18 +71,6 @@ export async function applyCustomerInfo(info: CustomerInfoLike): Promise<void> {
   }
 }
 
-/** Re-reads the subscription when the app returns to the foreground (Galaxy build: renewals, expiry, refunds). */
-export async function refreshPro(): Promise<void> {
-  if (!proPurchasable() || STORE !== "galaxy" || !configured) return;
-  try {
-    await configured;
-    const { customerInfo } = await Purchases.getCustomerInfo();
-    await applyCustomerInfo(customerInfo as unknown as CustomerInfoLike);
-  } catch (e) {
-    void logEvent("pro", `refresh failed: ${String(e)}`);
-  }
-}
-
 export async function loadPlans(): Promise<PlanView[]> {
   await initPro();
   const offerings = await Purchases.getOfferings();
@@ -99,7 +80,7 @@ export async function loadPlans(): Promise<PlanView[]> {
 
 export type BuyResult = "ok" | "cancelled";
 
-/** RevenueCat's "the user closed the store's payment sheet" (PURCHASE_CANCELLED_ERROR = "1"). */
+/** RevenueCat's "the user closed the Google Play sheet" (PURCHASE_CANCELLED_ERROR = "1"). */
 function isCancel(e: unknown): boolean {
   const x = e as { userCancelled?: boolean | null; code?: string | number; data?: { userCancelled?: boolean | null } } | null;
   return !!(x?.userCancelled || x?.data?.userCancelled || String(x?.code) === "1");
@@ -119,7 +100,7 @@ export async function buy(planId: string): Promise<BuyResult> {
   }
 }
 
-/** "Restore purchases": a new phone or a reinstall with the same store account (Google / Samsung). */
+/** "Restore purchases": a new phone or a reinstall with the same Google account. */
 export async function restore(): Promise<boolean> {
   await initPro();
   const { customerInfo } = await Purchases.restorePurchases();

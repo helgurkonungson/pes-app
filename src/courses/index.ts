@@ -21,9 +21,9 @@ export const BUILTIN_COURSES: BuiltinCourse[] = [
   { slug: "thinking", icon: "lightbulb", hue: 20 },
 ];
 
-export const COURSE_LANGS: Lang[] = ["ru", "en", "uk", "be", "es", "de", "fr", "zh", "hi"];
+export const COURSE_LANGS: Lang[] = ["ru", "en", "uk", "be", "es", "de", "fr", "zh", "hi", "kk", "tr"];
 
-const LANGUAGE: Record<Lang, LessonLanguage> = {
+const LANGUAGE: Partial<Record<Lang, LessonLanguage>> = {
   ru: "Russian",
   en: "English",
   uk: "Ukrainian",
@@ -33,10 +33,12 @@ const LANGUAGE: Record<Lang, LessonLanguage> = {
   fr: "French",
   zh: "Chinese",
   hi: "Hindi",
+  kk: "Kazakh",
+  tr: "Turkish",
 };
 
 export function courseLanguageFor(lang: Lang): LessonLanguage {
-  return LANGUAGE[lang];
+  return LANGUAGE[lang] ?? "English";
 }
 
 /** Course id of a built-in course in a language ("cb-learning-ru"). */

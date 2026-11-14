@@ -14,6 +14,8 @@ export const LESSON_LANG_OF: Record<UiLang, Exclude<LessonLanguage, "Source">> =
   fr: "French",
   zh: "Chinese",
   hi: "Hindi",
+  kk: "Kazakh",
+  tr: "Turkish",
 };
 
 export const LESSON_LANGUAGES: LessonLanguage[] = ["Source", ...Object.values(LESSON_LANG_OF)];

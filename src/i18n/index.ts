@@ -26,6 +26,8 @@ export const LANGS: { id: Lang; label: string; locale: string }[] = [
   { id: "fr", label: "Français", locale: "fr-FR" },
   { id: "zh", label: "中文（简体）", locale: "zh-CN" },
   { id: "hi", label: "हिन्दी", locale: "hi-IN" },
+  { id: "kk", label: "Қазақша", locale: "kk-KZ" },
+  { id: "tr", label: "Türkçe", locale: "tr-TR" },
 ];
 export const LANG_IDS = LANGS.map((l) => l.id);
 
@@ -46,6 +48,8 @@ const LOADERS: Record<Exclude<Lang, "en">, () => Promise<Dict>> = {
   fr: () => import("./fr").then((m) => m.fr),
   zh: () => import("./zh").then((m) => m.zh),
   hi: () => import("./hi").then((m) => m.hi),
+  kk: () => import("./kk").then((m) => m.kk),
+  tr: () => import("./tr").then((m) => m.tr),
 };
 
 /** Loads a language's dictionary (once). Never throws: on failure the UI stays in English for that language. */
@@ -65,7 +69,7 @@ export function systemLang(list: readonly (string | undefined)[] = typeof naviga
   for (const tag of list) {
     const base = (tag ?? "").toLowerCase().split(/[-_]/)[0];
     if (isLang(base)) return base;
-    if (base === "kk" || base === "ky" || base === "tg") return "ru"; // CIS phones without their own UI language
+    if (base === "ky" || base === "tg") return "ru"; // CIS phones without their own UI language
   }
   return "en";
 }

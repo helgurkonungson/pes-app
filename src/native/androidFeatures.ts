@@ -6,7 +6,6 @@
  */
 import { App as CapApp } from "@capacitor/app";
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { SELF_UPDATE_BUILD, STORE } from "../build";
 import type { WidgetData } from "../core/widget";
 
 interface HomeWidgetPlugin {
@@ -52,9 +51,9 @@ export async function setAppLocale(tag: string): Promise<void> {
   await AppLocale.set({ tag }).catch(() => undefined);
 }
 
-/** The Google Play rating card — only in the Play build (sideloaded and Galaxy Store builds aren't installed by Play). */
+/** The Google Play rating card. */
 export async function requestStoreReview(): Promise<void> {
-  if (!isAndroid() || SELF_UPDATE_BUILD || STORE !== "play") return;
+  if (!isAndroid()) return;
   await StoreReview.request().catch(() => undefined);
 }
 

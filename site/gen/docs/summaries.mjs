@@ -21,7 +21,7 @@ export default {
     support: [
       "Пишіть на support@chompbook.online будь-якою мовою застосунку — відповідаємо зазвичай за два робочі дні.",
       "Скарга на урок — прапорець на екрані уроку; технічні подробиці — Налаштування → Журнал помилок.",
-      "Скасування Pro: Google Play → Платежі й передплати, Galaxy Store → Меню → Передплати, або на iPhone — Налаштування → ваше ім'я → Передплати.",
+      "Скасування Pro: Google Play → Платежі й передплати, або на iPhone — Налаштування → ваше ім'я → Передплати.",
       "Новий телефон: Експорт резервної копії → Відновлення з резервної копії; Pro — «Відновити покупки».",
     ],
     "delete-data": [
@@ -51,7 +51,7 @@ export default {
     support: [
       "Пішыце на support@chompbook.online на любой мове праграмы — адказваем звычайна за два працоўныя дні.",
       "Скарга на ўрок — сцяжок на экране ўрока; тэхнічныя падрабязнасці — Налады → Журнал памылак.",
-      "Адмена Pro: Google Play → Плацяжы і падпіскі, Galaxy Store → Меню → Падпіскі, або на iPhone — Налады → ваша імя → Падпіскі.",
+      "Адмена Pro: Google Play → Плацяжы і падпіскі, або на iPhone — Налады → ваша імя → Падпіскі.",
       "Новы тэлефон: Экспарт рэзервовай копіі → Аднаўленне з рэзервовай копіі; Pro — «Аднавіць пакупкі».",
     ],
     "delete-data": [
@@ -81,7 +81,7 @@ export default {
     support: [
       "Escribe a support@chompbook.online en cualquier idioma de la app; solemos responder en dos días laborables.",
       "Reporta una lección con la bandera de la pantalla; envía detalles técnicos desde Ajustes → Registro de errores.",
-      "Cancelar Pro: Google Play → Pagos y suscripciones, Galaxy Store → Menú → Suscripciones, o en iPhone Ajustes → tu nombre → Suscripciones.",
+      "Cancelar Pro: Google Play → Pagos y suscripciones, o en iPhone Ajustes → tu nombre → Suscripciones.",
       "Teléfono nuevo: Exportar copia → Restaurar desde copia; para Pro, «Restaurar compras».",
     ],
     "delete-data": [
@@ -111,7 +111,7 @@ export default {
     support: [
       "Schreib an support@chompbook.online in einer der App-Sprachen – meist antworten wir innerhalb von zwei Werktagen.",
       "Lektion melden: Flagge auf dem Lektionsbildschirm; technische Details: Einstellungen → Fehlerprotokoll.",
-      "Pro kündigen: Google Play → Zahlungen und Abos, Galaxy Store → Menü → Abonnements, oder am iPhone Einstellungen → dein Name → Abonnements.",
+      "Pro kündigen: Google Play → Zahlungen und Abos, oder am iPhone Einstellungen → dein Name → Abonnements.",
       "Neues Handy: Backup exportieren → Aus Backup wiederherstellen; Pro: „Käufe wiederherstellen“.",
     ],
     "delete-data": [
@@ -141,7 +141,7 @@ export default {
     support: [
       "Écris à support@chompbook.online dans une des langues de l'appli ; nous répondons en général sous deux jours ouvrés.",
       "Signaler une leçon : drapeau sur l'écran de leçon ; détails techniques : Réglages → Journal d'erreurs.",
-      "Résilier Pro : Google Play → Paiements et abonnements, Galaxy Store → Menu → Abonnements, ou sur iPhone Réglages → ton nom → Abonnements.",
+      "Résilier Pro : Google Play → Paiements et abonnements, ou sur iPhone Réglages → ton nom → Abonnements.",
       "Nouveau téléphone : Exporter une sauvegarde → Restaurer depuis une sauvegarde ; pour Pro, « Restaurer les achats ».",
     ],
     "delete-data": [
@@ -171,7 +171,7 @@ export default {
     support: [
       "请用应用支持的任一语言写信至 support@chompbook.online，我们通常在两个工作日内回复。",
       "举报课程：点击课程页面上的旗帜；技术细节：设置 → 错误日志。",
-      "取消 Pro：Google Play → 付款和订阅；Galaxy Store → 菜单 → 订阅；iPhone：设置 → 你的名字 → 订阅。",
+      "取消 Pro：Google Play → 付款和订阅；iPhone：设置 → 你的名字 → 订阅。",
       "换新手机：导出备份 → 从备份恢复；Pro 请点“恢复购买”。",
     ],
     "delete-data": [
@@ -201,7 +201,7 @@ export default {
     support: [
       "ऐप की किसी भी भाषा में support@chompbook.online पर लिखें — आम तौर पर दो कार्यदिवसों में जवाब देते हैं।",
       "पाठ की शिकायत: पाठ स्क्रीन पर झंडा; तकनीकी विवरण: सेटिंग्स → एरर लॉग।",
-      "Pro रद्द करें: Google Play → भुगतान और सदस्यताएँ, Galaxy Store → मेनू → सदस्यताएँ, या iPhone पर सेटिंग्स → आपका नाम → सदस्यताएँ।",
+      "Pro रद्द करें: Google Play → भुगतान और सदस्यताएँ, या iPhone पर सेटिंग्स → आपका नाम → सदस्यताएँ।",
       "नया फ़ोन: बैकअप एक्सपोर्ट करें → बैकअप से रीस्टोर करें; Pro के लिए “ख़रीदारी बहाल करें”।",
     ],
     "delete-data": [
@@ -209,6 +209,66 @@ export default {
       "आपके एक्सपोर्ट किए बैकअप फ़ाइल मैनेजर में ख़ुद मिटाएँ।",
       "हमारे पास का डेटा (रिपोर्ट, Pro डेटा) 12 महीने / 90 दिन बाद अपने-आप मिट जाता है; पहले मिटवाने के लिए ऑर्डर नंबर के साथ privacy@chompbook.online पर लिखें।",
       "ऐप हटाने से सब्सक्रिप्शन रद्द नहीं होता।",
+    ],
+  },
+  kk: {
+    privacy: [
+      "Материалдарыңыз, сабақтарыңыз, прогресіңіз және ЖИ кілттеріңіз тек телефонда сақталады. Бізде аккаунттар, аналитика және жарнама жоқ.",
+      "Мәтін тек өзіңіз шешкен жерге барады: қосқан ЖИ қызметіне (телефоннан тікелей), Pro болса Chompbook AI-ға немесе сабақ не қате туралы есеп жібергенде бізге.",
+      "Диктовка (қалау бойынша): дауысты мәтінге телефонның сөйлеуді тану қызметі (әдетте Google) айналдырады; қосымша тек мәтінді алады және аудионы сақтамайды. Беттердің фотосы телефонда оқылады және сақталмайды.",
+      "Pro үшін біз тек кездейсоқ анонимді идентификаторды, жазылым мәртебесін және күндізгі санауыштарды көреміз. Сатып алуларды RevenueCat растайды; карта деректерін біз ешқашан көрмейміз.",
+      "Есептер 12 айға дейін, Pro деректері 90 күнге дейін сақталады. IP-мекенжайлар сақталмайды.",
+      "Бәрін кез келген уақытта Баптаулардан жоя аласыз, ал бізден өз деректеріңізге қолжетімділік немесе оларды жоюды сұрай аласыз: privacy@chompbook.online.",
+      "Қосымша 13 жастан асқан пайдаланушыларға арналған.",
+    ],
+    terms: [
+      "Қосымша тегін; өз материалдарыңыздан жасалған сабақтар ЖИ-сіз және интернетсіз жұмыс істейді.",
+      "Материалдарыңыздың құқықтары өзіңізде қалады. ЖИ қателесуі мүмкін — бұл кәсіби кеңес емес.",
+      "Chompbook Pro: күніне шамамен 10 ЖИ сабағы, тегін сынақ мерзімі, автоматты жаңарту, дүкенде кез келген уақытта бас тартуға болады. Қайтарым Google Play немесе Apple ережелеріне сәйкес жүргізіледі.",
+      "Шектеулерді айналып өтпеңіз және қолжетімділікті қайта сатпаңыз.",
+      "Армения Республикасының құқығы қолданылады, бірақ еліңіздегі тұтынушыларды қорғаудың міндетті нормалары сақталады.",
+    ],
+    support: [
+      "support@chompbook.online мекенжайына қосымшаның кез келген тілінде жазыңыз — әдетте екі жұмыс күні ішінде жауап береміз.",
+      "Сабаққа шағым — сабақ экранындағы жалаушаны басыңыз; техникалық мәліметтер — Баптаулар → Қателер журналы.",
+      "Pro-дан бас тарту: Google Play → Төлемдер мен жазылымдар немесе iPhone-да Баптаулар → атыңыз → Жазылымдар.",
+      "Жаңа телефон: Сақтық көшірмені экспорттау → Сақтық көшірмеден қалпына келтіру; Pro үшін — «Сатып алуларды қалпына келтіру».",
+    ],
+    "delete-data": [
+      "Телефонда: Баптаулар → Барлық деректерді жою немесе қосымшаны жойыңыз.",
+      "Өзіңіз экспорттаған сақтық көшірмелерді файл менеджерінен өзіңіз жойыңыз.",
+      "Біздегі деректер (есептер, Pro деректері) 12 ай / 90 күннен кейін өздігінен жойылады; ертерек — тапсырыс нөмірімен privacy@chompbook.online мекенжайына жазсаңыз.",
+      "Қосымшаны жою жазылымнан бас тартуды білдірмейді.",
+    ],
+  },
+  tr: {
+    privacy: [
+      "Materyalleriniz, dersleriniz, ilerlemeniz ve yapay zekâ anahtarlarınız yalnızca telefonda saklanır. Hesap, analitik ve reklam yok.",
+      "Metin yalnızca sizin karar verdiğiniz yere gider: bağladığınız yapay zekâ hizmetine (doğrudan telefondan), Pro aboneliğiniz varsa Chompbook AI'a veya bir ders ya da hata raporu gönderdiğinizde bize.",
+      "Dikte (isteğe bağlı): sesinizi metne telefonun konuşma tanıma servisi (genellikle Google) çevirir; uygulama yalnızca metni alır ve ses kaydı tutmaz. Sayfa fotoğrafları telefonda okunur ve saklanmaz.",
+      "Pro için yalnızca rastgele anonim bir kimlik, abonelik durumu ve günlük sayaçları görürüz. Satın alımları RevenueCat doğrular; kart bilgilerinizi hiçbir zaman görmeyiz.",
+      "Raporlar en fazla 12 ay, Pro verileri en fazla 90 gün saklanır. IP adresleri saklanmaz.",
+      "Ayarlar'dan her şeyi istediğiniz zaman silebilir, bizden verilerinize erişim veya verilerinizin silinmesini isteyebilirsiniz: privacy@chompbook.online.",
+      "Uygulama 13 yaş ve üzeri kullanıcılar için tasarlanmıştır.",
+    ],
+    terms: [
+      "Uygulama ücretsizdir; kendi materyallerinizden oluşturulan dersler yapay zekâ ve internet olmadan çalışır.",
+      "Materyallerinizin hakları sizde kalır. Yapay zekâ yanılabilir — bu profesyonel bir tavsiye değildir.",
+      "Chompbook Pro: günde yaklaşık 10 yapay zekâ dersi, ücretsiz deneme, otomatik yenileme, mağazada istediğiniz zaman iptal. İadeler Google Play veya Apple kurallarına göre yapılır.",
+      "Sınırları aşmaya çalışmayın ve erişimi yeniden satmayın.",
+      "Ermenistan Cumhuriyeti hukuku uygulanır; ancak ülkenizdeki zorunlu tüketici koruması saklıdır.",
+    ],
+    support: [
+      "support@chompbook.online adresine uygulamanın herhangi bir dilinde yazın — genellikle iki iş günü içinde yanıtlarız.",
+      "Ders şikâyeti için ders ekranındaki bayrağı kullanın; teknik ayrıntılar için Ayarlar → Hata günlüğü.",
+      "Pro'yu iptal etmek: Google Play → Ödemeler ve abonelikler veya iPhone'da Ayarlar → adınız → Abonelikler.",
+      "Yeni telefon: Yedeği dışa aktar → Yedekten geri yükle; Pro için «Satın alımları geri yükle».",
+    ],
+    "delete-data": [
+      "Telefonda: Ayarlar → Tüm verileri sil veya uygulamayı kaldırın.",
+      "Dışa aktardığınız yedekleri dosya yöneticisinden kendiniz silin.",
+      "Bizdeki veriler (raporlar, Pro verileri) 12 ay / 90 gün sonra otomatik silinir; daha erken silmek için sipariş numaranızla privacy@chompbook.online adresine yazın.",
+      "Uygulamayı kaldırmak aboneliği iptal etmez.",
     ],
   },
 };

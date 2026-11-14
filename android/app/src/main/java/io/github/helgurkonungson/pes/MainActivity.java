@@ -27,7 +27,6 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
         registerPlugin(HomeWidgetPlugin.class);
         registerPlugin(AppLocalePlugin.class);
         registerPlugin(StoreReviewPlugin.class);
-        registerPlugin(GalaxyPurchasesPlugin.class); // per store flavor (ADR-041): Samsung IAP in galaxy, a stub in play
         super.onCreate(savedInstanceState);
         // Belt and braces: the web layer has its own top bar.
         ActionBar bar = getSupportActionBar();

@@ -11,14 +11,14 @@ Chompbook : réviser avec l'IA
 ```
 Réponds avec tes mots, l'IA vérifie si tu as compris. Cours, PDF, examens, quiz
 ```
-**Полное описание (≤4000, 3907):**
+**Полное описание (≤4000, 3996):**
 ```
-Réponds avec tes propres mots, et l'IA vérifie si tu as vraiment compris, comme un tuteur. Chompbook transforme tes livres, PDF et notes de cours en courtes leçons quotidiennes pour réviser efficacement.
+Réponds avec tes propres mots, et l'IA vérifie si tu as vraiment compris. Chompbook transforme tes livres, PDF et notes de cours en courtes leçons quotidiennes.
 Chaque leçon se termine par une question ouverte. Tu reçois une note sur 10, ce qui est réussi, ce qu'il faut améliorer et comment, ainsi qu'une réponse modèle.
 
 POURQUOI AVEC TES MOTS
 Les fiches et les QCM testent la reconnaissance : on peut repérer ou deviner la bonne réponse sans vraiment maîtriser le sujet. Expliquer une idée avec ses propres mots prouve qu'on l'a comprise. C'est le rappel actif et la technique Feynman — et c'est ainsi que se termine chaque leçon Chompbook.
-• Tu écris librement : rien à deviner.
+• Tu écris ou dictes librement : rien à deviner.
 • L'IA donne une note sur 10 et dit ce qui va, ce qui manque et comment l'améliorer.
 • Une réponse modèle montre à quoi ressemble une explication complète.
 • L'IA retient ce qui t'a échappé et le ramène dans les leçons suivantes jusqu'à ce que ce soit acquis.
@@ -29,7 +29,7 @@ COMMENT ÇA MARCHE
 3. Un peu de théorie, un quiz rapide, puis tu expliques l'idée clé avec tes mots et tu reçois un retour.
 
 APPRENDS À PARTIR DE TOUT
-• Fichiers PDF, EPUB, Word, texte et Markdown
+• Fichiers PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, texte et Markdown
 • Pages web par lien ou notes saisies à la main
 • Photos et scans de pages — le texte est reconnu directement sur le téléphone
 • Fichiers Google Drive via le sélecteur de fichiers habituel
@@ -51,6 +51,7 @@ RÉVISER PLUS MALIN
 L'IA À TA FAÇON
 • Connecte une IA gratuite en quelques touches : identifie-toi avec Google pour créer une clé Gemini gratuite, ou inscris-toi gratuitement sur OpenRouter.
 • Ou utilise ta propre clé : Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA — ou ton propre serveur comme Ollama ou LM Studio.
+• Ou essaie Chompbook Pro : l'IA sans clé à configurer, 7 jours gratuits.
 • Elle rédige des leçons à partir de tes supports et corrige tes réponses ouvertes comme un tuteur particulier.
 
 CINQ COURS GRATUITS
@@ -72,7 +73,7 @@ Sans compte, sans pub, sans pistage. Tes supports et ta progression restent sur 
 FONCTIONNE AUSSI SANS IA
 Les leçons tirées de tes propres supports et les cinq cours fonctionnent entièrement sans elle, même hors ligne. Tu compares alors toi-même ce que tu as écrit à la réponse modèle et aux points clés.
 
-Français, English, Español, Deutsch, 中文, हिन्दी, Русский, Українська, Беларуская. Thème clair et sombre, téléphones et tablettes.
+Français, English, Español, Deutsch, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Thème clair et sombre, téléphones et tablettes.
 ```
 
 ## App Store

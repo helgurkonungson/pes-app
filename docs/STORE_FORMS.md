@@ -99,16 +99,6 @@ Play попросит указать статус «трейдер / не тре
 
 ---
 
-## Samsung Galaxy Store — Seller Portal (ADR-041)
-
-- **Продавец:** Corporate Seller «Tsarkov Oleg Vladimir, IE», Commercial Seller (D-U-N-S, счёт ИП в ID Bank). Телефон и адрес видны в карточке (как DSA в Play).
-- **Binary:** `Chompbook-x.y.z-galaxy.apk` из GitHub Release / артефакта CI (не AAB). «Uses Google Mobile Services» — да: вход Google для ключа Gemini (без него приложение работает).
-- **App information:** тексты из `store/listing/*.md`, графика — как для Play (скриншоты телефона/планшета, иконка 512). Категория Education. Privacy policy: https://chompbook.online/privacy/. Support: support@chompbook.online.
-- **Country/Region & Price:** Free, все страны кроме России и Беларуси. Для ЕС — регистрационный номер ИП.
-- **Age rating:** как в Play — 13+, AI-контент, без рекламы, без азартных игр.
-- **Data safety:** как в Play («С подпиской Chompbook Pro») + **Device or other IDs** — этого требует Samsung IAP.
-- **In App Purchase:** подписки `pro_monthly` (1 месяц, $4.99, СНГ ≈ $2.99) и `pro_annual` (1 год, $39.99, СНГ ≈ $24.99), бесплатный период 7 дней; после создания — **Activate**.
-
 ## App Store Connect (когда будет iOS-сборка)
 
 | Раздел | Ответ |

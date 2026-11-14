@@ -11,13 +11,14 @@ This is PES, Oleg's mobile learning app. The full process (phases, communication
 - AI output is untrusted: always pass it through `src/core/normalize.ts`.
 - No developer secrets in the repo or app. The user's key lives only in secure storage.
 - Design: colours, radii and spacing only via tokens in `src/styles/app.css`; dark and light themes (ADR-022: accent text via `--accent-ink`, fills via `--accent`), sun-yellow accent `#ffc53a` (brand «Солнце», same as the icon; orange `--warn`, blue `--info`); 360 px min width; safe-area variables.
-- Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **all nine** dictionaries (en, ru, uk, be, es, de, fr, zh, hi — ADR-024). Plurals need every form `Intl.PluralRules` has for the language (ru/uk/be: one/few/many/other; es/fr: one/many/other); `npm test` checks it.
+- Every UI string goes through `t()` / `useT()` from `src/i18n`; add the key to **all eleven** dictionaries (en, ru, uk, be, es, de, fr, zh, hi, kk, tr — ADR-024). Plurals need every form `Intl.PluralRules` has for the language (ru/uk/be: one/few/many/other; es/fr: one/many/other); `npm test` checks it.
 - AI-generated screens keep the "Report this lesson" flag (store rules, ADR-025); a new flow after onboarding must not break the first-run tutorial (ADR-026) or the emulator smoke test (`scripts/android-smoke.sh`).
 - Android release builds are shrunk by R8: a new Capacitor plugin package needs a keep rule in `android/app/proguard-rules.pro`; Android images are WebP.
 - Lessons must keep working without AI (ADR-006): never make a screen depend on AI being available; courses never call AI.
-- Never break update safety (ADR-009, ADR-034): don't change the app id (`online.chompbook.app`, Google Play), the upload/signing key, the WebView origin or existing Dexie versions. Store builds never update themselves (`VITE_SELF_UPDATE` stays off).
+- Never break update safety (ADR-009, ADR-034): don't change the app id (`online.chompbook.app`, Google Play), the upload/signing key, the WebView origin or existing Dexie versions. Builds never update themselves: updates come only from the store (the GitHub self-updater was removed).
 - Tests: `npm run typecheck && npm test && npm run e2e` before every release (see `docs/TESTING.md`). New logic → unit test; new screen or flow → Playwright test.
-- Before a release: bump `package.json` version, add a `CHANGELOG.md` section. Pushing a new version to `main` publishes the APK after the CI gates pass.
+- Branches (`docs/BRANCHES.md`): work goes to `pro` (or `main`), and a finished version is merged into `main` (CI gates only); nothing is released from `pro`. Releases: merge `main` into `google-play` / `galaxy-store` (CI builds and publishes the Release) and into `site` (Cloudflare deploys the site). `rustore` isn't built until RuStore Pay replaces RevenueCat there. Never fix things directly in a release branch.
+- Before a release: bump `package.json` version, add a `CHANGELOG.md` section.
 - Oleg's private course files (e.g. the CDO test course) never go into this public repo.
 - My workspace can't reach Google's Android build servers: APKs come from GitHub Actions.
 - Commit messages end with the attribution lines the session asks for.

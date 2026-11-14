@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID } from "./config.mjs";
+import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, CF_BEACON_TOKEN, DEMO_VIDEO } from "./config.mjs";
 import { I } from "./icons.mjs";
 import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
@@ -31,11 +31,30 @@ const T = {};
 for (const l of LANGS) T[l.id] = (await import(`./i18n/${l.id}.mjs`)).default;
 
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const DEMO = {
+  en: { kicker: "Demo", h2: "See it in 45 seconds", p: "Add your material, take a lesson, and get AI feedback on your own answer.", play: "Play the demo video", alt: "Chompbook demo video" },
+  ru: { kicker: "Демо", h2: "Посмотрите за 45 секунд", p: "Добавьте материал, пройдите урок и получите оценку ИИ вашего ответа.", play: "Смотреть демо-видео", alt: "Демо-видео Chompbook" },
+};
+const demoSection = (lang) => {
+  const d = DEMO[lang];
+  if (!d || !DEMO_VIDEO.id) return "";
+  const id = DEMO_VIDEO.id;
+  return `<section id="video"><div class="wrap">
+<div class="sec-head center reveal"><span class="kicker">${esc(d.kicker)}</span><h2>${esc(d.h2)}</h2><p>${esc(d.p)}</p></div>
+<div class="vid reveal"><a class="vid-play" href="https://youtu.be/${id}" data-yt="${id}" aria-label="${esc(d.play)}"><img src="/img/demo-thumb.webp" alt="${esc(d.alt)}" width="960" height="540" loading="lazy" decoding="async"><span class="vid-btn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></a></div>
+</div></section>
+`;
+};
+
 const pre = (lang) => (lang === "en" ? "" : `/${lang}`);
 const DOC_IDS = ["privacy", "terms", "support", "delete-data"];
 const FULL = { en: EN, ru: RU };
 const docKey = { privacy: "privacy", terms: "terms", support: "support", "delete-data": "deleteData" };
 const LOCALE = Object.fromEntries(LANGS.map((l) => [l.id, l.locale]));
+/** Course pages exist only in languages with translated courses (src/courses/<slug>/<lang>.md); others link to the English ones. */
+const HAS_COURSES = Object.fromEntries(LANGS.map((l) => [l.id, l.courses !== false]));
+const coursesPre = (lang) => (HAS_COURSES[lang] ? pre(lang) : "");
 const fmtDate = (lang, iso) => new Intl.DateTimeFormat(LOCALE[lang], { day: "numeric", month: "long", year: "numeric" }).format(new Date(iso + "T12:00:00Z"));
 
 /** path of the same page in each language (null = page doesn't exist in that language) */
@@ -72,7 +91,7 @@ ${links}
 <link rel="preload" href="/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script>document.documentElement.classList.remove("no-js")</script>
-${lang === "ru" ? metrikaHead : ""}</head>`;
+${lang === "ru" ? metrikaHead : ""}${cfBeacon}</head>`;
 }
 
 function header(lang, alternates, homeHref) {
@@ -86,7 +105,7 @@ function header(lang, alternates, homeHref) {
   return `<header class="top"><div class="wrap">
 <a class="brand" href="${homeHref || p + "/"}"><img src="/img/icon-64.png" alt="" width="34" height="34">${t.brand}${lang === "ru" ? " <small>Chompbook</small>" : ""}</a>
 <nav class="nav" aria-label="Main">
-<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${p}/courses/">${t.coursePage.nav}</a>${GUIDES[lang] ? `<a href="${p}/guides/">${GUIDES[lang].nav}</a>` : ""}<a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a>
+<a href="${p}/#how">${t.nav.how}</a><a href="${p}/#features">${t.nav.features}</a><a href="${coursesPre(lang)}/courses/">${t.coursePage.nav}</a>${GUIDES[lang] ? `<a href="${p}/guides/">${GUIDES[lang].nav}</a>` : ""}<a href="${p}/#pro">${t.nav.pro}</a><a href="${p}/#faq">${t.nav.faq}</a>
 </nav>
 <details class="lang-pick"><summary aria-label="${esc(t.langLabel)}">${I.globe}${cur.label}</summary><ul>${items}</ul></details>
 </div></header>`;
@@ -113,7 +132,7 @@ function footer(lang) {
 </ul></div>
 <div><h4>${t.foot.app}</h4><ul>
 <li><a href="${docHref(lang, "support")}">${dn.support[0]}</a></li>
-<li><a href="${p}/courses/">${t.coursePage.hubTitle}</a></li>
+<li><a href="${coursesPre(lang)}/courses/">${t.coursePage.hubTitle}</a></li>
 ${GUIDES[lang] ? `<li><a href="${p}/guides/">${GUIDES[lang].nav}</a></li>\n` : ""}<li><a href="${p}/#faq">${t.nav.faq}</a></li>
 ${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
@@ -148,6 +167,7 @@ function typo(lang, html) {
 }
 
 // Yandex Metrica: Russian-language pages only (lang "ru": /ru/… and /cis/…); no Session Replay, plus a cookie notice.
+const cfBeacon = CF_BEACON_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_BEACON_TOKEN })}'></script>\n` : "";
 const metrikaHead = `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=${METRIKA_ID}","ym");ym(${METRIKA_ID},"init",{ssr:true,clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});</script>
 `;
 const metrikaBody = `<noscript><div><img src="https://mc.yandex.ru/watch/${METRIKA_ID}" style="position:absolute;left:-9999px" alt=""></div></noscript>
@@ -171,8 +191,8 @@ ${footer(o.lang)}
 const docHref = (lang, id) => `${pre(lang)}/${id}/`;
 
 // ---------------------------------------------------------------- Product Hunt badge
-// Not on Russian-language and CIS pages (ru, be, /cis/). Dark by default, light in the light theme — like the site.
-const PH_LANGS = LANGS.map((l) => l.id).filter((l) => l !== "ru" && l !== "be");
+// Not on Russian-language and CIS pages (ru, be, kk, /cis/). Dark by default, light in the light theme — like the site.
+const PH_LANGS = LANGS.map((l) => l.id).filter((l) => !["ru", "be", "kk"].includes(l));
 const PH_IMG = (theme) => `https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1312855&amp;theme=${theme}&amp;t=1794669492538`;
 const phBadge = (lang, cls = "") => PH_LANGS.includes(lang)
   ? `<a class="ph-badge${cls ? " " + cls : ""}" href="https://www.producthunt.com/products/chompbook-ai-study-tutor?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-chompbook" target="_blank" rel="noopener noreferrer"><picture><source media="(prefers-color-scheme: light)" srcset="${PH_IMG("light")}"><img alt="Chompbook - AI tutor that checks your answers, not your guesses | Product Hunt" width="250" height="54" src="${PH_IMG("dark")}" loading="lazy"></picture></a>`
@@ -201,7 +221,7 @@ ${lang === "ru" || lang === "be" || lang === "uk" ? b("ruStore", "RuStore", I.ba
 </div>`;
 }
 
-/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app. */
+/** Labels of the open-question screen, taken from the app's own dictionaries so the demo matches the app . */
 function appLabels(lang) {
   const src = readFileSync(join(REPO, "src", "i18n", `${lang}.ts`), "utf8");
   const get = (k) => {
@@ -310,12 +330,12 @@ ${caps.map((c, i) => `<figure class="shot reveal" style="--d:${i * 0.07}s"><div 
 </div>
 </div></section>
 
-<section id="courses"><div class="wrap">
+${demoSection(lang)}<section id="courses"><div class="wrap">
 <div class="sec-head reveal"><span class="kicker">${esc(t.courses.kicker)}</span><h2>${esc(t.courses.h2)}</h2><p>${esc(t.courses.p)}</p></div>
 <div class="courses">
-${t.courses.items.map((c, i) => `<a class="course reveal" href="${p}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}
+${t.courses.items.map((c, i) => `<a class="course reveal" href="${coursesPre(lang)}/courses/${COURSE_SLUGS[i]}/" style="--d:${i * 0.08}s"><div class="ic" style="background:${courseIcons[i][1]};color:${courseIcons[i][2]}">${courseIcons[i][0]}</div><h3>${esc(c.t)}</h3><p>${esc(c.p)}</p></a>`).join("\n")}
 </div>
-<p class="more-link reveal"><a href="${p}/courses/">${esc(t.coursePage.allCourses)} →</a></p>
+<p class="more-link reveal"><a href="${coursesPre(lang)}/courses/">${esc(t.coursePage.allCourses)} →</a></p>
 </div></section>
 
 <section id="pro"><div class="wrap split">
@@ -432,7 +452,7 @@ ${ldScript([
       syllabusSections: k.lessons.map((l) => ({ "@type": "Syllabus", name: l.title })) },
     crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`], [k.title, path]]),
   ])}`;
-  return page({ lang, title: `${k.title} — ${c.hubTitle} | ${t.brand}`, desc: k.description, path, alternates: alt((l) => `${pre(l)}/courses/${slug}/`), body });
+  return page({ lang, title: `${k.title} — ${c.hubTitle} | ${t.brand}`, desc: k.description, path, alternates: alt((l) => (HAS_COURSES[l] ? `${pre(l)}/courses/${slug}/` : null)), body });
 }
 
 function coursesHub(lang) {
@@ -444,7 +464,7 @@ function coursesHub(lang) {
 <div class="cta-inline">${storeButtons(lang, "courses")}</div>
 </div>
 ${ldScript([{ "@type": "ItemList", itemListElement: ks.map((k, i) => ({ "@type": "ListItem", position: i + 1, url: `${SITE}${p}/courses/${k.slug}/`, name: k.title })) }, crumbsLd([[t.docs.home, `${p}/`], [c.hubTitle, `${p}/courses/`]])])}`;
-  return page({ lang, title: `${c.hubTitle} — ${t.brand}`, desc: c.hubLead, path: `${p}/courses/`, alternates: alt((l) => `${pre(l)}/courses/`), body });
+  return page({ lang, title: `${c.hubTitle} — ${t.brand}`, desc: c.hubLead, path: `${p}/courses/`, alternates: alt((l) => (HAS_COURSES[l] ? `${pre(l)}/courses/` : null)), body });
 }
 
 // ---------------------------------------------------------------- guides (ru, en)
@@ -599,8 +619,10 @@ for (const l of LANGS) {
   put(`${p ? p.slice(1) + "/" : ""}docs/index.html`, docsHub(lang));
   for (const id of DOC_IDS) put(`${p ? p.slice(1) + "/" : ""}${id}/index.html`, intlDoc(lang, id));
   const dir = p ? p.slice(1) + "/" : "";
-  put(`${dir}courses/index.html`, coursesHub(lang), CONTENT_DATE);
-  for (const slug of COURSE_SLUGS) put(`${dir}courses/${slug}/index.html`, coursePage(lang, slug), CONTENT_DATE);
+  if (HAS_COURSES[lang]) {
+    put(`${dir}courses/index.html`, coursesHub(lang), CONTENT_DATE);
+    for (const slug of COURSE_SLUGS) put(`${dir}courses/${slug}/index.html`, coursePage(lang, slug), CONTENT_DATE);
+  }
   if (GUIDES[lang]) {
     put(`${dir}guides/index.html`, guidesHub(lang), CONTENT_DATE);
     for (const g of GUIDES[lang].items) put(`${dir}guides/${g.slug}/index.html`, guidePage(lang, g), CONTENT_DATE);

@@ -32,6 +32,9 @@ export const APP_ID = "online.chompbook.app";
 /** Yandex Metrica tag — only on Russian-language pages (/ru/…, /cis/…); no Session Replay. Described in the privacy policies. */
 export const METRIKA_ID = 114170350;
 
+/** Cloudflare Web Analytics (no cookies, no storage, all languages) — site token from Cloudflare → Analytics & Logs → Web Analytics. Empty = off. Described in the privacy policies. */
+export const CF_BEACON_TOKEN = "10e40fe76c88497dae4b478cd20bf33d";
+
 /** Store links. status: "live" shows a normal button, "soon" a dimmed "coming soon" one; for the APK, "off" hides the GitHub link (the repository is private from 1.1.0). */
 export const STORES = {
   play: { status: "live", url: `https://play.google.com/store/apps/details?id=${APP_ID}` },
@@ -40,7 +43,7 @@ export const STORES = {
   apk: { status: "off", url: "https://github.com/helgurkonungson/pes-app/releases/latest" },
 };
 
-/** Interface languages of the app, in the app's order (src/i18n/index.ts). */
+/** Site languages: the app's interface languages in the app's order (src/i18n/index.ts), then kk and tr (`courses: false` on a language = no translated course pages, links go to the English ones). */
 export const LANGS = [
   { id: "en", label: "English", locale: "en-GB" },
   { id: "ru", label: "Русский", locale: "ru-RU" },
@@ -51,4 +54,10 @@ export const LANGS = [
   { id: "fr", label: "Français", locale: "fr-FR" },
   { id: "zh", label: "中文（简体）", locale: "zh-CN" },
   { id: "hi", label: "हिन्दी", locale: "hi-IN" },
+  // kk / tr: interface and courses since 1.2.0; shots = which language's app screens the store/site images use until real ones are captured.
+  { id: "kk", label: "Қазақша", locale: "kk-KZ", shots: "ru" },
+  { id: "tr", label: "Türkçe", locale: "tr-TR", shots: "en" },
 ];
+
+// Demo video on the home page (en, ru). Empty id hides the block.
+export const DEMO_VIDEO = { id: "WrDTraxTYDM" };

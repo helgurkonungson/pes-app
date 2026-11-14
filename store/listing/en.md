@@ -11,14 +11,14 @@ Chompbook: AI Study Tutor
 ```
 Answer in your own words — AI checks if you got it. Study books, PDFs and notes
 ```
-**Полное описание (≤4000, 3549):**
+**Полное описание (≤4000, 3703):**
 ```
-Answer in your own words — and AI checks whether you really understood. Chompbook is a study tutor that turns your books, PDFs and notes into short daily lessons.
+Answer in your own words — and AI checks whether you really understood. Chompbook is an AI study tutor that turns your books, PDFs, EPUB and FB2 files and notes into short daily lessons.
 Every lesson ends with an open question. You get a score out of 10, what worked, what to improve and how, plus a model answer.
 
 WHY YOUR OWN WORDS
 Flashcards and multiple choice test recognition: you can spot or guess the right option without really knowing the topic. Explaining an idea in your own words proves that you understand it. That is active recall and the Feynman technique — and it is how every Chompbook lesson ends.
-• You write freely, so there is nothing to guess from.
+• Type or dictate your answer, so there is nothing to guess from.
 • AI gives a score out of 10, says what worked, what is missing and how to fix it.
 • A model answer shows what a complete explanation looks like.
 • AI remembers what you missed and brings it back in the next lessons until you get it right.
@@ -29,7 +29,7 @@ HOW IT WORKS
 3. Study a short piece of theory, take a quick quiz, then explain the key idea in your own words and get feedback.
 
 LEARN FROM ANYTHING
-• PDF, EPUB, Word, text and Markdown files
+• PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, text and Markdown files
 • Web pages by link, or notes you type in
 • Photos and scans of pages — the text is recognised right on your phone
 • Files from Google Drive through the usual file picker
@@ -51,6 +51,7 @@ STUDY SMARTER
 AI YOUR WAY
 • Connect a free AI in a couple of taps: sign in with Google to create a free Gemini key, or sign in to OpenRouter for free.
 • Or use your own key: Gemini, Claude, ChatGPT, Groq, Mistral, OpenRouter, Qwen, YandexGPT, NVIDIA — or your own server such as Ollama or LM Studio.
+• Or try Chompbook Pro: AI lessons with no key to set up, 7 days free.
 • It writes lessons from your materials and checks your open answers the way a personal tutor would.
 
 FIVE FREE COURSES
@@ -72,7 +73,7 @@ No accounts, no ads, no tracking. Your materials and progress stay on your phone
 WORKS WITHOUT AI TOO
 Lessons from your own materials and the five courses work fully without it, even offline. You then compare what you wrote with the model answer and key points yourself.
 
-English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Light and dark theme, phones and tablets.
+English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Light and dark theme, phones and tablets.
 ```
 
 ## App Store
