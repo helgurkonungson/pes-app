@@ -1,5 +1,6 @@
 /** Lesson pages: theory with Listen, multiple choice, the open question and the waiting page for a part still being written (split out of Session.tsx, ADR-036). */
 import { Check, ExternalLink, Lightbulb, Mic, RotateCcw, Sparkles, Square, Volume2, X } from "lucide-react";
+import { Mascot } from "../../components/Mascot";
 import { useEffect, useState } from "react";
 import { reportAiError, reportAiOk, useAiState } from "../../ai/status";
 import { modelOf } from "../../ai/providers";
@@ -132,6 +133,7 @@ export function PageView({ page, session, progress, update, onSkipPlacement }: {
     case "intro":
       return (
         <div className="stack-lg">
+          <Mascot name={session.kind === "final" ? "onb-goal" : "onb-test"} size={session.kind === "final" ? 140 : 210} />
           <h2 className="q-title">{session.kind === "final" ? t("final.title") : t("placement.title")}</h2>
           <p className="muted">{page.text}</p>
           <div className="card flat tight">

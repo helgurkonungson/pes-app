@@ -5,6 +5,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Fragment, type ReactNode, useEffect, useState } from "react";
+import { ART, type ArtName } from "../assets/art";
 
 // ---------- concentric rings ----------
 
@@ -211,6 +212,32 @@ const BADGE_ICONS: Record<string, LucideIcon> = {
   medal: Medal,
   "calendar-check": CalendarCheck,
 };
+
+/** Badges with a drawn medal (2.0.0); the rest keep their line icon. */
+const BADGE_ART: Partial<Record<string, ArtName>> = {
+  "first-step": "medal-first",
+  "streak-7": "medal-7",
+  "streak-30": "medal-30",
+  sharp: "medal-perfect",
+  "clean-week": "medal-shield",
+  bookworm: "medal-cap",
+};
+
+/** The medal on the Progress screen: the drawn one when there is one (greyed until earned). */
+export function BadgeMedal({ id, icon, has, locked }: { id: string; icon: string; has: boolean; locked: ReactNode }) {
+  const art = BADGE_ART[id];
+  if (art)
+    return (
+      <div className="medal art" aria-hidden>
+        <img src={ART[art]} alt="" draggable={false} className={has ? undefined : "art-icon off"} />
+      </div>
+    );
+  return (
+    <div className="medal" aria-hidden>
+      {has ? <BadgeIcon name={icon} /> : locked}
+    </div>
+  );
+}
 
 export function BadgeIcon({ name, size = 24 }: { name: string; size?: number }) {
   const I = BADGE_ICONS[name] ?? Award;

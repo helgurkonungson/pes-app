@@ -5,6 +5,7 @@
  * - GitHub APK / web: Pro is sold in the Google Play version.
  */
 import { Check, Crown, ExternalLink, RotateCcw, Sparkles } from "lucide-react";
+import { Mascot } from "../components/Mascot";
 import { useCallback, useEffect, useState } from "react";
 import { getApiKey } from "../ai/key";
 import { AgeBlocked, AgeGate } from "../components/AgeGate";
@@ -87,7 +88,7 @@ export function Pro() {
         <TopBar title={t("pro.title")} />
         <div className="stack-lg">
           <div className="pro-hero" aria-hidden>
-            <Crown size={56} />
+            <Mascot name="pro-hero" size={150} />
           </div>
           <div className="stack" data-testid="pro-active">
             <h2 className="section-title">{t("pro.activeTitle")}</h2>
@@ -137,7 +138,7 @@ export function Pro() {
         <TopBar title={t("pro.title")} />
         <div className="stack-lg">
           <div className="pro-hero" aria-hidden>
-            <Crown size={56} />
+            <Mascot name="pro-hero" size={150} />
           </div>
           <p>{t("pro.lead")}</p>
           {features}
@@ -189,7 +190,7 @@ export function Pro() {
       <TopBar title={t("pro.title")} />
       <div className="stack-lg">
         <div className="pro-hero" aria-hidden>
-          <Crown size={56} />
+          <Mascot name="pro-hero" size={150} />
         </div>
         <p>{t("pro.lead")}</p>
         {features}

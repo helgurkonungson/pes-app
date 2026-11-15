@@ -1,7 +1,7 @@
 /** The result screen after a lesson or test: score, XP, energy, badges, placement summary (split out of Session.tsx, ADR-036). */
-import { Check, Crown, Flame, Zap } from "lucide-react";
+import { Crown } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BookBite } from "../../components/BookBite";
+import { ArtIcon, Mascot } from "../../components/Mascot";
 import { BadgeIcon } from "../../components/visuals";
 import { badgeById } from "../../core/badges";
 import { totalEnergy } from "../../core/energy";
@@ -68,7 +68,7 @@ export function Congrats({ session, result, onClose, onPro }: { session: Session
   if (!result) {
     return (
       <div className="preparing">
-        <BookBite size={150} />
+        <Mascot name="worm-loading" size={170} float />
       </div>
     );
   }
@@ -76,11 +76,7 @@ export function Congrats({ session, result, onClose, onPro }: { session: Session
   return (
     <div className="screen" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
       <div className="congrats" role="status">
-        <div className="check-badge">
-          <div>
-            <Check size={44} strokeWidth={3} />
-          </div>
-        </div>
+        <Mascot name={result.streak >= 3 && result.streak % 7 === 0 ? "worm-streak" : "worm-success"} size={168} />
         <h1 className="display" style={{ fontSize: 28 }}>
           {t("done.title")}
         </h1>
@@ -98,7 +94,7 @@ export function Congrats({ session, result, onClose, onPro }: { session: Session
           </div>
           <div>
             <div className="v">
-              <Flame size={18} style={{ verticalAlign: -2 }} /> {result.streak}
+              <ArtIcon name="streak" size={20} /> {result.streak}
             </div>
             <div className="k">{t("done.streak")}</div>
           </div>
@@ -130,7 +126,7 @@ export function Congrats({ session, result, onClose, onPro }: { session: Session
         {!!result.energy?.length && (
           <div className="placement-box energy-box">
             <p className="bold">
-              <Zap size={16} style={{ verticalAlign: -2 }} /> {t("done.energy", { n: totalEnergy(result.energy) })}
+              <ArtIcon name="energy" size={18} /> {t("done.energy", { n: totalEnergy(result.energy) })}
             </p>
             <p className="small">{result.energy.map((g) => `+${g.amount} ${t(`energy.r.${g.reason}` as Key)}`).join(" · ")}</p>
           </div>

@@ -1,7 +1,8 @@
 import { needsPlacement } from "../core/scoring";
 import { useLiveQuery } from "dexie-react-hooks";
 import { BuildProgress } from "../components/BuildProgress";
-import { BookOpen, Check, CloudOff, FileUp, Flame, GraduationCap, KeyRound, Moon, Play, Plus, RotateCcw, Snowflake, Sparkles, Sunrise, Zap } from "lucide-react";
+import { BookOpen, Check, CloudOff, FileUp, GraduationCap, KeyRound, Moon, Play, Plus, RotateCcw, Snowflake, Sunrise } from "lucide-react";
+import { ArtIcon, Mascot } from "../components/Mascot";
 import { useState } from "react";
 import { useAiState } from "../ai/status";
 import { useCourseImport } from "../components/FilePickers";
@@ -92,7 +93,7 @@ function StreakNews({ profile, due }: { profile: Profile; due: number }) {
     return (
       <div className="banner info" role="status">
         <span className="icon-dot">
-          <Snowflake size={20} />
+          <ArtIcon name="freeze" size={22} />
         </span>
         <span className="grow small">{t("home.frozen", { n: st.frozeOn.n })}</span>
       </div>
@@ -262,11 +263,11 @@ export function Home() {
               aria-label={t("home.energyAria", { n: profile.energy ?? 0 })}
               aria-haspopup="dialog"
             >
-              <Zap size={17} /> {profile.energy ?? 0}
+              <ArtIcon name="energy" size={18} /> {profile.energy ?? 0}
             </button>
             <button className={`streak-chip${streak ? " on" : ""}`} onClick={() => setTab("progress")} aria-label={t("home.streakAria", { n: streak })}>
-              <Flame size={18} /> {streak}
-              {(profile.freezes ?? 0) > 0 && <Snowflake size={13} className="chip-frost" aria-hidden />}
+              <ArtIcon name="streak" size={18} off={!streak} /> {streak}
+              {(profile.freezes ?? 0) > 0 && <ArtIcon name="freeze" size={14} className="chip-frost" />}
             </button>
           </div>
         </header>
@@ -279,8 +280,8 @@ export function Home() {
           <NextUp x={current} ai={ai} />
         ) : (
           <section className="card stack-lg center-col">
-            <div className="empty-art">
-              <Sparkles size={34} />
+            <div className="empty-art mascot-art">
+              <Mascot name="worm-empty" size={170} />
             </div>
             <h2 className="section-title">{t("home.empty.title")}</h2>
             <p className="muted small">{t("home.empty.text")}</p>

@@ -25,8 +25,8 @@
   --ribbon: #ff5a4f;
   --leaf: #1fae74;
   /* the waiting game (worm's garden, seen from above) */
-  --worm: #ff8fa3;
-  --worm-dark: #d9607a;
+  --worm: #9fd356;
+  --worm-dark: #4f7a24;
   --soil: #6b4a2b;
   --soil-dark: #4f3520;
   --mole: #4a4552;
@@ -406,8 +406,6 @@ a { color: var(--accent-ink); }
 .congrats {
   background: var(--accent); color: var(--on-accent); border-radius: var(--r-xl); padding: 30px 22px 22px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px;
 }
-.check-badge { width: 112px; height: 112px; border-radius: 50%; background: var(--on-accent-a12); display: grid; place-items: center; }
-.check-badge > div { width: 84px; height: 84px; border-radius: 50%; background: #1c1d20; color: var(--accent); display: grid; place-items: center; }
 .congrats .btn { background: #1c1d20; color: var(--accent); width: 100%; margin-top: 8px; }
 .result-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; margin-top: 4px; }
 .result-grid > div { background: var(--on-accent-a10); border-radius: var(--r-md); padding: 10px 6px; }
@@ -469,6 +467,8 @@ a { color: var(--accent-ink); }
 .onb-actions { position: sticky; bottom: 0; z-index: 2; margin-top: auto; padding: 12px 0 calc(var(--sab) + 20px); background: linear-gradient(to top, var(--bg) 80%, var(--bg-clear)); }
 .onb .hero-art { flex: 1 1 auto; min-height: 120px; max-height: 360px; border-radius: var(--r-xl); position: relative; overflow: hidden; display: grid; place-items: center; }
 .onb .hero-art .rings { max-height: 100%; }
+.onb .hero-art.onb-art { background: var(--surface); }
+.onb .hero-art .mascot { max-height: calc(100% - 16px); width: auto !important; max-width: 82%; }
 .dots { display: flex; gap: 6px; justify-content: center; }
 .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--surface-3); }
 .dots i.on { width: 24px; border-radius: var(--pill); background: var(--accent); }
@@ -629,39 +629,6 @@ button.menu-row:active { opacity: .7; }
 .worm-hint.low { top: 14px; transform: none; text-align: center; font-size: 14px; }
 .worm-ready { width: 100%; display: flex; flex-direction: column; gap: 6px; color: var(--accent-ink); font-weight: 700; text-align: center; }
 .worm-ready p { margin: 0; }
-
-/* ---------- loading: the book eaten bite by bite ---------- */
-.book-bite { overflow: visible; display: block; }
-.book-bite .bb-cover { fill: var(--book); }
-.book-bite .bb-cover-dark { fill: var(--book-dark); }
-.book-bite .bb-ribbon { fill: var(--ribbon); }
-.book-bite .bb-edge { fill: var(--paper-line); }
-.book-bite .bb-paper-shade, .book-bite .bb-gutter { fill: var(--paper-shade); }
-.book-bite .bb-paper { fill: var(--paper); }
-.book-bite .bb-pic { fill: var(--leaf); }
-.book-bite .bb-hill { fill: var(--book); }
-.book-bite .bb-sun { fill: var(--ribbon); }
-.book-bite .bb-line, .book-bite .bb-heading { fill: none; stroke: var(--paper-line); stroke-width: 6; stroke-linecap: round; }
-.book-bite .bb-heading { stroke: var(--book); stroke-width: 9; }
-.book-bite .bb-rim { fill: none; stroke: var(--paper-shade); stroke-width: 10; }
-.book-bite .bb-rim-line { fill: none; stroke: var(--paper-line); stroke-width: 2; }
-.book-bite .bb-shadow { fill: rgba(0, 0, 0, 0.35); transition: rx .5s ease; }
-.book-bite .bb-book { transform-box: view-box; transform-origin: 160px 130px; }
-.book-bite .bb-chomp { animation: bb-chomp .28s ease-out; }
-.book-bite .bb-fresh { animation: bb-fresh .45s ease-out; }
-.book-bite .bb-gone { animation: bb-gone .6s ease-in forwards; }
-.book-bite .bb-new { transform-box: fill-box; transform-origin: center; animation: bb-bite .16s ease-out; }
-.book-bite .bb-crumb { fill: var(--paper); transform-box: fill-box; transform-origin: center; animation: bb-crumb .7s cubic-bezier(.2, .6, .4, 1) both; }
-.book-bite .bb-crumb.shade { fill: var(--paper-shade); }
-@keyframes bb-chomp { 0% { transform: scale(1); } 35% { transform: scale(.965, 1.03); } 100% { transform: scale(1); } }
-@keyframes bb-fresh { from { opacity: 0; transform: translateY(10px) scale(.94); } to { opacity: 1; transform: none; } }
-@keyframes bb-gone { to { opacity: 0; transform: scale(.9); } }
-@keyframes bb-bite { from { transform: scale(0); } to { transform: scale(1); } }
-@keyframes bb-crumb {
-  0% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
-  70% { opacity: 1; }
-  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); }
-}
 
 /* ---------- language lists, choice lists ---------- */
 .choice-list { display: flex; flex-direction: column; gap: 6px; }
@@ -832,7 +799,7 @@ button.menu-row:active { opacity: .7; }
 .tut-pitfalls { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .tut-pitfalls li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
 .tut-pitfalls li svg { flex: none; margin-top: 2px; color: var(--warn); }
-.pro-hero { display: grid; place-items: center; height: 150px; border-radius: var(--r-xl); background: var(--surface); color: var(--accent-ink); }
+.pro-hero { display: grid; place-items: center; min-height: 150px; padding: 12px 0; border-radius: var(--r-xl); background: var(--surface); color: var(--accent-ink); }
 /* sheets opened from the tutorial (free AI) sit above it */
 .tut-sheets > .scrim { z-index: 41; }
 .tut-sheets > .sheet { z-index: 42; }
@@ -906,3 +873,16 @@ ul.mini-week { list-style: none; padding: 0; }
   .ring-fill, .disclosure .disc-chev { transition: none; }
   .dictate-btn.on { animation: none; }
 }
+
+/* ---------- mascot artwork (2.0.0) ---------- */
+.mascot { display: block; height: auto; max-width: 100%; margin: 0 auto; user-select: none; -webkit-user-select: none; pointer-events: none; }
+.mascot.float { animation: mascot-float 3.2s ease-in-out infinite; }
+@keyframes mascot-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .mascot.float { animation: none; } }
+.art-icon { display: inline-block; object-fit: contain; vertical-align: -3px; flex: none; pointer-events: none; }
+.art-icon.off { filter: grayscale(1); opacity: 0.35; }
+.badge .medal.art { background: none; width: 62px; height: 62px; }
+.badge .medal.art img { width: 100%; height: 100%; object-fit: contain; }
+.course-art { width: 56px; height: 56px; flex: none; object-fit: contain; }
+.course-list.compact .course-art { width: 44px; height: 44px; }
+.empty .art.mascot-art, .empty-art.mascot-art { width: auto; height: auto; background: none; border-radius: 0; }

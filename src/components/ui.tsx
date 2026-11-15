@@ -173,10 +173,10 @@ export function MinutesPicker({ value, onChange, label }: { value: number; onCha
   );
 }
 
-export function Empty({ icon, title, text, action }: { icon: ReactNode; title: string; text?: string; action?: ReactNode }) {
+export function Empty({ icon, title, text, action, art }: { icon: ReactNode; title: string; text?: string; action?: ReactNode; /** `icon` is a drawn illustration (no tile behind it). */ art?: boolean }) {
   return (
     <div className="empty">
-      <div className="art">{icon}</div>
+      <div className={art ? "art mascot-art" : "art"}>{icon}</div>
       <h3 className="section-title">{title}</h3>
       {text && <p className="muted small">{text}</p>}
       {action}

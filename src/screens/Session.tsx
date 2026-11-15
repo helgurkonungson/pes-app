@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiError } from "../ai/client";
 import { useAiState } from "../ai/status";
 import { confirmDialog } from "../components/ui";
+import { Mascot } from "../components/Mascot";
 import { WormGame } from "../components/WormGame";
 import { ReportButton } from "../components/ReportLesson";
 import { SendLogButton } from "../components/SendLogButton";
@@ -271,9 +272,7 @@ export function SessionScreen({ skillsetId, minutes, offline }: { skillsetId: st
             </>
           ) : (
             <>
-              <div className="err-art">
-                {error instanceof CourseFinishedError ? <Check size={36} /> : <CloudOff size={36} />}
-              </div>
+              <Mascot name={error instanceof CourseFinishedError ? "onb-goal" : "worm-error"} size={150} />
               <h2 className="section-title">{error instanceof CourseFinishedError ? t("course.finishedTitle") : t("session.cantPrepare")}</h2>
               <p className="muted small" style={{ maxWidth: 320 }} role="alert">
                 {aiErrorText(error, t)}
