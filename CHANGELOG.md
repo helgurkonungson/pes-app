@@ -2,6 +2,17 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on a store branch becomes a GitHub Release (docs/BRANCHES.md).
 
+## 2.0.0 — 2026-11-15
+
+**Meet the bookworm.** The app gets its mascot: a green bookworm in round glasses, drawn illustrations instead of plain icons.
+
+- **The waiting game, redrawn:** the worm's garden is now a drawn meadow with leaves, pebbles and flowers. The worm makes faces — looks where it crawls, chomps on a page, gets dizzy after a hit — books, pages and apples are illustrated, the bird's shadow grows before a real bird dives in, and moles peek out of their holes. Lives are drawn apples.
+- **The bookworm on the screens:** welcoming you on the first screen, waiting on empty Home and History, reading while the result is counted, celebrating a finished lesson (with a torch on a streak week), apologising when a lesson can't be prepared, inspecting books before the placement test, sleeping on a book when you pick rest days and tired when energy runs out.
+- **Drawn icons:** energy, streak and streak freezes on Home, Progress, the energy card and the result screen.
+- **Medals:** six badges (first lesson, 7- and 30-day streaks, a perfect lesson, a clean week, a finished skillset) have drawn medals; locked ones are shown greyed so you can see what's ahead.
+- **Course covers:** each free course shows the bookworm studying its subject.
+- **Pro** has its own picture: the bookworm in a crown on golden books.
+
 ## 1.3.0 — 2026-11-12
 
 - **More book formats:** Sources now take FB2 books (also zipped, `.fb2.zip`, in any encoding such as windows-1251), DRM-free Kindle books (MOBI, AZW, AZW3) and OpenDocument text (ODT, LibreOffice). Chapters become headings and footnotes stay out of the lessons; the book's own title is used. FB2 and Kindle files show up in the phone's file chooser even when Android doesn't know their type.

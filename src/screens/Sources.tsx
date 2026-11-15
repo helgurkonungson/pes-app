@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowRight, Camera, FileText, Globe, Link as LinkIcon, Trash2, Type, Upload } from "lucide-react";
+import { Mascot } from "../components/Mascot";
 import { useRef, useState } from "react";
 import { confirmDialog, Empty, Sheet, toast, TopBar } from "../components/ui";
 import type { Source } from "../core/types";
@@ -123,7 +124,7 @@ export function Sources({ id }: { id: string }) {
           </div>
         )}
 
-        {sources && sources.length === 0 && !busy && <Empty icon={<FileText size={34} />} title={t("sources.empty.title")} text={t("sources.empty.text")} />}
+        {sources && sources.length === 0 && !busy && <Empty art icon={<Mascot name="worm-loading" size={150} />} title={t("sources.empty.title")} text={t("sources.empty.text")} />}
         {sources && sources.length === 0 && !busy && skillset && (
           <div className="stack" style={{ gap: 8 }}>
             <button

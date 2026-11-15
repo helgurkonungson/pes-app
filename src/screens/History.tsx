@@ -1,5 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { BookOpen, CloudOff, Target } from "lucide-react";
+import { Mascot } from "../components/Mascot";
 import { Chevron, Empty, TopBar } from "../components/ui";
 import { Markdown } from "../components/visuals";
 import { ReportButton } from "../components/ReportLesson";
@@ -26,7 +27,7 @@ export function History({ id }: { id: string }) {
   return (
     <div className="screen">
       <TopBar title={t("history.title")} />
-      {sessions && sessions.length === 0 && <Empty icon={<BookOpen size={34} />} title={t("history.empty.title")} text={t("history.empty.text")} />}
+      {sessions && sessions.length === 0 && <Empty art icon={<Mascot name="worm-empty" size={160} />} title={t("history.empty.title")} text={t("history.empty.text")} />}
       <div className="stack">
         {sessions?.map((s) => (
           <button key={s.id} className="list-card" onClick={() => s.lesson && push({ name: "lesson", sessionId: s.id })} disabled={!s.lesson}>

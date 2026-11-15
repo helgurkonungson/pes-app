@@ -12,7 +12,8 @@ import { useBackupRestore } from "../components/FilePickers";
 import { FreeAiCard, FreeAiSheet } from "../components/FreeAi";
 import { LanguageButton } from "../components/LanguagePicker";
 import { ExtLink, MinutesPicker, toast } from "../components/ui";
-import { HeroBg, Rings, ScoreRing } from "../components/visuals";
+import { ScoreRing } from "../components/visuals";
+import { Mascot } from "../components/Mascot";
 import { updateProfile } from "../data/db";
 import { useLang, useT } from "../i18n";
 import { useNav } from "../nav/store";
@@ -128,11 +129,8 @@ export function Onboarding() {
           <div className="onb-lang">
             <LanguageButton value={lang} onChange={setLang} />
           </div>
-          <div className="hero-art">
-            <HeroBg hue={174} name="P" big />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <Rings values={[0.82, 0.6, 0.38]} size={170} stroke={16} />
-            </div>
+          <div className="hero-art onb-art">
+            <Mascot name="onb-welcome" size={280} float />
           </div>
           <div className="stack-lg">
             <h1 className="display">
@@ -157,6 +155,7 @@ export function Onboarding() {
       {step === 1 && (
         <>
           <div className="stack-lg" style={{ flex: 1 }}>
+            <Mascot name="onb-habit" size={130} />
             <h1 className="display">{t("onb.aboutYou")}</h1>
             <div className="field">
               <label htmlFor="name">{t("onb.nameOptional")}</label>
