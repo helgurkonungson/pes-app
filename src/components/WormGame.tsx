@@ -362,11 +362,14 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   const segs = 7;
   const look = Math.max(-2, Math.min(2, ((s.target ?? s.x) - s.x) / 10));
   if (sprite("game-body") && sprite("game-head-calm")) {
+    // 2.0.1: the head sprites are the face alone, so the face leads (looks the way the worm crawls)
+    // and the round segments trail behind it, tapering into the tail
     for (let i = segs - 1; i >= 1; i--) {
       const x = (trail[i * 3] ?? s.x) + (s.mode === "over" ? 0 : Math.sin(s.t * 4 - i * 0.9) * 1.6);
-      put(ctx, i === segs - 1 ? "game-tail" : "game-body", x, WORM_Y + 5 + i * 10, (WORM_R - i * 0.6) * 2.6);
+      const tail = i === segs - 1;
+      put(ctx, tail ? "game-tail" : "game-body", x, WORM_Y + 4 + i * 9 + (tail ? 2 : 0), tail ? 19 : (WORM_R - i * 0.5) * 2.7);
     }
-    put(ctx, headFor(s, look), s.x, WORM_Y - 3, 38);
+    put(ctx, headFor(s, look), s.x, WORM_Y - 2, 34);
     ctx.globalAlpha = 1;
     drawEffects(ctx, s, p);
     drawLives(ctx, s, p);

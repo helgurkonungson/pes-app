@@ -5,6 +5,7 @@
  * creates a key restricted to that API and reads it. The access token is never
  * stored; the key goes to secure storage like a pasted one.
  */
+import { GEMINI_KEY } from "./freeProviders";
 import { AiError } from "./client";
 
 export const CLOUD_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
@@ -146,7 +147,7 @@ export async function createGeminiKey(accessToken: string, deps: SetupDeps): Pro
   throw last instanceof AiError ? last : new GeminiSetupError("The new key doesn't work yet.", "unknown");
 }
 
-/** A Gemini key copied to the clipboard ("AIza…", 39 characters), or null. */
+/** A Gemini key copied to the clipboard ("AQ.…" auth key or "AIza…" standard key), or null. */
 export function geminiKeyIn(text: string | null | undefined): string | null {
-  return text?.match(/AIza[0-9A-Za-z_-]{35}/)?.[0] ?? null;
+  return text?.match(GEMINI_KEY)?.[0] ?? null;
 }

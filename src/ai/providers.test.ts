@@ -5,26 +5,76 @@ import { activeProvider, baseUrl, chatModels, fallbackModels, isChatModel, isNvi
 const tool = { name: "emit_x", description: "d", input_schema: { type: "object", properties: { a: { type: "number" } } } };
 const call = (id: "openai" | "yandex" | "qwen" | "nvidia" | "gemini" | "groq" | "custom" | "chompbook", cfg = {}) => compatStructured<{ a: number }>(id, "KEY", cfg, { model: "m1", system: "sys", prompt: "p", tool, maxTokens: 900 });
 
+/**
+ * Gemini goes over its native generateContent API since 2.0.1 (AQ. keys). The tests below still speak
+ * Chat Completions: a successful reply is turned into Gemini's shape, and a sent request back into the
+ * Chat Completions body, so every check reads the same for every provider.
+ */
+const isNative = (url: unknown) => /:generateContent$/.test(String(url));
+type Chat = { choices?: { message?: { content?: string | null; tool_calls?: { function: { name: string; arguments: string } }[] }; finish_reason?: string }[] };
+function asGeminiAnswer(data: unknown): unknown {
+  const c = (data as Chat)?.choices?.[0];
+  if (!c) return data;
+  const parts = [
+    ...(c.message?.content ? [{ text: c.message.content }] : []),
+    ...(c.message?.tool_calls ?? []).map((t) => ({ functionCall: { name: t.function.name, args: JSON.parse(t.function.arguments) } })),
+  ];
+  const finish = c.finish_reason === "length" ? "MAX_TOKENS" : c.finish_reason ? c.finish_reason.toUpperCase() : undefined;
+  return { candidates: [{ content: { parts }, ...(finish ? { finishReason: finish } : {}) }] };
+}
+function reply(url: unknown, status: number, data: unknown): Response {
+  return new Response(JSON.stringify(isNative(url) && status < 300 ? asGeminiAnswer(data) : data), { status });
+}
+type Native = {
+  systemInstruction?: { parts: { text: string }[] };
+  contents?: { role: string; parts: { text: string }[] }[];
+  tools?: { functionDeclarations: { name: string; description?: string; parametersJsonSchema?: unknown }[] }[];
+  toolConfig?: { functionCallingConfig: { mode: string; allowedFunctionNames?: string[] } };
+  generationConfig?: { maxOutputTokens?: number; thinkingConfig?: unknown };
+};
+function asChatBody(url: string, raw: unknown): Record<string, unknown> {
+  if (!isNative(url)) return raw as Record<string, unknown>;
+  const n = raw as Native;
+  const out: Record<string, unknown> = {
+    model: decodeURIComponent(url.match(/\/models\/([^/]+):generateContent$/)![1]),
+    messages: [
+      ...(n.systemInstruction ? [{ role: "system", content: n.systemInstruction.parts.map((x) => x.text).join("") }] : []),
+      ...(n.contents ?? []).map((m) => ({ role: m.role === "model" ? "assistant" : m.role, content: m.parts.map((x) => x.text).join("") })),
+    ],
+  };
+  if (n.tools) {
+    out.tools = n.tools[0].functionDeclarations.map((d) => ({ type: "function", function: { name: d.name, description: d.description, parameters: d.parametersJsonSchema } }));
+    const fc = n.toolConfig?.functionCallingConfig;
+    out.tool_choice = fc?.mode === "ANY" ? { type: "function", function: { name: fc.allowedFunctionNames?.[0] } } : "auto";
+  }
+  if (n.generationConfig?.maxOutputTokens) out.max_tokens = n.generationConfig.maxOutputTokens;
+  if (n.generationConfig?.thinkingConfig) out.reasoning_effort = "low";
+  return out;
+}
+
 function mockFetch(status: number, data: unknown) {
-  const f = vi.fn(async () => new Response(JSON.stringify(data), { status }));
+  const f = vi.fn(async (url: unknown) => reply(url, status, data));
   vi.stubGlobal("fetch", f);
   return f;
 }
 const sent = (f: ReturnType<typeof mockFetch>) => {
   const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
-  return { url, headers: init.headers as Record<string, string>, body: JSON.parse(String(init.body ?? "null")) };
+  return { url, headers: init.headers as Record<string, string>, body: asChatBody(url, JSON.parse(String(init.body ?? "null"))) as Record<string, any> };
 };
 
 /** Replies in order; the last one repeats. */
 function mockReplies(...replies: [number, unknown][]) {
-  const f = vi.fn(async () => {
+  const f = vi.fn(async (url: unknown) => {
     const [status, data] = replies.length > 1 ? replies.shift()! : replies[0];
-    return new Response(JSON.stringify(data), { status });
+    return reply(url, status, data);
   });
   vi.stubGlobal("fetch", f);
   return f;
 }
-const bodyOf = (f: ReturnType<typeof vi.fn>, i: number) => JSON.parse(String((f.mock.calls[i] as unknown as [string, RequestInit])[1].body));
+const bodyOf = (f: ReturnType<typeof vi.fn>, i: number): Record<string, any> => {
+  const [url, init] = f.mock.calls[i] as unknown as [string, RequestInit];
+  return asChatBody(url, JSON.parse(String(init.body)));
+};
 
 beforeEach(() => {
   retryPolicy.delaysMs = [0, 0];
@@ -303,9 +353,9 @@ describe("Gemini lessons (0.4.2)", () => {
   });
   it("re-sends after a dropped connection", async () => {
     let n = 0;
-    const f = vi.fn(async () => {
+    const f = vi.fn(async (url: unknown) => {
       if (n++ === 0) throw new TypeError("Failed to fetch");
-      return new Response(JSON.stringify(ok), { status: 200 });
+      return reply(url, 200, ok);
     });
     vi.stubGlobal("fetch", f);
     expect(await call("gemini")).toEqual({ a: 1 });

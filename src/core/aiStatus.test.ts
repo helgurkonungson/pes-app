@@ -22,6 +22,12 @@ describe("aiState", () => {
     expect(aiState({ aiBlock: { kind: "credits", at: ago(60_000) } }, true, NOW)).toBe("credits");
     expect(aiState({ aiBlock: { kind: "credits", at: ago(CREDITS_RETRY_MS + 1) } }, true, NOW)).toBe("ok");
   });
+  it("Chompbook AI without an active Pro is not tried at all", () => {
+    expect(aiState({ provider: "chompbook" }, true, NOW)).toBe("credits");
+    expect(aiState({ provider: "chompbook", pro: { active: false, since: ago(1) } }, true, NOW)).toBe("credits");
+    expect(aiState({ provider: "chompbook", pro: { active: true, since: ago(1) } }, true, NOW)).toBe("ok");
+    expect(aiState({ provider: "gemini" }, true, NOW)).toBe("ok");
+  });
 });
 
 describe("classifyApiError", () => {

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { btn, chooseProvider, createSkillsetWithText, calmWormGame, finishLesson, mockApis, onboard, skipCountdown, pickLang, skipTutorial, holdWormRound } from "./helpers";
+import { btn, chooseProvider, createSkillsetWithText, calmWormGame, finishLesson, mockApis, onboard, skipCountdown, pickLang, skipTutorial, holdWormRound, routeGemini, type ChatRoute } from "./helpers";
 
 test.describe("AI lessons (mocked Claude API)", () => {
   test("placement test → AI lesson → AI-graded open answer", async ({ page }) => {
@@ -199,7 +199,7 @@ test("Alice AI: a valid key without folder rights explains how to fix it", async
 test.describe("Gemini, Groq and a custom server", () => {
   // the free-AI screen depends on the phone's time zone (where Gemini works); India: everything is offered
   test.use({ timezoneId: "Asia/Kolkata" });
-  const lessonReply = async (route: import("@playwright/test").Route, asText = false) => {
+  const lessonReply = async (route: ChatRoute, asText = false) => {
     const { compatRequest, toolInput } = await import("./helpers");
     const { tool, prompt } = compatRequest(JSON.parse(route.request().postData() ?? "{}"));
     const input = JSON.stringify(toolInput(tool, prompt));
@@ -216,11 +216,11 @@ test.describe("Gemini, Groq and a custom server", () => {
 
   test("Gemini: key → newest Flash model picked → lesson", async ({ page }) => {
     await mockApis(page, "credits");
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models"))
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-2.5-flash" }, { id: "models/gemini-3.8-flash" }, { id: "models/gemini-3.8-flash-lite" }, { id: "models/gemini-embedding-001" }] }) });
-      expect(route.request().headers()["authorization"]).toBe("Bearer AIza-test-0123456789abcdef");
+      expect(route.request().headers()["x-goog-api-key"]).toBe("AIza-test-0123456789abcdef");
       return lessonReply(route, true);
     });
     await onboard(page);
@@ -234,10 +234,35 @@ test.describe("Gemini, Groq and a custom server", () => {
     await lessonWorks(page);
   });
 
-  test("free Gemini key: explicit consent first, Google's key page, the copied key is checked and Gemini becomes the provider", async ({ page, context }) => {
-    const KEY = "AIzaSyD-0123456789abcdefghijklmnopqrstu";
+  test("'Check' in Settings really asks the AI (2.0.1): a rejected key shows as rejected, a working one as working", async ({ page }) => {
     await mockApis(page, "credits");
-    await page.route("https://generativelanguage.googleapis.com/**", (route) =>
+    let reject = false;
+    await routeGemini(page, (route) => {
+      if (reject) return route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify([{ error: { code: 403, message: "Method doesn't allow unregistered callers.", status: "PERMISSION_DENIED" } }]) });
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
+    });
+    await onboard(page);
+    await page.getByRole("navigation").getByRole("button", { name: "Настройки" }).click();
+    await chooseProvider(page, "Gemini");
+    await btn(page, /Ключ API Gemini/).click();
+    await page.getByRole("dialog").getByRole("textbox").fill("AQ.test-0123456789abcdefghijklmnopqrstuvwxyz");
+    await page.getByRole("dialog").getByRole("button", { name: "Проверить и сохранить" }).click();
+    await expect(page.getByText("Ключ сохранен")).toBeVisible();
+    const status = page.locator(".menu-row", { hasText: "Состояние ИИ" });
+    await expect(status).toContainText("Работает");
+    reject = true; // e.g. the key was deleted in AI Studio
+    await status.click();
+    await expect(status).toContainText("Ключ отклонен");
+    reject = false;
+    await status.click();
+    await expect(page.getByText("ИИ работает")).toBeVisible();
+    await expect(status).toContainText("Работает");
+  });
+
+  test("free Gemini key: explicit consent first, Google's key page, the copied key is checked and Gemini becomes the provider", async ({ page, context }) => {
+    const KEY = "AQ.Ab8RN6L4Tr9b6lEZUKBRBWTyNw-Z3b3uK8m_x0123456789abcdef"; // AI Studio issues only AQ. "auth keys" now
+    await mockApis(page, "credits");
+    await routeGemini(page, (route) =>
       route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) }),
     );
     await context.route("https://aistudio.google.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<h1>AI Studio</h1>" }));
@@ -360,7 +385,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     const KEY = "AIzaSyD-0123456789abcdefghijklmnopqrstu";
     await mockApis(page, "credits");
     let checks = 0;
-    await page.route("https://generativelanguage.googleapis.com/**", (route) => {
+    await routeGemini(page, (route) => {
       checks++;
       return route.fulfill({ status: 400, contentType: "application/json", body: JSON.stringify([{ error: { code: 400, message: "User location is not supported for the API use.", status: "FAILED_PRECONDITION" } }]) });
     });
@@ -390,7 +415,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     let calls = 0;
     let effort: unknown;
     const models: string[] = [];
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       calls++;
@@ -441,7 +466,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     let releaseQuiz!: () => void;
     const quizGate = new Promise<void>((r) => (releaseQuiz = r));
     const tools: string[] = [];
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");
@@ -475,7 +500,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await mockApis(page, "credits");
     let releaseQuiz!: () => void;
     const quizGate = new Promise<void>((r) => (releaseQuiz = r));
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");
@@ -522,7 +547,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await mockApis(page, "credits");
     const tools: string[] = [];
     let asleep = false;
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");
@@ -554,7 +579,7 @@ test.describe("Gemini, Groq and a custom server", () => {
     await mockApis(page, "credits");
     const tools: string[] = [];
     let failSection = true;
-    await page.route("https://generativelanguage.googleapis.com/**", async (route) => {
+    await routeGemini(page, async (route) => {
       const url = route.request().url();
       if (url.endsWith("/models")) return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ data: [{ id: "models/gemini-3.8-flash" }] }) });
       const { compatRequest } = await import("./helpers");

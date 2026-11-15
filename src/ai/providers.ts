@@ -50,7 +50,7 @@ export const PROVIDERS: Record<ProviderId, ProviderMeta> = {
     id: "gemini",
     name: "Gemini",
     keyUrl: "https://aistudio.google.com/apikey",
-    keyPlaceholder: "AIza…",
+    keyPlaceholder: "AQ.…",
     defaultModel: "gemini-flash-latest", // replaced by the newest Flash model from the list after the key is verified
     webSearch: false,
     vendor: "Google AI Studio",

@@ -238,3 +238,65 @@ export async function holdWormRound(page: Page, on: boolean): Promise<void> {
   await page.waitForFunction(() => typeof (window as unknown as { __wormHold?: unknown }).__wormHold === "function");
   await page.evaluate((v) => (window as unknown as { __wormHold: (on: boolean) => void }).__wormHold(v), on);
 }
+
+/**
+ * Gemini goes over its native API since 2.0.1 (AQ. keys only work there). The tests keep speaking Chat
+ * Completions: this route hands them the request as a Chat Completions body (the model list as ".../models")
+ * and turns their Chat Completions replies into Gemini's own shapes.
+ */
+export type ChatRoute = {
+  request(): { url(): string; postData(): string | null; headers(): Record<string, string> };
+  fulfill(r: { status: number; contentType?: string; body: string }): Promise<void>;
+  abort(code?: string): Promise<void>;
+};
+type NativeReq = {
+  systemInstruction?: { parts: { text: string }[] };
+  contents?: { role: string; parts: { text: string }[] }[];
+  tools?: { functionDeclarations: { name: string; description?: string; parametersJsonSchema?: unknown }[] }[];
+  toolConfig?: { functionCallingConfig: { mode: string; allowedFunctionNames?: string[] } };
+  generationConfig?: { maxOutputTokens?: number; thinkingConfig?: unknown };
+};
+export async function routeGemini(page: Page, handler: (route: ChatRoute) => unknown): Promise<void> {
+  await page.route("https://generativelanguage.googleapis.com/**", (route) => {
+    const req = route.request();
+    const real = req.url();
+    const list = /\/models(\?|$)/.test(real);
+    const gen = real.match(/\/models\/([^/?]+):generateContent/);
+    const chatBody = () => {
+      const n = JSON.parse(req.postData() ?? "{}") as NativeReq;
+      const out: Record<string, unknown> = {
+        model: gen ? decodeURIComponent(gen[1]) : undefined,
+        messages: [
+          ...(n.systemInstruction ? [{ role: "system", content: n.systemInstruction.parts.map((p) => p.text).join("") }] : []),
+          ...(n.contents ?? []).map((m) => ({ role: m.role === "model" ? "assistant" : m.role, content: m.parts.map((p) => p.text).join("") })),
+        ],
+      };
+      if (n.tools) {
+        out.tools = n.tools[0].functionDeclarations.map((d) => ({ type: "function", function: { name: d.name, description: d.description, parameters: d.parametersJsonSchema } }));
+        const fc = n.toolConfig?.functionCallingConfig;
+        out.tool_choice = fc?.mode === "ANY" ? { type: "function", function: { name: fc.allowedFunctionNames?.[0] } } : "auto";
+      }
+      if (n.generationConfig?.maxOutputTokens) out.max_tokens = n.generationConfig.maxOutputTokens;
+      if (n.generationConfig?.thinkingConfig) out.reasoning_effort = "low";
+      return JSON.stringify(out);
+    };
+    const wrapped: ChatRoute = {
+      request: () => ({ url: () => (list ? "https://generativelanguage.googleapis.com/v1beta/models" : real), postData: () => (gen ? chatBody() : req.postData()), headers: () => req.headers() }),
+      fulfill: ({ status, contentType, body }) => {
+        let out = body;
+        if (status < 300) {
+          const d = JSON.parse(body) as { data?: { id: string }[]; choices?: { message?: { content?: string | null; tool_calls?: { function: { name: string; arguments: string } }[] }; finish_reason?: string }[] };
+          if (list && d.data) out = JSON.stringify({ models: d.data.map((m) => ({ name: m.id, supportedGenerationMethods: ["generateContent"] })) });
+          else if (gen && d.choices) {
+            const c = d.choices[0];
+            const parts = [...(c.message?.content ? [{ text: c.message.content }] : []), ...(c.message?.tool_calls ?? []).map((t) => ({ functionCall: { name: t.function.name, args: JSON.parse(t.function.arguments) } }))];
+            out = JSON.stringify({ candidates: [{ content: { parts }, finishReason: c.finish_reason === "length" ? "MAX_TOKENS" : "STOP" }], usageMetadata: { promptTokenCount: 1000, candidatesTokenCount: 250 } });
+          }
+        }
+        return route.fulfill({ status, contentType: contentType ?? "application/json", body: out });
+      },
+      abort: (code) => route.abort(code),
+    };
+    return handler(wrapped);
+  });
+}

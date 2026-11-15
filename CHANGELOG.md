@@ -2,6 +2,12 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on a store branch becomes a GitHub Release (docs/BRANCHES.md).
 
+## 2.0.1 — 2026-11-15
+
+- **Free Gemini works with Google's new keys:** Google AI Studio now issues keys that start with `AQ.` instead of `AIza`. Chompbook recognises them (the key is picked up from the clipboard again and "Save key" works) and talks to Gemini over Google's native API, which accepts both kinds of keys.
+- **"Check" in Settings → AI really checks:** it asks the AI and shows what it answered (working, key rejected, out of credits) instead of just saying "Works". Chompbook AI without an active Pro now says so right away and opens the Pro screen, and lessons don't try it at all.
+- **A tidier worm in the waiting game:** the face leads the way the worm crawls and the body tapers neatly into the tail.
+
 ## 2.0.0 — 2026-11-15
 
 **Meet the bookworm.** The app gets its mascot: a green bookworm in round glasses, drawn illustrations instead of plain icons.

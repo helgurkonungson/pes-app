@@ -239,7 +239,7 @@ export function GeminiSetupSheet({ onClose, onDone, onUseOpenRouter }: { onClose
           </ol>
           <div className="field">
             <label htmlFor="gemini-key">{t("gemini.keyLabel")}</label>
-            <input id="gemini-key" className="input selectable" value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder="AIza…" autoComplete="off" autoCapitalize="off" spellCheck={false} />
+            <input id="gemini-key" className="input selectable" value={pasted} onChange={(e) => setPasted(e.target.value)} placeholder="AQ.…" autoComplete="off" autoCapitalize="off" spellCheck={false} />
           </div>
           {state.error && (
             <div className="error-box" role="alert">

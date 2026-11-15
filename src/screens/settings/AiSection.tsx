@@ -9,7 +9,7 @@ import { AiError, listModels, type ModelInfo, testKey } from "../../ai/client";
 import { freeProvider } from "../../ai/freeProviders";
 import { clearApiKey, getApiKey, maskKey, setApiKey } from "../../ai/key";
 import { activeProvider, modelOf, normalizeBaseUrl, pickDefaultModel, PROVIDER_IDS, PROVIDERS } from "../../ai/providers";
-import { useAiState } from "../../ai/status";
+import { reportAiError, reportAiOk, useAiState } from "../../ai/status";
 import { formatTokens, monthKey } from "../../ai/usage";
 import { FreeAiCard, FreeAiSheet } from "../../components/FreeAi";
 import { ExtLink, Group, MenuRow, Segmented, SectionLabel, Sheet, toast } from "../../components/ui";
@@ -38,6 +38,7 @@ export function AiSection({ profile }: { profile: Profile }) {
   const [models, setModels] = useState<ModelInfo[] | null>(null);
   const proStatusActive = usePro((s) => s.status.active);
   const proActive = proStatusActive || !!profile.pro?.active;
+  const [checking, setChecking] = useState(false);
 
   const provider = activeProvider(profile);
   const meta = PROVIDERS[provider];
@@ -118,6 +119,25 @@ export function AiSection({ profile }: { profile: Profile }) {
     setSheet(null);
   };
 
+  /**
+   * "Check" really asks the AI (2.0.1): before, it only cleared the remembered problem, so the status
+   * said "Works" while the next lesson failed again. Chompbook AI without Pro opens the Pro screen.
+   */
+  const checkAi = async () => {
+    if (provider === "chompbook" && !proActive) return openPro();
+    setChecking(true);
+    try {
+      await listModels();
+      await reportAiOk();
+      toast(t("settings.aiCheckOk"));
+    } catch (e) {
+      await reportAiError(e);
+      toast(e instanceof AiError ? aiErrorText(e, t) : t("settings.keyCheckFailed"));
+    } finally {
+      setChecking(false);
+      keyChanged();
+    }
+  };
   const aiStatusText =
     ai === "ok" ? t("settings.ai.ok") : ai === "off" ? t("settings.ai.off") : ai === "credits" ? t(provider === "chompbook" ? "settings.ai.proInactive" : "settings.ai.credits") : ai === "auth" ? t("settings.ai.auth") : ai === "no-key" ? t("settings.ai.noKey") : "…";
   const keyLabel = meta.keyOptional ? t("settings.keyOptional") : t("settings.keyFor", { name: providerName(provider, t) });
@@ -191,16 +211,9 @@ export function AiSection({ profile }: { profile: Profile }) {
           <MenuRow
             icon={<Activity size={20} />}
             label={t("settings.aiStatus")}
-            hint={aiStatusText}
-            value={ai === "credits" || ai === "auth" ? t("settings.retryAi") : undefined}
-            onClick={
-              ai === "credits" || ai === "auth"
-                ? async () => {
-                    await updateProfile({ aiBlock: undefined });
-                    toast(t("settings.aiRetrying"));
-                  }
-                : undefined
-            }
+            hint={checking ? t("settings.aiChecking") : aiStatusText}
+            value={ai && ai !== "off" && ai !== "no-key" ? t("settings.retryAi") : undefined}
+            onClick={ai && ai !== "off" && ai !== "no-key" && !checking ? () => void checkAi() : undefined}
           />
         </Group>
       </section>

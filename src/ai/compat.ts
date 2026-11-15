@@ -155,6 +155,69 @@ export function extractJson(text: string): unknown {
   }
 }
 
+/**
+ * Gemini over its native API (2.0.1). Google AI Studio now issues only "auth keys" ("AQ.…"), which the
+ * OpenAI-compatible endpoint rejects; the native one takes both key kinds in the x-goog-api-key header.
+ * The request is built from the same Chat Completions body (so the step-downs below keep working) and
+ * the answer is turned back into the Chat Completions shape.
+ */
+export const GEMINI_NATIVE = "https://generativelanguage.googleapis.com/v1beta";
+
+type ChatBody = {
+  model?: string;
+  messages?: { role: string; content: string }[];
+  tools?: { function: { name: string; description?: string; parameters?: unknown } }[];
+  tool_choice?: "auto" | { function?: { name?: string } };
+  max_tokens?: number;
+  reasoning_effort?: string;
+};
+
+export function geminiNativeRequest(body: Record<string, unknown>): { model: string; payload: Record<string, unknown> } {
+  const b = body as ChatBody;
+  const model = (b.model ?? "").replace(/^models\//, "");
+  const system = (b.messages ?? []).filter((m) => m.role === "system").map((m) => m.content).join("\n");
+  const contents = (b.messages ?? []).filter((m) => m.role !== "system").map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+  const payload: Record<string, unknown> = { contents };
+  if (system) payload.systemInstruction = { parts: [{ text: system }] };
+  if (b.tools?.length) {
+    payload.tools = [{ functionDeclarations: b.tools.map((t) => ({ name: t.function.name, description: t.function.description, parametersJsonSchema: t.function.parameters })) }];
+    const forced = typeof b.tool_choice === "object" ? b.tool_choice.function?.name : undefined;
+    payload.toolConfig = { functionCallingConfig: forced ? { mode: "ANY", allowedFunctionNames: [forced] } : { mode: "AUTO" } };
+  }
+  const gen: Record<string, unknown> = {};
+  if (b.max_tokens) gen.maxOutputTokens = b.max_tokens;
+  // "low" thinking: Gemini 3+ takes a level, 2.5 a token budget
+  if (b.reasoning_effort) gen.thinkingConfig = /gemini-2\./i.test(model) ? { thinkingBudget: 1024 } : { thinkingLevel: "low" };
+  if (Object.keys(gen).length) payload.generationConfig = gen;
+  return { model, payload };
+}
+
+type GeminiAnswer = {
+  candidates?: { content?: { parts?: { text?: string; thought?: boolean; functionCall?: { name?: string; args?: unknown } }[] }; finishReason?: string }[];
+  usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; thoughtsTokenCount?: number };
+};
+
+const FINISH: Record<string, string> = { STOP: "stop", MAX_TOKENS: "length", SAFETY: "content_filter", PROHIBITED_CONTENT: "content_filter", BLOCKLIST: "content_filter", RECITATION: "content_filter" };
+
+export function geminiNativeAnswer(data: unknown): unknown {
+  const d = data as GeminiAnswer | null;
+  const c = d?.candidates?.[0];
+  const parts = c?.content?.parts ?? [];
+  const calls = parts.filter((p) => p.functionCall).map((p) => ({ type: "function", function: { name: p.functionCall!.name ?? "", arguments: JSON.stringify(p.functionCall!.args ?? {}) } }));
+  const text = parts.filter((p) => !p.thought && typeof p.text === "string").map((p) => p.text).join("");
+  const u = d?.usageMetadata;
+  return {
+    choices: [{ message: { content: text || null, ...(calls.length ? { tool_calls: calls } : {}) }, finish_reason: c?.finishReason ? (FINISH[c.finishReason] ?? c.finishReason.toLowerCase()) : undefined }],
+    usage: { prompt_tokens: u?.promptTokenCount ?? 0, completion_tokens: (u?.candidatesTokenCount ?? 0) + (u?.thoughtsTokenCount ?? 0) },
+  };
+}
+
+async function geminiPost(key: string, body: Record<string, unknown>, signal?: AbortSignal): Promise<HttpResult> {
+  const { model, payload } = geminiNativeRequest(body);
+  const r = await http(`${GEMINI_NATIVE}/models/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: { "content-type": "application/json", "x-goog-api-key": key }, body: payload, signal });
+  return r.status >= 200 && r.status < 300 ? { status: r.status, data: geminiNativeAnswer(r.data) } : r;
+}
+
 export async function compatStructured<T>(
   id: ProviderId,
   key: string,
@@ -189,7 +252,8 @@ export async function compatStructured<T>(
   // Gemini thinks at full depth by default: slow, token-hungry, and long requests end in 5xx/timeouts
   if (id === "gemini" && isGeminiThinking(opts.model)) body.reasoning_effort = "low";
   const url = `${baseUrl(id, cfg)}/chat/completions`;
-  const postOnce = () => http(url, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal, timeoutMs: id === "custom" ? 600_000 : undefined });
+  const postOnce = () =>
+    id === "gemini" ? geminiPost(key, body, opts.signal) : http(url, { method: "POST", headers: headers(id, key, cfg), body, signal: opts.signal, timeoutMs: id === "custom" ? 600_000 : undefined });
   // a dropped connection (mobile network switch, Wi-Fi hiccup) is re-sent after the same pauses
   const post = async () => {
     for (let i = 0; ; i++) {
@@ -300,8 +364,12 @@ export async function compatListModels(id: ProviderId, key: string, cfg: Cfg): P
     const k = await http(`${baseUrl(id, cfg)}/key`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
     check(id, k);
   }
-  const r = await http(`${baseUrl(id, cfg)}/models`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
+  const r =
+    id === "gemini"
+      ? await http(`${GEMINI_NATIVE}/models?pageSize=1000`, { method: "GET", headers: { "x-goog-api-key": key }, timeoutMs: 20_000 })
+      : await http(`${baseUrl(id, cfg)}/models`, { method: "GET", headers: headers(id, key, cfg), timeoutMs: 20_000 });
   check(id, r);
-  const list = ((r.data as { data?: { id: string }[]; models?: { name?: string; model?: string }[] })?.data ?? []).map((m) => m.id);
+  const d = r.data as { data?: { id: string }[]; models?: { name?: string; supportedGenerationMethods?: string[] }[] } | null;
+  const list = id === "gemini" ? (d?.models ?? []).filter((m) => !m.supportedGenerationMethods || m.supportedGenerationMethods.includes("generateContent")).map((m) => m.name ?? "") : (d?.data ?? []).map((m) => m.id);
   return chatModels(id, list).map((m) => ({ id: m, display_name: m }));
 }

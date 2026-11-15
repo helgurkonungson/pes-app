@@ -17,6 +17,9 @@ export interface FreeProvider {
   keyIn: (text: string) => string | null;
 }
 
+/** A Gemini key in copied text: an auth key ("AQ.…", what AI Studio issues since 2026) or a standard one ("AIza…"). */
+export const GEMINI_KEY = /AQ\.[0-9A-Za-z_.-]{30,}|AIza[0-9A-Za-z_-]{35}/;
+
 export const FREE_PROVIDERS: FreeProvider[] = [
   {
     id: "gemini",
@@ -24,7 +27,7 @@ export const FREE_PROVIDERS: FreeProvider[] = [
     keyUrl: "https://aistudio.google.com/app/apikey",
     termsUrl: "https://ai.google.dev/gemini-api/terms",
     trainsOnFree: true,
-    keyIn: (t) => t.match(/AIza[0-9A-Za-z_-]{35}/)?.[0] ?? null,
+    keyIn: (t) => t.match(GEMINI_KEY)?.[0] ?? null,
   },
   {
     id: "groq",
