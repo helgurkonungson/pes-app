@@ -164,8 +164,9 @@ function headFor(s: GameState, look: number): GameArt {
   if (s.mode === "over" || ev === "hit" || ev === "miss" || s.safe > SAFE_FACE) return "game-head-hurt";
   if (ev === "pick" || ev === "apple") return "game-head-chomp";
   if (s.mode === "idle") return "game-head-happy";
-  if (look < -1) return "game-head-left";
-  if (look > 1) return "game-head-right";
+  // the head is drawn turned 180° (it faces up, the way the worm crawls), so the side faces swap
+  if (look < -1) return "game-head-right";
+  if (look > 1) return "game-head-left";
   return "game-head-calm";
 }
 /** The hurt face lasts this long after a hit (the rest of the safe time the worm only blinks). */
@@ -362,14 +363,15 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   const segs = 7;
   const look = Math.max(-2, Math.min(2, ((s.target ?? s.x) - s.x) / 10));
   if (sprite("game-body") && sprite("game-head-calm")) {
-    // 2.0.1: the head sprites are the face alone, so the face leads (looks the way the worm crawls)
+    // 2.0.1: the head sprites are the face alone, so the face leads
     // and the round segments trail behind it, tapering into the tail
     for (let i = segs - 1; i >= 1; i--) {
       const x = (trail[i * 3] ?? s.x) + (s.mode === "over" ? 0 : Math.sin(s.t * 4 - i * 0.9) * 1.6);
       const tail = i === segs - 1;
       put(ctx, tail ? "game-tail" : "game-body", x, WORM_Y + 4 + i * 9 + (tail ? 2 : 0), tail ? 19 : (WORM_R - i * 0.5) * 2.7);
     }
-    put(ctx, headFor(s, look), s.x, WORM_Y - 2, 34);
+    // 2.0.2: the face sprites look down at the viewer; turned 180° the worm faces where it crawls (up)
+    put(ctx, headFor(s, look), s.x, WORM_Y - 2, 34, Math.PI);
     ctx.globalAlpha = 1;
     drawEffects(ctx, s, p);
     drawLives(ctx, s, p);

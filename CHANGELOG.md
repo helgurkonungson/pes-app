@@ -2,6 +2,10 @@
 
 All notable changes to Chompbook (formerly PES). Versions follow semver; every new version on a store branch becomes a GitHub Release (docs/BRANCHES.md).
 
+## 2.0.2 — 2026-11-15
+
+- **The worm looks where it crawls:** in the waiting game the worm's face now points up, the way it moves, instead of looking back at you.
+
 ## 2.0.1 — 2026-11-15
 
 - **Free Gemini works with Google's new keys:** Google AI Studio now issues keys that start with `AQ.` instead of `AIza`. Chompbook recognises them (the key is picked up from the clipboard again and "Save key" works) and talks to Gemini over Google's native API, which accepts both kinds of keys.
