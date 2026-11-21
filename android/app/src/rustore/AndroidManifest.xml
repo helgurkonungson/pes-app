@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- RuStore build (ADR-042): RuStore Pay SDK settings. Merged into src/main/AndroidManifest.xml. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- The app id from RuStore Console (build.gradle → resValue from RUSTORE_APP_ID); a string resource,
+             because a bare number in meta-data would be read as an integer. -->
+        <meta-data
+            android:name="console_app_id_value"
+            android:value="@string/rustore_console_app_id" />
+        <!-- Bank apps return here after a payment (RuStorePayReturnActivity). -->
+        <meta-data
+            android:name="sdk_pay_scheme_value"
+            android:value="online.chompbook.app.rustorepay" />
+
+        <activity
+            android:name=".RuStorePayReturnActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTop"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="online.chompbook.app.rustorepay" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

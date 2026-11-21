@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isoDays, kindOf, manageSubscriptionUrl, proStatus, shouldOfferPro, type StorePackage, toPlans, trialDays, usageView } from "./pro";
+import { isoDays, kindOf, manageSubscriptionUrl, proStatus, type RuStorePurchase, ruStoreActive, ruStoreKey, ruStorePlans, ruStoreStatus, shouldOfferPro, type StorePackage, toPlans, trialDays, usageView } from "./pro";
 
 const pkg = (id: string, type: string, price: number, extra: Partial<StorePackage["product"]> = {}): StorePackage => ({
   identifier: id,
@@ -72,5 +72,39 @@ describe("Pro offer after a lesson (1.1.0)", () => {
     expect(shouldOfferPro({ ...base, provider: "chompbook" })).toBe(false);
     expect(shouldOfferPro({ ...base, graded: false })).toBe(false);
     expect(shouldOfferPro({ ...base, purchasable: false })).toBe(false);
+  });
+});
+
+describe("RuStore Pay (ADR-042)", () => {
+  const NOW = Date.parse("2026-11-21T10:00:00Z");
+  const IDS = ["pro_monthly", "pro_annual"];
+
+  it("turns RuStore products into plans: annual first, per-month price, saving, trial", () => {
+    const plans = ruStorePlans([
+      { productId: "pro_monthly", type: "SUBSCRIPTION", amountLabel: "249 ₽", price: 24900, currency: "RUB", mainPeriod: "P1M", trialPeriod: "P7D" },
+      { productId: "pro_annual", type: "SUBSCRIPTION", amountLabel: "1 990 ₽", price: 199000, currency: "RUB", mainPeriod: "P1Y", trialPeriod: "P7D" },
+      { productId: "coins", type: "CONSUMABLE_PRODUCT", amountLabel: "99 ₽", price: 9900, currency: "RUB" },
+    ]);
+    expect(plans.map((p) => p.id)).toEqual(["pro_annual", "pro_monthly"]);
+    expect(plans[0]).toMatchObject({ kind: "annual", price: "1 990 ₽", trialDays: 7, savePct: 33 });
+    expect(plans[0].perMonth).toMatch(/165,84|165\.84/);
+    expect(plans[1]).toMatchObject({ kind: "monthly", perMonth: null, savePct: null, trialDays: 7 });
+  });
+
+  it("finds the active subscription and makes the server key", () => {
+    const subs: RuStorePurchase[] = [
+      { purchaseId: "old", productId: "pro_monthly", kind: "SUBSCRIPTION", status: "CLOSED", expirationDate: NOW - 1 },
+      { purchaseId: "paused", productId: "pro_monthly", kind: "SUBSCRIPTION", status: "PAUSED", expirationDate: NOW + 1000 },
+      { purchaseId: "a1", productId: "pro_annual", kind: "SUBSCRIPTION", status: "ACTIVE", expirationDate: NOW + 86_400_000 },
+      { purchaseId: "other", productId: "other_sub", kind: "SUBSCRIPTION", status: "ACTIVE", expirationDate: NOW + 9 * 86_400_000 },
+    ];
+    expect(ruStoreActive(subs, IDS, NOW)?.purchaseId).toBe("a1");
+    expect(ruStoreStatus(subs, IDS, NOW)).toEqual({ active: true, until: new Date(NOW + 86_400_000).toISOString(), willRenew: true, trial: false });
+    expect(ruStoreStatus(subs.slice(0, 2), IDS, NOW).active).toBe(false);
+    expect(ruStoreKey("pro_annual", "3aa0c7bd-964e")).toBe("rustore:pro_annual:3aa0c7bd-964e");
+  });
+
+  it("manages the subscription in RuStore", () => {
+    expect(manageSubscriptionUrl("online.chompbook.app", undefined, "rustore")).toBe("https://www.rustore.ru/catalog/app/online.chompbook.app");
   });
 });

@@ -84,6 +84,20 @@
 5. В Galaxy-приложении RevenueCat скопировать «Samsung IAP Instant Server Notification Service URL» → Seller Portal → In App Purchase → ⋮ → **Instant Server Notification Url (ISN)** → Test → Save.
 6. Проверка: свой Samsung-аккаунт в **Profile → License Test**, Closed Beta со сборкой `galaxy`. Сервер `api/` менять не нужно: он проверяет entitlement `pro`, общий для обоих магазинов.
 
+## 10. RuStore (ADR-042)
+
+RevenueCat не работает с RuStore, поэтому здесь подписку продает RuStore Pay SDK, а сервер `api/` проверяет покупку в RuStore сам.
+
+1. RuStore Консоль → **Приложения → Создать приложение**: пакет `online.chompbook.app`, загрузите APK из Release `rustore-vX.Y.Z` (первая загрузка может быть без Pro). Номер приложения – цифры в адресе `console.rustore.ru/apps/<номер>`.
+2. GitHub → Settings → Secrets and variables → Actions → **Variables** → `RUSTORE_APP_ID` = этот номер. Затем пересоберите ветку `rustore` (Actions → Android → Run workflow на `rustore`): без переменной Pro в сборке не продается.
+3. **Компания → Монетизация**: подключите прием платежей (доп. соглашение для нерезидентов, реквизиты счета ИП).
+4. Приложение → **Монетизация → Подписки → Создать**: ID `pro_monthly` (период 1 месяц) и `pro_annual` (1 год), цены в рублях (по аналогии с СНГ в Play: около 249 ₽ и 1 990 ₽), пробный период 7 дней, льготный период 7 дней. Названия и описания – как в Play («Chompbook Pro»). Опубликуйте подписки.
+5. **Компания → API RuStore → Создать ключ**: доступ к методам платежей и подписок для Chompbook. Сохраните ID ключа и приватный ключ.
+6. Cloudflare → Worker `chompbook-api` → Settings → Variables and Secrets: `RUSTORE_KEY_ID` (Text) и `RUSTORE_PRIVATE_KEY` (Secret, приватный ключ целиком, одной строкой base64). Для тестовых покупок временно `RUSTORE_SANDBOX` = `1`, после проверки удалить.
+7. Проверка: тестовая покупка с аккаунта тестировщика RuStore → «У вас Chompbook Pro» → урок пишет Chompbook AI (модель `RUSTORE_MODEL`).
+
+Если сервер отвечает «не может проверить подписку»: неверные ключ или ID ключа, у ключа нет доступа к подпискам, или RuStore закрыл старый хост `public-api.rustore.ru` (тогда `RUSTORE_API` = адрес прокси с сертификатами Минцифры, например на VPS).
+
 ## Если что-то не так
 
 | Симптом | Причина |
@@ -91,4 +105,4 @@
 | «Не удалось загрузить тарифы» | нет offering `default` или продукты не привязаны; сервисный аккаунт ещё не активен (до 36 ч); приложение установлено не из Google Play |
 | Pro оплачен, но «Chompbook Pro не активна» | entitlement называется не `pro`; неверный `REVENUECAT_SECRET` |
 | Уроки с Pro падают с «временно недоступен» | нет `OPENROUTER_KEY`, исчерпан лимит ключа OpenRouter или модель переименована |
-| В приложении нет раздела покупки | сборка без переменной `REVENUECAT_ANDROID_KEY` |
+| В приложении нет раздела покупки | сборка без переменной `REVENUECAT_ANDROID_KEY` (RuStore: без `RUSTORE_APP_ID`) |

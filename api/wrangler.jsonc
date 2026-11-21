@@ -1,7 +1,9 @@
 // Chompbook AI server (Pro) — api.chompbook.online. ADR-037, setup: docs/PRO_SETUP.md.
 // Deploy: Cloudflare dashboard → Workers & Pages → Create → Import a repository → root directory "api",
 // production branch "pro" until 1.0.0 is merged into main (main has no api/ before that).
-// Secrets (dashboard → the Worker → Settings → Variables and secrets): OPENROUTER_KEY, REVENUECAT_SECRET.
+// Secrets (dashboard → the Worker → Settings → Variables and secrets): OPENROUTER_KEY, REVENUECAT_SECRET;
+// for RuStore subscriptions (ADR-042) also RUSTORE_KEY_ID and RUSTORE_PRIVATE_KEY (RuStore Console →
+// Company → API RuStore). RUSTORE_SANDBOX = "1" accepts test purchases while testing; remove it after.
 {
   "name": "chompbook-api",
   "main": "src/index.ts",
@@ -23,7 +25,10 @@
     // during the 7-day free trial (≈ 3 lessons a day) and for all users together per UTC day (a spending stop)
     "TRIAL_DAILY_TOKENS": "180000",
     "GLOBAL_DAILY_TOKENS": "6000000",
-    "ENTITLEMENT": "pro"
+    "ENTITLEMENT": "pro",
+    // RuStore subscribers (Russia, Belarus, CIS): Anthropic doesn't serve these countries, so another chain (ADR-042)
+    "RUSTORE_MODEL": "deepseek/deepseek-v4.1-flash-1017",
+    "RUSTORE_FALLBACK_MODELS": "qwen/qwen3-235b-a22b-2507"
   },
   // daily clean-up: usage older than 90 days, cached subscription answers unused for 30 days
   "triggers": { "crons": ["17 3 * * *"] },

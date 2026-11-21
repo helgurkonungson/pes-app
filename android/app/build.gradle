@@ -1,4 +1,6 @@
 apply plugin: 'com.android.application'
+// Kotlin for the RuStore Pay plugin (rustore flavor, ADR-042): the RuStore SDK is Kotlin-first
+apply plugin: 'org.jetbrains.kotlin.android'
 
 def pesPackageVersion() {
     def pkg = new groovy.json.JsonSlurper().parse(file("../../package.json"))
@@ -46,6 +48,12 @@ android {
         galaxy {
             dimension "store"
         }
+        // RuStore (ADR-042): RuStore Pay for Pro. RUSTORE_APP_ID = the app id from RuStore Console
+        // (digits in console.rustore.ru/apps/<id>); the SDK reads it from the manifest as a string.
+        rustore {
+            dimension "store"
+            resValue "string", "rustore_console_app_id", (System.getenv("RUSTORE_APP_ID") ?: "")
+        }
     }
     buildTypes {
         release {
@@ -57,6 +65,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 repositories {
@@ -78,6 +90,9 @@ dependencies {
     // `purchases` itself is only a private dependency of the Capacitor plugin, so the app declares it to compile against it.
     galaxyImplementation "com.revenuecat.purchases:purchases:10.29.0"
     galaxyImplementation "com.revenuecat.purchases:purchases-store-galaxy:10.29.0"
+    // RuStore Pay SDK (RuStorePayPlugin, ADR-042), RuStore build only
+    rustoreImplementation platform("ru.rustore.sdk:bom:2026.08.01")
+    rustoreImplementation "ru.rustore.sdk:pay"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"

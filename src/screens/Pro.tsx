@@ -1,6 +1,7 @@
 /**
  * Chompbook Pro (ADR-037): built-in AI with a subscription through Google Play or, in the Galaxy
- * Store build, Samsung IAP (ADR-041).
+ * Store build, Samsung IAP (ADR-041), or, in the RuStore build, RuStore Pay (ADR-042: Russian-law
+ * documents from /cis/ and a separate consent to personal data processing before paying).
  * - Store build: plans from the store, free trial, legal text, restore, manage.
  * - Active Pro: renewal date, today's allowance, switch lessons back to Chompbook AI.
  * - GitHub APK / web: Pro is sold in the Google Play version.
@@ -22,8 +23,13 @@ import { buy, fetchUsage, loadPlans, proPurchasable, restore, usePro } from "../
 import { APP_ID, PLAY_URL, SITE_URL as SITE, STORE } from "../build";
 
 const galaxy = STORE === "galaxy";
+const ru = STORE === "rustore";
+const LOAD_FAILED: Key = galaxy ? "pro.loadFailedGalaxy" : ru ? "pro.loadFailedRuStore" : "pro.loadFailed";
+const LEGAL_CANCEL: Key = galaxy ? "pro.legalCancelGalaxy" : ru ? "pro.legalCancelRuStore" : "pro.legalCancel";
 
 function legalUrl(page: "terms" | "privacy", lang: string): string {
+  // RuStore: the subscription offer and the 152-FZ policy (site/gen/docs/cis.mjs), Russian only
+  if (ru) return `${SITE}/cis/${page === "terms" ? "offer" : "privacy"}/`;
   return `${SITE}/${page}/${lang === "ru" ? "ru/" : ""}`;
 }
 
@@ -40,6 +46,8 @@ export function Pro() {
   const [chosen, setChosen] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | "buy" | "restore">(null);
   const [usage, setUsage] = useState<ProUsage | null>(null);
+  // RuStore build: the separate consent to personal data processing (/cis/consent/), before paying
+  const [consent, setConsent] = useState(!ru);
   const purchasable = proPurchasable();
   const active = status.active || !!profile?.pro?.active;
 
@@ -115,7 +123,7 @@ export function Pro() {
             <button
               className="btn primary block"
               onClick={async () => {
-                if (!(await getApiKey("chompbook"))) return toast(t(galaxy ? "pro.loadFailedGalaxy" : "pro.loadFailed"));
+                if (!(await getApiKey("chompbook"))) return toast(t(LOAD_FAILED));
                 await updateProfile({ provider: "chompbook", aiBlock: undefined });
                 toast(t("pro.inUse"));
               }}
@@ -145,12 +153,16 @@ export function Pro() {
           </div>
           <p>{t("pro.lead")}</p>
           {features}
-          <div className="banner small" role="note" data-testid="pro-play-only">
-            <span className="grow">{t("pro.playOnly")}</span>
-          </div>
-          <button className="btn ghost block" onClick={() => openExternal(PLAY_URL)}>
-            <ExternalLink size={18} /> {t("pro.openPlay")}
-          </button>
+          {!ru && (
+            <>
+              <div className="banner small" role="note" data-testid="pro-play-only">
+                <span className="grow">{t("pro.playOnly")}</span>
+              </div>
+              <button className="btn ghost block" onClick={() => openExternal(PLAY_URL)}>
+                <ExternalLink size={18} /> {t("pro.openPlay")}
+              </button>
+            </>
+          )}
         </div>
         <div className="cta-bar">
           <button className="btn primary block" onClick={() => setFree(true)}>
@@ -207,7 +219,7 @@ export function Pro() {
             {loadError && (
               <div className="stack">
                 <div className="error-box" role="alert">
-                  {t(galaxy ? "pro.loadFailedGalaxy" : "pro.loadFailed")}
+                  {t(LOAD_FAILED)}
                 </div>
                 <button className="btn ghost block" onClick={load}>
                   <RotateCcw size={18} /> {t("common.retry")}
@@ -237,9 +249,17 @@ export function Pro() {
             {plan && (
               <div className="stack">
                 <p className="faint small">
-                  {plan.kind === "annual" ? t("pro.legalYear", { price: plan.price }) : t("pro.legalMonth", { price: plan.price })} {t(galaxy ? "pro.legalCancelGalaxy" : "pro.legalCancel")}
+                  {plan.kind === "annual" ? t("pro.legalYear", { price: plan.price }) : t("pro.legalMonth", { price: plan.price })} {t(LEGAL_CANCEL)}
                   {plan.trialDays ? ` ${t("pro.legalTrial")}` : ""}
                 </p>
+                {ru && (
+                  <label className="check-row small" data-testid="pro-consent">
+                    <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
+                    <span>
+                      {t("pro.consentCis")} <ExtLink href={`${SITE}/cis/consent/`}>{t("pro.consentDoc")}</ExtLink>
+                    </span>
+                  </label>
+                )}
               </div>
             )}
             <button
@@ -264,7 +284,7 @@ export function Pro() {
       </div>
       {group && group !== "child" && (
         <div className="cta-bar">
-          <button className="btn primary block" disabled={!plan || !!busy} onClick={purchase} data-testid="pro-buy">
+          <button className="btn primary block" disabled={!plan || !!busy || !consent} onClick={purchase} data-testid="pro-buy">
             <Crown size={20} /> {busy === "buy" ? t("common.checking") : plan?.trialDays ? t("pro.startTrial") : t("pro.subscribe")}
           </button>
         </div>

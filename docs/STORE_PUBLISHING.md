@@ -33,6 +33,14 @@
 6. 👤 Android developer verification: когда Google откроет регистрацию ключей, добавить в Play Console ключ подписи galaxy-APK — это ключ загрузки из секрета `PES_KEYSTORE_BASE64`, а не ключ Play App Signing.
 7. Тест: License Tester в профиле Seller Portal + Closed Beta; затем Submit.
 
+## RuStore (ADR-042)
+
+Аккаунт разработчика – армянский ИП (нерезидент), одобрен в ноябре 2026. Пошагово – в проекте Chompbook на claude.ai (`claude/rustore-release.md`). Кратко:
+1. 👤 Консоль → создать приложение `online.chompbook.app`, загрузить APK `rustore` из Release `rustore-vX.Y.Z`, тексты и графика (русский), категория «Образование», возрастная маркировка 12+ (AI-контент по материалам пользователя), ссылка на политику: https://chompbook.online/cis/privacy/.
+2. 👤 Номер приложения → GitHub Variables `RUSTORE_APP_ID`, пересобрать ветку `rustore`.
+3. 👤 Монетизация, подписки, ключ API, переменные Cloudflare – `docs/PRO_SETUP.md` → «RuStore».
+4. На модерацию – APK с Pro. Подпись – ключ загрузки из `PES_KEYSTORE_BASE64` (не ключ Play App Signing), поэтому версию из Play нельзя обновить версией из RuStore и наоборот.
+
 ## App Store
 
 - **Возрастной рейтинг** (анкета App Store Connect, новые категории 4+/9+/13+/16+/18+). Приложение генерирует контент с помощью AI и открывает страницы сервисов во встроенном браузере (только фиксированные адреса). Ожидаемо **13+**. Не отмечайте «Made for Kids»: это категория для детей, с запретом сторонней аналитики и внешних ссылок без родительского контроля.

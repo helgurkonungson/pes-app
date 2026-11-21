@@ -44,3 +44,6 @@
 -keep class com.revenuecat.purchases.galaxy.** { *; }
 -keep class com.samsung.android.sdk.iap.** { *; }
 -dontwarn com.samsung.android.sdk.iap.**
+# RuStore build (ADR-042): RuStore Pay SDK. It ships consumer rules; keep it whole as a safety margin.
+-keep class ru.rustore.sdk.** { *; }
+-dontwarn ru.rustore.sdk.**

@@ -17,13 +17,17 @@ export const PLAY_URL = `https://play.google.com/store/apps/details?id=${APP_ID}
 
 /**
  * The store this build is for (ADR-041): "play" — Google Play (default); "galaxy" — Samsung Galaxy
- * Store (VITE_STORE=galaxy, the Android `galaxy` flavor). Decides the purchases backend, store links,
- * the rating card and store wording.
+ * Store (VITE_STORE=galaxy, the Android `galaxy` flavor); "rustore" — RuStore (VITE_STORE=rustore,
+ * the `rustore` flavor, ADR-042). Decides the purchases backend, store links, the rating card,
+ * legal documents and store wording.
  */
-export type StoreId = "play" | "galaxy";
-export const STORE: StoreId = import.meta.env.VITE_STORE === "galaxy" ? "galaxy" : "play";
+export type StoreId = "play" | "galaxy" | "rustore";
+const STORES: StoreId[] = ["play", "galaxy", "rustore"];
+export const STORE: StoreId = STORES.includes(import.meta.env.VITE_STORE as StoreId) ? (import.meta.env.VITE_STORE as StoreId) : "play";
+/** The app's RuStore page. */
+export const RUSTORE_URL = `https://www.rustore.ru/catalog/app/${APP_ID}`;
 /** The app's page in the store this build came from. */
-export const STORE_URL: string = STORE === "galaxy" ? `https://galaxystore.samsung.com/detail/${APP_ID}` : PLAY_URL;
+export const STORE_URL: string = STORE === "galaxy" ? `https://galaxystore.samsung.com/detail/${APP_ID}` : STORE === "rustore" ? RUSTORE_URL : PLAY_URL;
 /** Our site: privacy policy, OAuth callback pages, report endpoint. */
 export const SITE_URL = "https://chompbook.online";
 
@@ -41,6 +45,14 @@ export const REVENUECAT_GALAXY_KEY: string = import.meta.env.VITE_REVENUECAT_GAL
 export const REVENUECAT_KEY: string = STORE === "galaxy" ? REVENUECAT_GALAXY_KEY : REVENUECAT_ANDROID_KEY;
 /** Samsung IAP test mode (VITE_GALAXY_BILLING=test): no real charges. Release builds stay in production mode. */
 export const GALAXY_BILLING_TEST: boolean = import.meta.env.VITE_GALAXY_BILLING === "test";
+/**
+ * RuStore build (ADR-042): Pro is sold through RuStore Pay. The flag only says the build was made
+ * with the RuStore app id from RuStore Console (VITE_RUSTORE_APP_ID, also written into the Android
+ * manifest); empty = Pro can't be bought in this build.
+ */
+export const RUSTORE_PAY: boolean = STORE === "rustore" && !!import.meta.env.VITE_RUSTORE_APP_ID;
+/** Subscription product ids in RuStore Console (the same ids as in Google Play). */
+export const RUSTORE_PRODUCTS = ["pro_monthly", "pro_annual"];
 /** Chompbook AI server (Pro, ADR-037), OpenAI-compatible. */
 export const PRO_API: string = (import.meta.env.VITE_PRO_API || "https://api.chompbook.online/v1").replace(/\/+$/, "");
 

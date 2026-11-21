@@ -11,12 +11,12 @@
 #   main         — development; gates only (no build, saves Actions minutes in the private repo)
 #   google-play  — Release "vX.Y.Z": PES-x.y.z.apk + Chompbook-x.y.z-play.aab (the Play upload)
 #   galaxy-store — Release "galaxy-vX.Y.Z": Chompbook-x.y.z-galaxy.apk (Seller Portal → Binary)
-#   rustore      — not built yet: RuStore Pay must replace RevenueCat first
+#   rustore      — Release "rustore-vX.Y.Z": Chompbook-x.y.z-rustore.apk (RuStore Console → upload), ADR-042
 name: Android
 
 on:
   push:
-    branches: [main, google-play, galaxy-store]
+    branches: [main, google-play, galaxy-store, rustore]
     # a push that only changes the website doesn't rebuild the app (site.yml checks it instead)
     paths-ignore: ["site/**"]
   pull_request:
@@ -32,7 +32,7 @@ concurrency:
 
 env:
   # the store this branch builds for (ADR-041); main and PRs only run the gates
-  STORE: ${{ github.ref_name == 'galaxy-store' && 'galaxy' || 'play' }}
+  STORE: ${{ github.ref_name == 'galaxy-store' && 'galaxy' || github.ref_name == 'rustore' && 'rustore' || 'play' }}
 
 jobs:
   checks:
@@ -154,15 +154,17 @@ jobs:
       - name: Build web app
         run: npm run build
         env:
-          # play | galaxy (src/build.ts, ADR-041)
+          # play | galaxy | rustore (src/build.ts, ADR-041, ADR-042)
           VITE_STORE: ${{ env.STORE }}
           # Google OAuth client ids for the one-tap free Gemini key (docs/GEMINI_SETUP.md); not secrets.
-          # Empty = the app falls back to the in-app Google AI Studio page.
-          VITE_GOOGLE_WEB_CLIENT_ID: ${{ vars.GOOGLE_WEB_CLIENT_ID }}
-          VITE_GOOGLE_IOS_CLIENT_ID: ${{ vars.GOOGLE_IOS_CLIENT_ID }}
+          # Empty = the app falls back to the in-app Google AI Studio page. Not in the RuStore build:
+          # Gemini isn't offered in Russia and Belarus (ADR-042).
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ env.STORE != 'rustore' && vars.GOOGLE_WEB_CLIENT_ID || '' }}
+          VITE_GOOGLE_IOS_CLIENT_ID: ${{ env.STORE != 'rustore' && vars.GOOGLE_IOS_CLIENT_ID || '' }}
           # "Report this lesson" (ADR-025): HTTPS endpoint receiving JSON reports, and the e-mail for
           # reports shared by hand. Not secrets; empty = reports are shared through the share sheet.
-          VITE_REPORT_URL: ${{ vars.REPORT_URL }}
+          # The RuStore build shares by hand: its documents (152-FZ) ask for a consent before we receive any.
+          VITE_REPORT_URL: ${{ env.STORE != 'rustore' && vars.REPORT_URL || '' }}
           VITE_REPORT_EMAIL: ${{ vars.REPORT_EMAIL }}
           # Chompbook Pro (ADR-037): RevenueCat public SDK key (public by design; empty = Pro can't be
           # bought in this build) and, optionally, another Chompbook AI server URL.
@@ -171,6 +173,8 @@ jobs:
           # (leave empty for builds sent to Samsung)
           VITE_REVENUECAT_GALAXY_KEY: ${{ vars.REVENUECAT_GALAXY_KEY }}
           VITE_GALAXY_BILLING: ${{ vars.GALAXY_BILLING }}
+          # RuStore build: the app id from RuStore Console turns on Pro through RuStore Pay (ADR-042)
+          VITE_RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID }}
           VITE_PRO_API: ${{ vars.PRO_API }}
 
       - name: Sync Capacitor
@@ -207,9 +211,13 @@ jobs:
           PES_KEYSTORE_PASSWORD: ${{ secrets.PES_KEYSTORE_PASSWORD }}
           PES_KEY_ALIAS: ${{ secrets.PES_KEY_ALIAS }}
           PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
+          RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID }}
         run: |
           chmod +x gradlew
-          if [ "$STORE" = galaxy ]; then
+          if [ "$STORE" = rustore ]; then
+            # the `rustore` flavor (ADR-042): an APK signed with the same key, RuStore Pay inside
+            ./gradlew assembleRustoreRelease --no-daemon --stacktrace
+          elif [ "$STORE" = galaxy ]; then
             # the `galaxy` flavor (ADR-041): an APK signed with the same key
             ./gradlew assembleGalaxyRelease --no-daemon --stacktrace
           else
@@ -224,7 +232,9 @@ jobs:
         run: |
           mkdir -p out smoke
           out=android/app/build/outputs
-          if [ "$STORE" = galaxy ]; then
+          if [ "$STORE" = rustore ]; then
+            cp $out/apk/rustore/release/app-rustore-release.apk "out/Chompbook-$V-rustore.apk"
+          elif [ "$STORE" = galaxy ]; then
             cp $out/apk/galaxy/release/app-galaxy-release.apk "out/Chompbook-$V-galaxy.apk"
           else
             cp $out/apk/release/app-release.apk "out/PES-$V.apk"
@@ -352,7 +362,7 @@ jobs:
   release:
     needs: [build, e2e-cross, device-tests]
     # store branches only: a manual run on main builds, but never publishes
-    if: github.event_name != 'pull_request' && (github.ref_name == 'google-play' || github.ref_name == 'galaxy-store')
+    if: github.event_name != 'pull_request' && (github.ref_name == 'google-play' || github.ref_name == 'galaxy-store' || github.ref_name == 'rustore')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -375,7 +385,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ needs.build.outputs.version }}
         run: |
-          if [ "$STORE" = galaxy ]; then TAG="galaxy-v$VERSION"; TITLE="Chompbook $VERSION (Galaxy Store)"
+          if [ "$STORE" = rustore ]; then TAG="rustore-v$VERSION"; TITLE="Chompbook $VERSION (RuStore)"
+          elif [ "$STORE" = galaxy ]; then TAG="galaxy-v$VERSION"; TITLE="Chompbook $VERSION (Galaxy Store)"
           else TAG="v$VERSION"; TITLE="Chompbook v$VERSION"; fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists — only the build artifact was updated."

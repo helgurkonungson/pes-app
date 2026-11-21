@@ -117,16 +117,33 @@ describe("branding", () => {
       for (const name of ["widget_name", "widget_description", "widget_streak_label", "widget_cta", "widget_empty"]) expect(xml, `${dir}/${name}`).toContain(`name="${name}"`);
     }
   });
-  it("ADR-041 store flavors: play and galaxy with their own StoreReview / GalaxyPurchases, Samsung IAP matching RevenueCat", () => {
+  it("ADR-042 RuStore flavor: RuStore Pay with the console app id as a string and the payment return scheme", () => {
+    const app = new URL("../android/app/", import.meta.url);
+    const gradle = readFileSync(new URL("build.gradle", app), "utf8");
+    expect(gradle).toMatch(/rustore\s*\{[\s\S]*resValue "string", "rustore_console_app_id"/);
+    expect(gradle).toContain('rustoreImplementation "ru.rustore.sdk:pay"');
+    const manifest = readFileSync(new URL("src/rustore/AndroidManifest.xml", app), "utf8");
+    expect(manifest).toContain('android:value="@string/rustore_console_app_id"');
+    const scheme = manifest.match(/sdk_pay_scheme_value"\s+android:value="([^"]+)"/)?.[1];
+    expect(scheme).toBeTruthy();
+    expect(manifest).toContain(`<data android:scheme="${scheme}" />`);
+    expect(scheme).toMatch(/^[a-z][a-z0-9.+-]*$/); // RFC 3986 scheme
+    expect(readFileSync(new URL("proguard-rules.pro", app), "utf8")).toContain("-keep class ru.rustore.sdk.**");
+  });
+  it("ADR-041 store flavors: play, galaxy and rustore with their own StoreReview / GalaxyPurchases / RuStorePay, Samsung IAP matching RevenueCat", () => {
     const app = new URL("../android/app/", import.meta.url);
     const gradle = readFileSync(new URL("build.gradle", app), "utf8");
     expect(gradle).toMatch(/productFlavors\s*\{[\s\S]*play\s*\{[\s\S]*galaxy\s*\{/);
-    for (const flavor of ["play", "galaxy"])
-      for (const cls of ["StoreReviewPlugin", "GalaxyPurchasesPlugin"])
-        expect(readFileSync(new URL(`src/${flavor}/java/io/github/helgurkonungson/pes/${cls}.java`, app), "utf8"), `${flavor}/${cls}`).toContain(`class ${cls}`);
+    for (const flavor of ["play", "galaxy", "rustore"])
+      for (const cls of ["StoreReviewPlugin", "GalaxyPurchasesPlugin", "RuStorePayPlugin"]) {
+        const file = flavor === "rustore" && cls === "RuStorePayPlugin" ? `${cls}.kt` : `${cls}.java`;
+        expect(readFileSync(new URL(`src/${flavor}/java/io/github/helgurkonungson/pes/${file}`, app), "utf8"), `${flavor}/${cls}`).toContain(`class ${cls}`);
+      }
     const activity = readFileSync(new URL("src/main/java/io/github/helgurkonungson/pes/MainActivity.java", app), "utf8");
     expect(activity.indexOf("registerPlugin(GalaxyPurchasesPlugin.class)")).toBeGreaterThan(0);
     expect(activity.indexOf("registerPlugin(GalaxyPurchasesPlugin.class)")).toBeLessThan(activity.indexOf("super.onCreate"));
+    expect(activity.indexOf("registerPlugin(RuStorePayPlugin.class)")).toBeGreaterThan(0);
+    expect(activity.indexOf("registerPlugin(RuStorePayPlugin.class)")).toBeLessThan(activity.indexOf("super.onCreate"));
     // purchases-store-galaxy must equal the native SDK of purchases-hybrid-common: update both together
     // (the hybrid-common POM on Maven Central names its `purchases` version)
     const PAIRS: Record<string, string> = { "19.15.0": "10.29.0" };

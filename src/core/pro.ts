@@ -123,10 +123,12 @@ export function usageView(u: ProUsage | null | undefined): { ratio: number; less
 /**
  * Where to manage the subscription (cancel, change plan, payment method) when the store gives no
  * link of its own: Google Play's subscription page for this app; for the Galaxy Store (ADR-041) the
- * app's page there — subscriptions live in Galaxy Store → Menu → Subscriptions.
+ * app's page there — subscriptions live in Galaxy Store → Menu → Subscriptions; for RuStore
+ * (ADR-042) the app's RuStore page — subscriptions live in RuStore → Profile → Subscriptions.
  */
-export function manageSubscriptionUrl(appId: string, productId?: string, store: "play" | "galaxy" = "play"): string {
+export function manageSubscriptionUrl(appId: string, productId?: string, store: "play" | "galaxy" | "rustore" = "play"): string {
   if (store === "galaxy") return `https://galaxystore.samsung.com/detail/${encodeURIComponent(appId)}`;
+  if (store === "rustore") return `https://www.rustore.ru/catalog/app/${encodeURIComponent(appId)}`;
   const base = `https://play.google.com/store/account/subscriptions?package=${encodeURIComponent(appId)}`;
   return productId ? `${base}&sku=${encodeURIComponent(productId)}` : base;
 }
@@ -144,4 +146,95 @@ export function shouldOfferPro(x: { purchasable: boolean; proActive: boolean; pr
   if (!x.lastOffer) return true;
   const last = Date.parse(x.lastOffer);
   return !Number.isFinite(last) || x.now.getTime() - last >= PRO_OFFER_EVERY_DAYS * 86_400_000;
+}
+
+// ---------- RuStore (ADR-042) ----------
+
+/** A RuStore subscription product as the RuStorePay plugin returns it. */
+export interface RuStoreProduct {
+  productId: string;
+  type: string; // "SUBSCRIPTION" | …
+  /** Formatted price with the currency sign, e.g. "249 ₽". */
+  amountLabel: string;
+  /** Minor units (kopecks); may be missing. */
+  price?: number | null;
+  currency?: string | null;
+  /** ISO 8601 of the main period ("P1M", "P1Y") and of the free trial, if the product has one. */
+  mainPeriod?: string | null;
+  trialPeriod?: string | null;
+}
+
+/** A purchase from RuStore Pay `getPurchases` (subscriptions only matter here). */
+export interface RuStorePurchase {
+  purchaseId: string;
+  productId?: string | null;
+  /** "SUBSCRIPTION" for subscriptions. */
+  kind: string;
+  /** SubscriptionPurchaseStatus: ACTIVE, PAUSED, TERMINATED, CLOSED, EXPIRED, CANCELLED, … */
+  status: string;
+  /** Epoch ms of the end of the current term. */
+  expirationDate?: number | null;
+  purchaseTime?: number | null;
+}
+
+/** The Chompbook AI "key" of a RuStore subscription; the server checks it with RuStore (api/src/rustore.ts). */
+export function ruStoreKey(productId: string, purchaseId: string): string {
+  return `rustore:${productId}:${purchaseId}`;
+}
+
+function ruKind(p: RuStoreProduct): PlanKind {
+  if (p.mainPeriod === "P1Y" || p.mainPeriod === "P12M" || /annual|year/i.test(p.productId)) return "annual";
+  if (p.mainPeriod === "P1M" || /month/i.test(p.productId)) return "monthly";
+  return "other";
+}
+
+function money(minor: number, currency: string, loc: string): string {
+  try {
+    return new Intl.NumberFormat(loc, { style: "currency", currency, maximumFractionDigits: minor % 100 === 0 ? 0 : 2 }).format(minor / 100);
+  } catch {
+    return `${(minor / 100).toFixed(2)} ${currency}`;
+  }
+}
+
+/** RuStore products → paywall plans, in the same order and shape as the RevenueCat plans. */
+export function ruStorePlans(products: RuStoreProduct[], loc = "ru-RU"): PlanView[] {
+  const subs = products.filter((p) => p.type === "SUBSCRIPTION" && p.amountLabel);
+  const monthly = subs.find((p) => ruKind(p) === "monthly");
+  const order: Record<PlanKind, number> = { annual: 0, monthly: 1, other: 2 };
+  return [...subs]
+    .sort((a, b) => order[ruKind(a)] - order[ruKind(b)])
+    .map((p) => {
+      const kind = ruKind(p);
+      const comparable = kind === "annual" && monthly && p.price && monthly.price && p.currency && p.currency === monthly.currency;
+      const save = comparable ? Math.round((1 - p.price! / (monthly!.price! * 12)) * 100) : null;
+      // round the monthly share up to whole kopecks
+      const perMonth = kind === "annual" && p.price && p.currency ? money(Math.ceil(p.price / 12), p.currency, loc) : null;
+      return {
+        id: p.productId,
+        kind,
+        price: p.amountLabel,
+        perMonth,
+        trialDays: isoDays(p.trialPeriod),
+        savePct: save !== null && save > 0 ? save : null,
+      };
+    });
+}
+
+/**
+ * The learner's Pro subscription in RuStore: an ACTIVE subscription to one of our products whose
+ * term hasn't ended (the latest one, if there are several). PAUSED = a failed renewal: not Pro.
+ */
+export function ruStoreActive(purchases: RuStorePurchase[], productIds: string[], now: number): RuStorePurchase | null {
+  const live = purchases.filter(
+    (p) => p.kind === "SUBSCRIPTION" && p.status === "ACTIVE" && !!p.productId && productIds.includes(p.productId) && (p.expirationDate == null || p.expirationDate > now),
+  );
+  if (!live.length) return null;
+  return live.sort((a, b) => (b.expirationDate ?? Infinity) - (a.expirationDate ?? Infinity))[0];
+}
+
+export function ruStoreStatus(purchases: RuStorePurchase[], productIds: string[], now: number): ProStatus {
+  const p = ruStoreActive(purchases, productIds, now);
+  if (!p) return { active: false, until: null, willRenew: false, trial: false };
+  // RuStore Pay doesn't say on the phone whether auto-renewal is on; an active subscription renews unless cancelled
+  return { active: true, until: p.expirationDate ? new Date(p.expirationDate).toISOString() : null, willRenew: true, trial: false };
 }

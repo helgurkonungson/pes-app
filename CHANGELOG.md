@@ -5,6 +5,7 @@ All notable changes to Chompbook (formerly PES). Versions follow semver; every n
 ## 2.0.2 — 2026-11-15
 
 - **The worm looks where it crawls:** in the waiting game the worm's face now points up, the way it moves, instead of looking back at you.
+- **RuStore build:** CI also builds `Chompbook-x.y.z-rustore.apk` for RuStore (Russia, Belarus and other CIS countries): Chompbook Pro is sold through RuStore Pay with Russian-law documents and a consent to personal data processing before paying; Pro lessons there use models available in those countries. No Google sign-in for a Gemini key and no Google Play rating card in this build.
 
 ## 2.0.1 — 2026-11-15
 

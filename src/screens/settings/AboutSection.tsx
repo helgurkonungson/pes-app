@@ -14,7 +14,7 @@ export function AboutSection() {
       <section className="stack">
         <SectionLabel>{t("settings.about")}</SectionLabel>
         <Group>
-          <MenuRow icon={<RefreshCw size={20} />} label={t("settings.version")} hint={t(STORE === "galaxy" ? "settings.updatesGalaxy" : "settings.updatesPlay")} value={`v${APP_VERSION}`} onClick={() => openExternal(STORE_URL)} />
+          <MenuRow icon={<RefreshCw size={20} />} label={t("settings.version")} hint={t(STORE === "galaxy" ? "settings.updatesGalaxy" : STORE === "rustore" ? "settings.updatesRuStore" : "settings.updatesPlay")} value={`v${APP_VERSION}`} onClick={() => openExternal(STORE_URL)} />
           <MenuRow icon={<GraduationCap size={20} />} label={t("settings.tutorial")} onClick={() => useTutorial.getState().show()} />
           <MenuRow icon={<Flag size={20} />} label={t("settings.reports")} onClick={() => useNav.getState().push({ name: "reports" })} />
           <MenuRow icon={<Bug size={20} />} label={t("settings.logs")} onClick={() => useNav.getState().push({ name: "logs" })} />
