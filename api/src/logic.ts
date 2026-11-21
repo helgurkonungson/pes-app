@@ -1,12 +1,15 @@
 /**
  * Chompbook AI server (ADR-037) — the logic, free of Cloudflare specifics so it is unit tested.
  *
- * The app sends OpenAI-compatible Chat Completions with `Authorization: Bearer <RevenueCat app user id>`.
+ * The app sends OpenAI-compatible Chat Completions with `Authorization: Bearer <RevenueCat app user id>`
+ * (or, from the RuStore build, `rustore:<product>:<purchase id>`, checked with RuStore — ADR-042).
  * We check that this user has the active "pro" entitlement (RevenueCat, cached), keep a daily token
  * budget per user, and forward the request to OpenRouter with our own key and the model we choose.
  */
 
-export interface Env {
+import { fetchRuStoreSubscription, isRuStoreUser, ruStoreModels, type RuStoreEnv } from "./rustore";
+
+export interface Env extends RuStoreEnv {
   /** OpenRouter API key (secret). */
   OPENROUTER_KEY: string;
   /** RevenueCat secret API key, v1 REST (secret). */
@@ -140,6 +143,18 @@ export async function checkPro(user: string, env: Env, deps: Deps): Promise<{ ac
     const stillValid = cached.expiresAt === null || cached.expiresAt > now;
     if (now - cached.checkedAt < ttl && (!cached.active || stillValid)) return { active: cached.active, trial: !!cached.trial };
   }
+  if (isRuStoreUser(user)) {
+    let state: { active: boolean; expiresAt: number | null; trial?: boolean };
+    try {
+      state = await fetchRuStoreSubscription(user, env, deps.fetch, now);
+    } catch (e) {
+      // RuStore down: same rule as for RevenueCat below
+      if (cached?.active && now - cached.checkedAt < 24 * 3600_000) return { active: true, trial: !!cached.trial };
+      throw e;
+    }
+    await deps.store.putEntitlement(user, state.active, now, state.expiresAt, !!state.trial);
+    return { active: state.active, trial: !!state.trial };
+  }
   const res = await deps.fetch(`https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(user)}`, {
     headers: { authorization: `Bearer ${env.REVENUECAT_SECRET}`, accept: "application/json" },
   });
@@ -248,8 +263,10 @@ export function isAdult(req: Request): boolean {
  * isn't supported by every model there, so "auto".
  */
 export function upstreamBody(body: Record<string, unknown>, env: Env, user: string, adult = false): Record<string, unknown> {
-  const model = env.MODEL || DEFAULTS.model;
-  const fallbacks = (env.FALLBACK_MODELS ?? DEFAULTS.fallbacks).split(",").map((m) => m.trim()).filter(Boolean);
+  // RuStore subscribers (Russia, Belarus, CIS) get their own model chain (ADR-042)
+  const rs = ruStoreModels(env, user);
+  const model = rs?.model ?? (env.MODEL || DEFAULTS.model);
+  const fallbacks = rs?.fallbacks ?? (env.FALLBACK_MODELS ?? DEFAULTS.fallbacks).split(",").map((m) => m.trim()).filter(Boolean);
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const out: Record<string, unknown> = {
     messages: [{ role: "system", content: adult ? `${PRIVACY_RULES}\n${DATA_RULES}` : `${PRIVACY_RULES}\n${DATA_RULES}\n${TEEN_SAFETY}` }, ...messages],
