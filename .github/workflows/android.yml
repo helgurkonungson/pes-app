@@ -173,8 +173,9 @@ jobs:
           # (leave empty for builds sent to Samsung)
           VITE_REVENUECAT_GALAXY_KEY: ${{ vars.REVENUECAT_GALAXY_KEY }}
           VITE_GALAXY_BILLING: ${{ vars.GALAXY_BILLING }}
-          # RuStore build: the app id from RuStore Console turns on Pro through RuStore Pay (ADR-042)
-          VITE_RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID }}
+          # RuStore build: the app id from RuStore Console (console.rustore.ru/apps/2063793007, not a secret)
+          # turns on Pro through RuStore Pay (ADR-042); a RUSTORE_APP_ID variable overrides it
+          VITE_RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID || '2063793007' }}
           VITE_PRO_API: ${{ vars.PRO_API }}
 
       - name: Sync Capacitor
@@ -211,7 +212,7 @@ jobs:
           PES_KEYSTORE_PASSWORD: ${{ secrets.PES_KEYSTORE_PASSWORD }}
           PES_KEY_ALIAS: ${{ secrets.PES_KEY_ALIAS }}
           PES_KEY_PASSWORD: ${{ secrets.PES_KEY_PASSWORD }}
-          RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID }}
+          RUSTORE_APP_ID: ${{ vars.RUSTORE_APP_ID || '2063793007' }}
         run: |
           chmod +x gradlew
           if [ "$STORE" = rustore ]; then
