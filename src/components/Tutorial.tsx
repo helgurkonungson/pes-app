@@ -7,7 +7,8 @@
  * or "Create my own skill": a short how-to, why AI helps, and how to connect it (free AI
  * with its catches, Chompbook Pro, or the learner's own key).
  */
-import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, CloudOff, Crown, Flag, Flame, KeyRound, Plus, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, CloudOff, Crown, Flag, KeyRound, Plus, Sparkles } from "lucide-react";
+import { Mascot } from "./Mascot";
 import { useEffect, useRef, useState } from "react";
 import { useAiState } from "../ai/status";
 import { activeProvider, PROVIDERS } from "../ai/providers";
@@ -380,7 +381,7 @@ function Art({ slide }: { slide: Slide }) {
       return (
         <div className="tut-art tut-streak">
           <div className="tut-flame">
-            <Flame size={64} />
+            <Mascot name="worm-streak" size={110} />
           </div>
           <span className="tut-xp">+20 XP</span>
           <div className="tut-card">

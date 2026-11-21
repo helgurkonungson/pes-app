@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, DEMO_VIDEO } from "./config.mjs";
+import { SITE, DOCS_DATE, SELLER, STORES, LANGS, METRIKA_ID, CF_BEACON_TOKEN, DEMO_VIDEO } from "./config.mjs";
 import { I } from "./icons.mjs";
 import * as EN from "./docs/en.mjs";
 import * as RU from "./docs/ru.mjs";
@@ -91,7 +91,7 @@ ${links}
 <link rel="preload" href="/fonts/plus-jakarta-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/style.css">
 <script>document.documentElement.classList.remove("no-js")</script>
-${lang === "ru" ? metrikaHead : ""}</head>`;
+${lang === "ru" ? metrikaHead : ""}${cfBeacon}</head>`;
 }
 
 function header(lang, alternates, homeHref) {
@@ -137,6 +137,7 @@ ${GUIDES[lang] ? `<li><a href="${p}/guides/">${GUIDES[lang].nav}</a></li>\n` : "
 ${STORES.apk.status === "live" ? `<li><a href="${STORES.apk.url}">${t.store.apk}</a></li>\n` : ""}<li><a href="${p}/docs/">${t.nav.docs}</a></li>
 </ul></div>
 </div>
+${phBadge(lang, "foot-badge")}
 <p class="seller">© 2026 ${esc(s.nameShort || s.name)}</p>
 </div></footer>`;
 }
@@ -166,6 +167,7 @@ function typo(lang, html) {
 }
 
 // Yandex Metrica: Russian-language pages only (lang "ru": /ru/… and /cis/…); no Session Replay, plus a cookie notice.
+const cfBeacon = CF_BEACON_TOKEN ? `<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='${JSON.stringify({ token: CF_BEACON_TOKEN })}'></script>\n` : "";
 const metrikaHead = `<script>(function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};m[i].l=1*new Date();for(var j=0;j<document.scripts.length;j++){if(document.scripts[j].src===r){return;}}k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})(window,document,"script","https://mc.yandex.ru/metrika/tag.js?id=${METRIKA_ID}","ym");ym(${METRIKA_ID},"init",{ssr:true,clickmap:true,referrer:document.referrer,url:location.href,accurateTrackBounce:true,trackLinks:true});</script>
 `;
 const metrikaBody = `<noscript><div><img src="https://mc.yandex.ru/watch/${METRIKA_ID}" style="position:absolute;left:-9999px" alt=""></div></noscript>
@@ -187,6 +189,14 @@ ${footer(o.lang)}
 `);
 
 const docHref = (lang, id) => `${pre(lang)}/${id}/`;
+
+// ---------------------------------------------------------------- Product Hunt badge
+// Not on Russian-language and CIS pages (ru, be, kk, /cis/). Dark by default, light in the light theme — like the site.
+const PH_LANGS = LANGS.map((l) => l.id).filter((l) => !["ru", "be", "kk"].includes(l));
+const PH_IMG = (theme) => `https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1312855&amp;theme=${theme}&amp;t=1794669492538`;
+const phBadge = (lang, cls = "") => PH_LANGS.includes(lang)
+  ? `<a class="ph-badge${cls ? " " + cls : ""}" href="https://www.producthunt.com/products/chompbook-ai-study-tutor?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-chompbook" target="_blank" rel="noopener noreferrer"><picture><source media="(prefers-color-scheme: light)" srcset="${PH_IMG("light")}"><img alt="Chompbook - AI tutor that checks your answers, not your guesses | Product Hunt" width="250" height="54" src="${PH_IMG("dark")}" loading="lazy"></picture></a>`
+  : "";
 
 // ---------------------------------------------------------------- landing
 
@@ -287,6 +297,7 @@ function landing(lang) {
 <p class="lead">${esc(t.hero.lead)}</p>
 ${storeButtons(lang)}
 ${STORES.apk.status === "live" ? `<p class="apk">${esc(t.hero.apk)} <a href="${STORES.apk.url}" rel="noopener">${esc(t.hero.apkLink)}</a></p>\n` : ""}<ul class="ticks">${t.hero.ticks.map((x) => `<li>${I.check}${esc(x)}</li>`).join("")}</ul>
+${phBadge(lang)}
 </div>
 <div class="stage" aria-hidden="true">
 <div class="phone back"><div class="screen">${shot(5, "on")}</div></div>

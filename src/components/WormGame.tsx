@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BIRD_WARN, H, hitNow, type ItemKind, LIVES_MAX, newGame, steer, step, W, WORM_R, WORM_Y, type GameState } from "../core/wormGame";
 import { useT } from "../i18n";
+import { ART, type ArtName } from "../assets/art";
 
 const BEST_KEY = "pes.worm.best";
 /**
@@ -81,6 +82,95 @@ const hash = (n: number) => {
   const x = Math.sin(n * 127.1) * 43758.5453;
   return x - Math.floor(x);
 };
+
+
+// ---------- sprites (2.0.0: the drawn garden; the vector shapes below stay as a fallback until they load) ----------
+
+const GAME_ART = [
+  "game-ground", "game-body", "game-tail", "game-bird-shadow",
+  "game-head-calm", "game-head-left", "game-head-right", "game-head-chomp", "game-head-hurt", "game-head-happy",
+  "game-book-1", "game-book-2", "game-book-3", "game-page-1", "game-page-2", "game-page-3", "game-apple-1", "game-apple-2", "game-apple-3",
+  "game-bird-1", "game-bird-2", "game-bird-3", "game-bird-4",
+  "game-mole-hole", "game-mole-peek", "game-mole-out",
+  "game-decor-pebbles", "game-decor-leaf", "game-decor-leaf2", "game-decor-daisies", "game-decor-grass", "game-decor-twig", "game-decor-clover",
+  "game-life", "game-life-empty", "game-fx-star", "game-fx-dust", "game-fx-leaves",
+] as const satisfies readonly ArtName[];
+type GameArt = (typeof GAME_ART)[number];
+
+const images = new Map<GameArt, HTMLImageElement>();
+/** Starts loading every game sprite (once). */
+function preloadSprites() {
+  if (typeof Image === "undefined") return;
+  for (const n of GAME_ART) {
+    if (images.has(n)) continue;
+    const im = new Image();
+    im.decoding = "async";
+    im.src = ART[n];
+    images.set(n, im);
+  }
+}
+/** The sprite if it has loaded, else null (then the vector fallback is drawn). */
+function sprite(n: GameArt): HTMLImageElement | null {
+  const im = images.get(n);
+  return im && im.complete && im.naturalWidth > 0 ? im : null;
+}
+/** Draws a sprite centred on (x, y), `w` wide (height from its proportions). False if not loaded yet. */
+function put(ctx: CanvasRenderingContext2D, n: GameArt, x: number, y: number, w: number, rot = 0): boolean {
+  const im = sprite(n);
+  if (!im) return false;
+  const h = (w * im.naturalHeight) / im.naturalWidth;
+  if (rot) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.drawImage(im, -w / 2, -h / 2, w, h);
+    ctx.restore();
+  } else ctx.drawImage(im, x - w / 2, y - h / 2, w, h);
+  return true;
+}
+
+const DECOR: GameArt[] = ["game-decor-pebbles", "game-decor-leaf", "game-decor-daisies", "game-decor-grass", "game-decor-clover", "game-decor-leaf2", "game-decor-twig"];
+const TILE = 160;
+
+/** The drawn garden: a seamless meadow tile plus a few leaves, pebbles and flowers scrolling with it. */
+function drawGroundArt(ctx: CanvasRenderingContext2D, s: GameState): boolean {
+  const g = sprite("game-ground");
+  if (!g) return false;
+  const off = s.scroll % TILE;
+  for (let y = -TILE + off; y < H; y += TILE) for (let x = 0; x < W; x += TILE) ctx.drawImage(g, x, y, TILE, TILE);
+  const row = 90;
+  const roff = s.scroll % row;
+  const row0 = Math.floor(s.scroll / row);
+  for (let r = -1; r <= H / row + 1; r++) {
+    const id = row0 - r;
+    if (hash(id * 5.3) < 0.35) continue;
+    const n = DECOR[Math.floor(hash(id * 2.1) * DECOR.length)];
+    const x = 14 + hash(id * 9.7) * (W - 28);
+    put(ctx, n, x, r * row + roff + hash(id * 3.3) * row, 16 + hash(id) * 6, (hash(id * 1.7) - 0.5) * 1.2);
+  }
+  return true;
+}
+
+const ITEM_ART: Record<ItemKind, GameArt[]> = {
+  book: ["game-book-1", "game-book-2", "game-book-3"],
+  page: ["game-page-1", "game-page-2", "game-page-3"],
+  apple: ["game-apple-1", "game-apple-3", "game-apple-2"],
+};
+const ITEM_W: Record<ItemKind, number> = { book: 31, page: 28, apple: 27 };
+
+/** Which face the worm makes this frame. */
+function headFor(s: GameState, look: number): GameArt {
+  const ev = s.event && s.t - s.event.at < 0.4 ? s.event.kind : null;
+  if (s.mode === "over" || ev === "hit" || ev === "miss" || s.safe > SAFE_FACE) return "game-head-hurt";
+  if (ev === "pick" || ev === "apple") return "game-head-chomp";
+  if (s.mode === "idle") return "game-head-happy";
+  // the head is drawn turned 180° (it faces up, the way the worm crawls), so the side faces swap
+  if (look < -1) return "game-head-right";
+  if (look > 1) return "game-head-left";
+  return "game-head-calm";
+}
+/** The hurt face lasts this long after a hit (the rest of the safe time the worm only blinks). */
+const SAFE_FACE = 1.1;
 
 function drawGround(ctx: CanvasRenderingContext2D, s: GameState, p: Palette) {
   ctx.fillStyle = p.soil;
@@ -167,16 +257,23 @@ function drawItem(ctx: CanvasRenderingContext2D, kind: ItemKind, x: number, y: n
 
 function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: Palette) {
   ctx.clearRect(0, 0, W, H);
-  drawGround(ctx, s, p);
+  if (!drawGroundArt(ctx, s)) drawGround(ctx, s, p);
 
   for (const it of s.items) {
     ctx.globalAlpha = it.missed ? 0.3 : 1; // left behind: fades out
-    drawItem(ctx, it.kind, it.x, it.y, p);
+    const art = ITEM_ART[it.kind][it.id % 3];
+    if (!put(ctx, art, it.x, it.y, ITEM_W[it.kind], ((it.id % 5) - 2) * 0.1)) drawItem(ctx, it.kind, it.x, it.y, p);
   }
   ctx.globalAlpha = 1;
 
   // moles: a mound that swells, then the mole looks out
   for (const m of s.moles) {
+    const swellArt = 8 + Math.min(1, Math.max(0, (m.y + 30) / 260)) * 6;
+    if (sprite("game-mole-hole")) {
+      const w = swellArt * 2 + 16;
+      put(ctx, m.up >= 0.6 ? "game-mole-out" : m.up > 0 ? "game-mole-peek" : "game-mole-hole", m.x, m.y, m.up >= 0.6 ? w * 1.15 : w);
+      continue;
+    }
     const swell = 8 + Math.min(1, Math.max(0, (m.y + 30) / 260)) * 6;
     ctx.fillStyle = p.soilDark;
     ctx.beginPath();
@@ -210,6 +307,22 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   // birds: first a shadow growing on the ground, then a swoop past it
   for (const b of s.birds) {
     const k = Math.min(1, b.age / BIRD_WARN);
+    if (sprite("game-bird-1") && sprite("game-bird-shadow")) {
+      const frame = (["game-bird-1", "game-bird-2", "game-bird-3", "game-bird-2"] as const)[Math.floor(s.t * 10) % 4];
+      if (!b.struck) {
+        ctx.globalAlpha = 0.2 + k * 0.45;
+        put(ctx, "game-bird-shadow", b.x, WORM_Y, 18 + k * 46);
+        ctx.globalAlpha = 1;
+        // the last moments before the strike: the bird dives in from the top
+        if (k > 0.72) put(ctx, frame, b.x, WORM_Y - (1 - (k - 0.72) / 0.28) * 230, 62);
+      } else {
+        const f = (b.age - BIRD_WARN) / 0.9; // after the strike it flies on, down and out of the garden
+        ctx.globalAlpha = 1 - f * 0.7;
+        put(ctx, frame, b.x, WORM_Y + f * 200, 62);
+        ctx.globalAlpha = 1;
+      }
+      continue;
+    }
     if (!b.struck) {
       ctx.globalAlpha = 0.25 + k * 0.5;
       ctx.fillStyle = p.shadow;
@@ -248,6 +361,22 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   const blink = s.safe > 0 && Math.floor(s.t * 10) % 2 === 0;
   ctx.globalAlpha = blink ? 0.35 : 1;
   const segs = 7;
+  const look = Math.max(-2, Math.min(2, ((s.target ?? s.x) - s.x) / 10));
+  if (sprite("game-body") && sprite("game-head-calm")) {
+    // 2.0.1: the head sprites are the face alone, so the face leads
+    // and the round segments trail behind it, tapering into the tail
+    for (let i = segs - 1; i >= 1; i--) {
+      const x = (trail[i * 3] ?? s.x) + (s.mode === "over" ? 0 : Math.sin(s.t * 4 - i * 0.9) * 1.6);
+      const tail = i === segs - 1;
+      put(ctx, tail ? "game-tail" : "game-body", x, WORM_Y + 4 + i * 9 + (tail ? 2 : 0), tail ? 19 : (WORM_R - i * 0.5) * 2.7);
+    }
+    // 2.0.2: the face sprites look down at the viewer; turned 180° the worm faces where it crawls (up)
+    put(ctx, headFor(s, look), s.x, WORM_Y - 2, 34, Math.PI);
+    ctx.globalAlpha = 1;
+    drawEffects(ctx, s, p);
+    drawLives(ctx, s, p);
+    return;
+  }
   for (let i = segs - 1; i >= 0; i--) {
     const x = (trail[i * 3] ?? s.x) + (s.mode === "over" ? 0 : Math.sin(s.t * 4 - i * 0.9) * 1.6);
     const y = WORM_Y + i * 9;
@@ -260,7 +389,6 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
     ctx.stroke();
   }
   // eyes look the way it crawls
-  const look = Math.max(-2, Math.min(2, ((s.target ?? s.x) - s.x) / 10));
   for (const dx of [-4, 4]) {
     if (s.mode === "over") {
       ctx.strokeStyle = p.pupil;
@@ -284,24 +412,32 @@ function draw(ctx: CanvasRenderingContext2D, s: GameState, trail: number[], p: P
   }
   ctx.globalAlpha = 1;
 
-  // a soft ring when something happens (picked up / apple / hit)
-  if (s.event && s.t - s.event.at < 0.35) {
-    const f = (s.t - s.event.at) / 0.35;
-    ctx.globalAlpha = 1 - f;
-    ctx.strokeStyle = s.event.kind === "hit" || s.event.kind === "miss" ? p.bad : s.event.kind === "apple" ? p.apple : p.accent;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(s.x, WORM_Y, WORM_R + 4 + f * 16, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
-  }
+  drawEffects(ctx, s, p);
+  drawLives(ctx, s, p);
+}
 
-  // lives: apples in the top left corner (empty places for the ones that can still be gained)
-  if (s.mode !== "idle") {
-    for (let i = 0; i < LIVES_MAX; i++) {
-      ctx.globalAlpha = i < s.lives ? 1 : 0.22;
-      drawItem(ctx, "apple", 26 + i * 20, 22, p);
-    }
+/** A soft ring when something happens (picked up / apple / hit), and a little burst from the art. */
+function drawEffects(ctx: CanvasRenderingContext2D, s: GameState, p: Palette) {
+  if (!s.event || s.t - s.event.at >= 0.35) return;
+  const f = (s.t - s.event.at) / 0.35;
+  const bad = s.event.kind === "hit" || s.event.kind === "miss";
+  ctx.globalAlpha = 1 - f;
+  ctx.strokeStyle = bad ? p.bad : s.event.kind === "apple" ? p.apple : p.accent;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(s.x, WORM_Y, WORM_R + 4 + f * 16, 0, Math.PI * 2);
+  ctx.stroke();
+  if (s.event.kind !== "miss") put(ctx, s.event.kind === "hit" ? "game-fx-dust" : s.event.kind === "apple" ? "game-fx-leaves" : "game-fx-star", s.x, WORM_Y - 16 - f * 10, 22 + f * 16);
+  ctx.globalAlpha = 1;
+}
+
+/** Lives: apples in the top left corner (empty places for the ones that can still be gained). */
+function drawLives(ctx: CanvasRenderingContext2D, s: GameState, p: Palette) {
+  if (s.mode === "idle") return;
+  for (let i = 0; i < LIVES_MAX; i++) {
+    if (put(ctx, i < s.lives ? "game-life" : "game-life-empty", 24 + i * 21, 22, 19)) continue;
+    ctx.globalAlpha = i < s.lives ? 1 : 0.22;
+    drawItem(ctx, "apple", 26 + i * 20, 22, p);
     ctx.globalAlpha = 1;
   }
 }
@@ -337,6 +473,7 @@ export function WormGame({ ready = false, onDone, onPlay }: { ready?: boolean; o
     const c = canvas.current;
     const ctx = c?.getContext("2d");
     if (!c || !ctx) return;
+    preloadSprites();
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     c.width = W * dpr;
     c.height = H * dpr;

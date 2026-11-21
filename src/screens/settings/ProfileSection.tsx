@@ -1,6 +1,7 @@
 /** Settings → Profile (name, language, daily goal, rest days, reminder) and Theme, with their sheets (ADR-036). */
 import { Capacitor } from "@capacitor/core";
 import { Bell, Moon, SunMoon, Target, User } from "lucide-react";
+import { Mascot } from "../../components/Mascot";
 import { useState } from "react";
 import { UiLanguageRow } from "../../components/LanguagePicker";
 import { Group, MenuRow, MinutesPicker, Segmented, SectionLabel, Sheet, Toggle } from "../../components/ui";
@@ -97,6 +98,7 @@ export function ProfileSection({ profile }: { profile: Profile }) {
       {sheet === "rest" && (
         <Sheet title={t("settings.restDays")} onClose={close}>
           <div className="stack-lg">
+            <Mascot name="worm-rest" size={170} />
             <div className="weekday-pick" role="group" aria-label={t("settings.restDays")}>
               {Array.from({ length: 7 }, (_, i) => {
                 const days = profile.restDays ?? [];

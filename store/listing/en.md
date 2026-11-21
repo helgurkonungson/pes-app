@@ -11,9 +11,9 @@ Chompbook: AI Study Tutor
 ```
 Answer in your own words — AI checks if you got it. Study books, PDFs and notes
 ```
-**Полное описание (≤4000, 3631):**
+**Полное описание (≤4000, 3703):**
 ```
-Answer in your own words — and AI checks whether you really understood. Chompbook is a study tutor that turns your books, PDFs and notes into short daily lessons.
+Answer in your own words — and AI checks whether you really understood. Chompbook is an AI study tutor that turns your books, PDFs, EPUB and FB2 files and notes into short daily lessons.
 Every lesson ends with an open question. You get a score out of 10, what worked, what to improve and how, plus a model answer.
 
 WHY YOUR OWN WORDS
@@ -29,7 +29,7 @@ HOW IT WORKS
 3. Study a short piece of theory, take a quick quiz, then explain the key idea in your own words and get feedback.
 
 LEARN FROM ANYTHING
-• PDF, EPUB, Word, text and Markdown files
+• PDF, EPUB, FB2, Kindle (MOBI, AZW3), Word, ODT, text and Markdown files
 • Web pages by link, or notes you type in
 • Photos and scans of pages — the text is recognised right on your phone
 • Files from Google Drive through the usual file picker
@@ -73,7 +73,7 @@ No accounts, no ads, no tracking. Your materials and progress stay on your phone
 WORKS WITHOUT AI TOO
 Lessons from your own materials and the five courses work fully without it, even offline. You then compare what you wrote with the model answer and key points yourself.
 
-English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская. Light and dark theme, phones and tablets.
+English, Español, Deutsch, Français, 中文, हिन्दी, Русский, Українська, Беларуская, Қазақша, Türkçe. Light and dark theme, phones and tablets.
 ```
 
 ## App Store

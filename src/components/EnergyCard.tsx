@@ -1,9 +1,9 @@
 /** Energy balance, freezes and how to earn more (ADR-029): on Progress and in the Home sheet (1.1.0). */
-import { Snowflake, Zap } from "lucide-react";
 import { canBuyFreeze, ENERGY, FREEZE_COST, MAX_FREEZES } from "../core/energy";
 import type { Profile } from "../core/types";
 import { buyStreakFreeze } from "../data/repo";
 import { useT } from "../i18n";
+import { ArtIcon, Mascot } from "./Mascot";
 import { toast } from "./ui";
 
 export function EnergyCard({ profile, open, bare }: { profile: Profile; open?: boolean; bare?: boolean }) {
@@ -15,11 +15,12 @@ export function EnergyCard({ profile, open, bare }: { profile: Profile; open?: b
   const [m7, m30, m100] = ENERGY.milestones.map(([, e]) => e);
   return (
     <section className={bare ? "stack" : "card stack"} aria-label={t("energy.title")}>
+      {energy < FREEZE_COST && freezes === 0 && profile.xp > 0 && <Mascot name="worm-tired" size={200} />}
       <div className="row-between">
         <div>
           <p className="small muted bold">{t("energy.title")}</p>
           <div className="big-number energy-number">
-            <Zap size={24} aria-hidden /> {energy}
+            <ArtIcon name="energy" size={30} /> {energy}
           </div>
         </div>
         <div className="freeze-stock" aria-label={t("energy.freezesOf", { n: freezes, max: MAX_FREEZES })}>
@@ -27,7 +28,7 @@ export function EnergyCard({ profile, open, bare }: { profile: Profile; open?: b
           <div className="row" style={{ gap: 4, justifyContent: "flex-end" }} aria-hidden>
             {Array.from({ length: MAX_FREEZES }, (_, i) => (
               <span key={i} className={`frost${i < freezes ? " on" : ""}`}>
-                <Snowflake size={18} />
+                <ArtIcon name="freeze" size={22} off={i >= freezes} />
               </span>
             ))}
           </div>
@@ -40,8 +41,8 @@ export function EnergyCard({ profile, open, bare }: { profile: Profile; open?: b
           if (await buyStreakFreeze()) toast(t("energy.bought"));
         }}
       >
-        <Snowflake size={18} /> {full ? t("energy.full") : can ? t("energy.buy", { cost: FREEZE_COST }) : t("energy.need", { n: FREEZE_COST - energy })}
-        {can && <Zap size={16} aria-hidden />}
+        <ArtIcon name="freeze" size={20} /> {full ? t("energy.full") : can ? t("energy.buy", { cost: FREEZE_COST }) : t("energy.need", { n: FREEZE_COST - energy })}
+        {can && <ArtIcon name="energy" size={18} />}
       </button>
       <p className="small muted">{t("energy.what")}</p>
       <p className="small muted">{t("energy.freezeHint")}</p>

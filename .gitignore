@@ -27,3 +27,4 @@ public/ocr/
 site/.wrangler/
 vite.config.ts.timestamp-*
 api/.wrangler/
+__pycache__/

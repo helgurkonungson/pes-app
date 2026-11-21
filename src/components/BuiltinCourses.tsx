@@ -5,6 +5,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Brain, Check, ChevronRight, Lightbulb, Sparkles, Table, Wallet } from "lucide-react";
 import { useState } from "react";
+import { ART, type ArtName } from "../assets/art";
 import { BUILTIN_COURSES, type BuiltinCourse, builtinCourseId } from "../courses";
 import { installBuiltinCourse } from "../data/builtinCourses";
 import { db } from "../data/db";
@@ -14,8 +15,12 @@ import { useNav } from "../nav/store";
 import { toast } from "./ui";
 
 const ICONS = { brain: Brain, sparkles: Sparkles, table: Table, wallet: Wallet, lightbulb: Lightbulb };
+/** The bookworm studying each course's subject (2.0.0). */
+const COURSE_ART: Partial<Record<string, ArtName>> = { ai: "course-ai", data: "course-data", learning: "course-learning", money: "course-money", thinking: "course-thinking" };
 
 export function CourseIcon({ c, size = 22 }: { c: BuiltinCourse; size?: number }) {
+  const art = COURSE_ART[c.slug];
+  if (art) return <img className="course-art" src={ART[art]} alt="" aria-hidden draggable={false} />;
   const I = ICONS[c.icon];
   return (
     <span className="course-icon" style={{ "--hue": c.hue } as React.CSSProperties} aria-hidden>

@@ -10,7 +10,7 @@ import { APP_VERSION } from "../build";
 
 const MAX = 200;
 /** Anything that looks like a secret is masked before it is written. */
-const SECRET = /\b(sk-or-v1-[a-f0-9]{16,}|sk-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{20,}|AQVN[0-9A-Za-z_-]{20,}|gsk_[A-Za-z0-9]{16,}|nvapi-[A-Za-z0-9_-]{16,}|Bearer\s+[A-Za-z0-9._-]{12,})/g;
+const SECRET = /\b(sk-or-v1-[a-f0-9]{16,}|sk-[A-Za-z0-9_-]{8,}|AIza[0-9A-Za-z_-]{20,}|AQ\.[0-9A-Za-z_.-]{20,}|AQVN[0-9A-Za-z_-]{20,}|gsk_[A-Za-z0-9]{16,}|nvapi-[A-Za-z0-9_-]{16,}|Bearer\s+[A-Za-z0-9._-]{12,})/g;
 
 export function redact(s: string): string {
   return s.replace(SECRET, "[hidden]");

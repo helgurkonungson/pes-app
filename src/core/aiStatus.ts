@@ -6,9 +6,11 @@ export type AiState = "ok" | "off" | AiBlock;
 /** After this long a "credits ran out" block is retried automatically (the learner may have topped up). */
 export const CREDITS_RETRY_MS = 6 * 60 * 60 * 1000;
 
-export function aiState(p: Pick<Profile, "aiMode" | "aiBlock"> | undefined, hasKey: boolean, now: number = Date.now()): AiState {
+export function aiState(p: Pick<Profile, "aiMode" | "aiBlock" | "provider" | "pro"> | undefined, hasKey: boolean, now: number = Date.now()): AiState {
   if (p?.aiMode === "offline") return "off";
   if (!hasKey) return "no-key";
+  // Chompbook AI works only with an active Pro (2.0.1): without it the server answers 402, so don't even ask
+  if (p?.provider === "chompbook" && !p.pro?.active) return "credits";
   const b = p?.aiBlock;
   if (b?.kind === "auth") return "auth";
   if (b?.kind === "credits" && now - Date.parse(b.at) < CREDITS_RETRY_MS) return "credits";

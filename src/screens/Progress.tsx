@@ -1,9 +1,10 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { ChevronLeft, ChevronRight, Clock, Flame, Lock, Moon, Snowflake, Sparkles, Target, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Lock, Moon, Snowflake, Sparkles, Target, Trophy } from "lucide-react";
 import { useState } from "react";
 import { Bar, PageTitle, SectionLabel } from "../components/ui";
 import { EnergyCard } from "../components/EnergyCard";
-import { BadgeIcon, LineChart } from "../components/visuals";
+import { BadgeMedal, LineChart } from "../components/visuals";
+import { ArtIcon } from "../components/Mascot";
 import { BADGES } from "../core/badges";
 import { addDays, lastNDays, localDay, monthLabel, parseDay, shortDate, weekdayLetter, weekOf } from "../core/dates";
 import { levelProgress, pct, rankFor } from "../core/scoring";
@@ -65,7 +66,7 @@ export function Progress() {
 
         <div className="grid-2">
           <div className="card tight">
-            <Flame size={20} className="accent" />
+            <ArtIcon name="streak" size={24} off={!streak} />
             <div className="big-number" style={{ marginTop: 6 }}>
               {streak}
               <small>{t("progress.daysUnit", { n: streak })}</small>
@@ -212,9 +213,7 @@ export function Progress() {
               const has = !!profile.badges[b.id];
               return (
                 <div key={b.id} className={`badge${has ? "" : " locked"}`}>
-                  <div className="medal" aria-hidden>
-                    {has ? <BadgeIcon name={b.icon} /> : <Lock size={20} />}
-                  </div>
+                  <BadgeMedal id={b.id} icon={b.icon} has={has} locked={<Lock size={20} />} />
                   <div className="t">{t(`badge.${b.id}.t` as Key)}</div>
                   <div className="d">{t(`badge.${b.id}.d` as Key)}</div>
                 </div>
